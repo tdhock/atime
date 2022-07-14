@@ -8,18 +8,19 @@ atime <- function(N, setup, times=10, verbose=FALSE, seconds.limit=0.01, ...){
   for(N.value in N){
     not.done.yet <- names(done.vec)[!done.vec]
     if(length(not.done.yet)){
-      N.env <- new.env()
+      N.env <- new.env(parent=parent.frame())
       N.env$N <- N.value
       eval(mc.args$setup, N.env)
-      m.args <- list(iterations=times,check=FALSE)
-      result.list <- list()
+      m.list <- list(bench::mark, iterations=times,check=FALSE)
+      N.env$result.list <- list()
       for(expr.name in not.done.yet){
         expr <- expr.list[[expr.name]]
-        m.args[[expr.name]] <- substitute(
-          result.list[[NAME]] <<- EXPR,
+        m.list[[expr.name]] <- substitute(
+          result.list[[NAME]] <- EXPR,
           list(NAME=expr.name, EXPR=expr))
       }
-      N.df <- with(N.env, do.call(bench::mark, m.args))
+      m.call <- as.call(m.list)
+      N.df <- eval(m.call, N.env)
       N.stats <- data.table(N=N.value, expr.name=not.done.yet, N.df)
       N.stats[, kilobytes := as.numeric(mem_alloc)/1024]
       summary.funs <- list(
@@ -30,7 +31,7 @@ atime <- function(N, setup, times=10, verbose=FALSE, seconds.limit=0.01, ...){
       for(fun.name in names(summary.funs)){
         N.stats[[fun.name]] <- sapply(N.df[["time"]], summary.funs[[fun.name]])
       }
-      N.stats$result <- result.list
+      N.stats$result <- N.env$result.list
       done.pkgs <- N.stats[median > seconds.limit, paste(expr.name)]
       done.vec[done.pkgs] <- TRUE
       if(verbose)print(N.stats[, data.table(

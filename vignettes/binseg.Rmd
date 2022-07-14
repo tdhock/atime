@@ -52,7 +52,7 @@ if(require(ggplot2)){
   line.dt <- atime.list$timings[, rbind(
     data.table(N, expr.name, panel="seconds", value=median),
     data.table(N, expr.name, panel="kilobytes", value=kilobytes))]
-  ribbon.df <- data.frame(panel="kilobytes", atime.list[["timings"]])
+  ribbon.df <- data.frame(panel="seconds", atime.list[["timings"]])
   hline.df <- with(atime.list, data.frame(seconds.limit, panel="seconds"))
   gg <- ggplot()+
     theme_bw()+

@@ -1,0 +1,94 @@
+<!--
+%\VignetteEngine{knitr::knitr}
+%\VignetteIndexEntry{Binary segmentation examples}
+-->
+
+# Comparisons
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+library(data.table)
+viz.data <- function(get.seg.means, data.per.seg=10, penalty=1){
+  no.labels <- data.table(
+    start=integer(), end=integer(), changes=integer())
+  atime.list <- atime::atime(
+    N=1:20,
+    setup={
+      N.segs <- 2^N
+      seg.means <- get.seg.means(N.segs)
+      mean.vec <- rep(seg.means, each=data.per.seg)
+      set.seed(1)
+      data.vec <- rnorm(data.per.seg*N.segs, mean.vec, 0.2)
+    },
+    "changepoint::cpt.mean"={
+      changepoint::cpt.mean(
+        data.vec, method="PELT", penalty="Manual", pen.value=penalty)
+    },
+    "binsegRcpp::binseg_normal"={
+      binsegRcpp::binseg_normal(data.vec, N.segs)
+    },
+    "fpop::Fpop"={
+      fpop::Fpop(data.vec, penalty)
+    },
+    "LOPART::LOPART"={
+      LOPART::LOPART(data.vec, no.labels, penalty)
+    },
+    seconds.limit=0.1,
+    times=5)
+  if(require(ggplot2)){
+    line.dt <- atime.list$timings[, rbind(
+      data.table(N, expr.name, panel="seconds", value=median),
+      data.table(N, expr.name, panel="kilobytes", value=kilobytes))]
+    ribbon.df <- data.frame(panel="seconds", atime.list[["timings"]])
+    hline.df <- with(atime.list, data.frame(seconds.limit, panel="seconds"))
+    gg <- ggplot()+
+      theme_bw()+
+      facet_grid(panel ~ ., scales="free")+
+      geom_hline(aes(
+        yintercept=seconds.limit),
+        color="grey",
+        data=hline.df)+
+      geom_line(aes(
+        N, value, color=expr.name),
+        data=line.dt)+
+      geom_ribbon(aes(
+        N, ymin=min, ymax=max, fill=expr.name),
+        data=ribbon.df,
+        alpha=0.5)+
+      scale_x_log10()+
+      scale_y_log10("seconds (median line, min/max band)")
+    if(require("directlabels")){
+      direct.label(gg, "right.polygons")+
+        coord_cartesian(xlim=c(1,60))
+    }else{
+      gg
+    }
+  }
+}
+viz.data(function(N.segs)rep(0:1,l=N.segs))
+```
+
+The plots above show some speed differences between segmentation
+algorithms. It is clear that LOPART and binseg algorithms are
+slow/quadratic in these data (ten points up, ten points down, ten
+points up, ...), whereas FPOP and PELT (changepoint pkg) are
+fast/log-linear. This is the worst case for binseg.
+
+```{r}
+viz.data(function(N.segs)1:N.segs)
+```
+
+Results above show a more typical result: LOPART is slow/quadratic
+whereas other are fast/log-linear. 
+
+```{r}
+viz.data(function(N.segs)1:N.segs, data.per.seg=1, penalty=1e10)
+```
+
+Results above show a highly unusual/pathological result: FPOP and PELT
+are quadratic time for a data sequence which is always increasing with
+a large penalty.
+
