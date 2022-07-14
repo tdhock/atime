@@ -17,7 +17,6 @@ atime.list <- atime::atime(
     N.data <- 2^N
     max.segs <- as.integer(N.data/2)
     max.changes <- max.segs-1L
-    print(N.data)
     set.seed(1)
     data.vec <- 1:N.data
   },
@@ -46,5 +45,41 @@ atime.list <- atime::atime(
   seconds.limit=0.1,
   verbose=TRUE,
   times=5)
+plot(atime.list)
 
+if(require(ggplot2)){
+  library(data.table)
+  line.dt <- atime.list$timings[, rbind(
+    data.table(N, expr.name, panel="seconds", value=median),
+    data.table(N, expr.name, panel="kilobytes", value=kilobytes))]
+  ribbon.df <- data.frame(panel="kilobytes", atime.list[["timings"]])
+  hline.df <- with(atime.list, data.frame(seconds.limit, panel="seconds"))
+  gg <- ggplot()+
+    theme_bw()+
+    facet_grid(panel ~ ., scales="free")+
+    geom_hline(aes(
+      yintercept=seconds.limit),
+      color="grey",
+      data=hline.df)+
+    geom_line(aes(
+      N, value, color=expr.name),
+      data=line.dt)+
+    geom_ribbon(aes(
+      N, ymin=min, ymax=max, fill=expr.name),
+      data=ribbon.df,
+      alpha=0.5)+
+    scale_x_log10()+
+    scale_y_log10("seconds (median line, min/max band)")
+  if(require("directlabels")){
+    direct.label(gg, "right.polygons")+
+      coord_cartesian(xlim=c(1,60))
+  }else{
+    gg
+  }
+}
 ```
+
+The plots above show some speed differences between binary
+segmentation algorithms, but they could be even easier to see for
+larger data sizes (exercise for the reader: try modifying the `N` and
+`seconds.limit` arguments).

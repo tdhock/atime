@@ -32,8 +32,8 @@ atime.list <- atime::atime(
   N=1:30)
 
 if(require("ggplot2")){
-  sec.dt <- data.frame(panel="seconds", atime.list[["timings"]])
-  mem.dt <- data.frame(panel="kilobytes", atime.list[["timings"]])
+  sec.df <- data.frame(panel="seconds", atime.list[["timings"]])
+  mem.df <- data.frame(panel="kilobytes", atime.list[["timings"]])
   hline.df <- with(atime.list, data.frame(seconds.limit, panel="seconds"))
   gg <- ggplot()+
     theme_bw()+
@@ -44,18 +44,19 @@ if(require("ggplot2")){
       data=hline.df)+
     geom_ribbon(aes(
       N, ymin=min, ymax=max, fill=expr.name),
-      data=sec.dt,
+      data=sec.df,
       alpha=0.5)+
     geom_line(aes(
       N, median, color=expr.name),
-      data=sec.dt)+
+      data=sec.df)+
     geom_line(aes(
       N, kilobytes, color=expr.name),
-      data=mem.dt)+
+      data=mem.df)+
     scale_y_log10("")+
     scale_x_log10()
   if(require("directlabels")){
-    directlabels::direct.label(gg, "last.polygons")
+    directlabels::direct.label(gg, "last.polygons")+
+      coord_cartesian(xlim=c(1,40))
   }else{
     gg
   }

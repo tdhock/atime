@@ -38,30 +38,41 @@ if(FALSE){
 
 max.N <- 20
 atime.list <- atime::atime(
-  ICU=stringi::stri_match(subject, regex=pattern),
-  PCRE=regexpr(pattern, subject, perl=TRUE),
-  TRE=regexpr(pattern, subject, perl=FALSE),
-  times=10,
-  seconds.limit=0.1,
   N=1:max.N,
   setup={
-    cat(sprintf("subject/pattern size %4d / %4d\n", N, max.N))
     subject <- paste(rep("a", N), collapse="")
     pattern <- paste(rep(c("(a)?", "\\1"), each=N), collapse="")
-  })
+  },
+  ICU=stringi::stri_match(subject, regex=pattern),
+  PCRE=regexpr(pattern, subject, perl=TRUE),
+  TRE=regexpr(pattern, subject, perl=FALSE)
+)
+plot(atime.list)
 
 if(require(ggplot2)){
-  ggplot()+
+  gg <- ggplot()+
     geom_ribbon(aes(
       N, ymin=min, ymax=max, fill=expr.name),
       data=atime.list$timing,
       alpha=0.5)+
     geom_line(aes(
       N, median, color=expr.name),
-      data=atime.list$timing)
+      data=atime.list$timing)+
+    scale_x_log10()+
+    scale_y_log10("seconds (median line, min/max band)")
+  if(require("directlabels")){
+    direct.label(gg, "top.polygons")
+  }else{
+    gg
+  }
 }
+```
 
-time.dt <- atime::atime(
+The plots above show that ICU/PCRE/TRE are all exponential in N
+(subject/pattern size) when the pattern contains backreferences.
+
+```{r}
+atime.list <- atime::atime(
   ICU=stringi::stri_match(subject, regex=pattern),
   RE2=re2::re2_match(subject, pattern),
   PCRE=regexpr(pattern, subject, perl=TRUE),
@@ -71,5 +82,31 @@ time.dt <- atime::atime(
     pattern <- paste(rep(c("a?", "a"), each=N), collapse="")
   },
   N=1:25,
-  times=10)
+  times=3)
+plot(atime.list)
+
+if(require(ggplot2)){
+  gg <- ggplot()+
+    geom_ribbon(aes(
+      N, ymin=min, ymax=max, fill=expr.name),
+      data=atime.list$timing,
+      alpha=0.5)+
+    geom_line(aes(
+      N, median, color=expr.name),
+      data=atime.list$timing)+
+    scale_x_log10()+
+    scale_y_log10("seconds (median line, min/max band)")
+  if(require("directlabels")){
+    direct.label(gg, "right.polygons")+
+      coord_cartesian(xlim=c(1,30))
+  }else{
+    gg
+  }
+}
 ```
+
+The plots above show that ICU/PCRE are exponential time whereas
+RE2/TRE are polynomial time. Exercise for the reader: modify the above
+code to use the `seconds.limit` argument so that you can see what
+happens to ICU/PCRE for larger N (hint: you should see a difference at
+larger sizes).
