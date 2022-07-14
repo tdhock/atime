@@ -50,6 +50,7 @@ plot.atime <- function(x, ...){
   lattice::xyplot(
     log10(median) ~ log10(N), x$timings, 
     groups=expr.name, type="l", 
+    ylab="log10(median seconds)",
     auto.key=list(space="right", points=FALSE, lines=TRUE))
 }
 

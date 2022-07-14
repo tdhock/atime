@@ -2,7 +2,7 @@ Rplots.pdf
 .dir-locals.el
 inst/testfiles
 .travis.yml
-README.org
+README*
 build.sh
 ^\.github$
 ^codecov\.yml$

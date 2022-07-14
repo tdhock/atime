@@ -24,13 +24,14 @@ these named arguments:
 
 #+BEGIN_SRC R
   (atime.list <- atime::atime(
-    PCRE=regexpr(pattern, subject, perl=TRUE),
-    TRE=regexpr(pattern, subject, perl=FALSE),
+    N=1:30,
     setup={
       subject <- paste(rep("a", N), collapse="")
       pattern <- paste(rep(c("a?", "a"), each=N), collapse="")
     },
-    N=1:30))
+    TRE=regexpr(pattern, subject, perl=FALSE),
+    PCRE=regexpr(pattern, subject, perl=TRUE)
+    ))
 #+END_SRC
 
 On my machine I got the following result:
@@ -49,6 +50,26 @@ modify this behavior). To visualize the results you can do:
 #+BEGIN_SRC R
 plot(atime.list)
 #+END_SRC
+
+[[file:README-figure.png]]
+
+This plot should allow you to see the asymptotic time complexity of
+your R code. Typically on the left you can see timings for small N,
+where overhead dominates the timings, and the curve is more or less
+constant (as is clear in the blue PCRE curve). Typically on the right
+you can see a linear trend on the log-log plot (if your algorithm is
+polynomial in N), and the slope indicates the asymptotic time
+complexity class (larger slope for more complex algorithm in N). If
+you do not see an interpretable result with clear linear trends on the
+right of the log-log plot, you should try to increase =seconds.limit=
+and the max value in =N= so that you start to see linear trends and
+are able to compare the slopes of the lines. Note that in this example
+PCRE is exponential time so it does not show a linear trend on the
+right of the log-log plot (but in practice you should rarely encounter
+exponential time algorithms). Actually PCRE has a fail-safe: if it
+performs too many iterations it will just give up -- you should see a
+[[https://github.com/tdhock/namedCapture-article/blob/master/figure-timings-pathological-linetype.png][constant trend for PCRE]] if you increase N large enough (exercise for
+the reader).
 
 ** Related work
 
