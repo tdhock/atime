@@ -21,6 +21,7 @@ Suggests:
     binsegRcpp,
     wbs,
     fpop,
-    changepoint
+    changepoint,
+    LOPART
 VignetteBuilder: knitr
 

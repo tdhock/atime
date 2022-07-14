@@ -3,14 +3,17 @@
 %\VignetteIndexEntry{Binary segmentation examples}
 -->
 
-# Comparisons
+# Binary segmentation examples
 
 ```{r setup, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
 )
+```
 
+```{r}
+library(data.table)
 atime.list <- atime::atime(
   N=2:20,
   setup={
@@ -48,7 +51,6 @@ atime.list <- atime::atime(
 plot(atime.list)
 
 if(require(ggplot2)){
-  library(data.table)
   line.dt <- atime.list$timings[, rbind(
     data.table(N, expr.name, panel="seconds", value=median),
     data.table(N, expr.name, panel="kilobytes", value=kilobytes))]

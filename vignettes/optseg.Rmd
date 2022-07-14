@@ -1,15 +1,18 @@
 <!--
 %\VignetteEngine{knitr::knitr}
-%\VignetteIndexEntry{Binary segmentation examples}
+%\VignetteIndexEntry{Optimal segmentation examples}
 -->
 
-# Comparisons
+# Optimal segmentation examples
 
 ```{r setup, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
 )
+```
+
+```{r}
 library(data.table)
 viz.data <- function(get.seg.means, data.per.seg=10, penalty=1){
   no.labels <- data.table(

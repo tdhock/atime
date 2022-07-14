@@ -3,14 +3,16 @@
 %\VignetteIndexEntry{Regular expression examples}
 -->
 
-# Regular expression functions
+# Regular expression examples
 
 ```{r setup, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
 )
+```
 
+```{r}
 max.N <- 20
 atime.list <- atime::atime(
   N=1:max.N,
