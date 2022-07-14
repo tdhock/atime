@@ -19,7 +19,8 @@ these named arguments:
   timings.
 - there should also be at least one other named argument (an
   expression to time for every size N, name is the label which will
-  appear on plots).
+  appear on plots). Below there are two such arguments, named TRE and
+  PCRE:
 
 #+BEGIN_SRC R
   (atime.list <- atime::atime(
