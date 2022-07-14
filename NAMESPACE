@@ -1,0 +1,6 @@
+importFrom("stats", "median", "quantile", "sd")
+import(data.table)
+import(lattice)
+export(atime)
+S3method("print", "atime")
+S3method("plot", "atime")

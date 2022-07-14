@@ -22,37 +22,43 @@
 
 \examples{
 
-  time.dt <- atime(
+  atime.list <- atime(
     PCRE=regexpr(pattern, subject, perl=TRUE),
-    TRE=regexpr(pattern, subject, perl=FALSE)
-  setup={
-    subject <- paste(rep("a", N), collapse="")
-    pattern <- paste(rep(c("a?", "a"), each=N), collapse="")
-  },
-  N=1:25,
-  times=10)
-if(require("ggplot2")){
-  sec.dt <- data.table(panel="seconds", x[["timings"]])
-  mem.dt <- data.table(panel="kilobytes", x[["timings"]])
-  ggplot()+
-    theme_bw()+
-    facet_grid(panel ~ ., scales="free")+
-    geom_hline(aes(
-      yintercept=seconds.limit),
-      color="grey",
-      data=with(x, data.table(seconds.limit, panel="seconds")))+
-    geom_ribbon(aes(
-      N, ymin=min, ymax=max, fill=expr.name),
-      data=sec.dt,
-      alpha=0.5)+
-    geom_line(aes(
-      N, median, color=expr.name),
-      data=sec.dt)+
-    geom_line(aes(
-      N, kilobytes, color=expr.name),
-      data=mem.dt)+
-    scale_y_log10("")+
-    scale_x_log10()
-}
+    TRE=regexpr(pattern, subject, perl=FALSE),
+    setup={
+      subject <- paste(rep("a", N), collapse="")
+      pattern <- paste(rep(c("a?", "a"), each=N), collapse="")
+    },
+    N=1:30)
+  
+  if(require("ggplot2")){
+    sec.dt <- data.frame(panel="seconds", atime.list[["timings"]])
+    mem.dt <- data.frame(panel="kilobytes", atime.list[["timings"]])
+    hline.df <- with(atime.list, data.frame(seconds.limit, panel="seconds"))
+    gg <- ggplot()+
+      theme_bw()+
+      facet_grid(panel ~ ., scales="free")+
+      geom_hline(aes(
+        yintercept=seconds.limit),
+        color="grey",
+        data=hline.df)+
+      geom_ribbon(aes(
+        N, ymin=min, ymax=max, fill=expr.name),
+        data=sec.dt,
+        alpha=0.5)+
+      geom_line(aes(
+        N, median, color=expr.name),
+        data=sec.dt)+
+      geom_line(aes(
+        N, kilobytes, color=expr.name),
+        data=mem.dt)+
+      scale_y_log10("")+
+      scale_x_log10()
+    if(require("directlabels")){
+      directlabels::direct.label(gg, "last.polygons")
+    }else{
+      gg
+    }
+  }
 
 }

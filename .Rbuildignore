@@ -1,0 +1,9 @@
+Rplots.pdf
+.dir-locals.el
+inst/testfiles
+.travis.yml
+README.org
+build.sh
+^\.github$
+^codecov\.yml$
+

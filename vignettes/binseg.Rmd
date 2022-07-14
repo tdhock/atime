@@ -1,4 +1,17 @@
-atime.list <- atime(
+<!--
+%\VignetteEngine{knitr::knitr}
+%\VignetteIndexEntry{Binary segmentation examples}
+-->
+
+# Comparisons
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+
+atime.list <- atime::atime(
   N=2:20,
   setup={
     N.data <- 2^N
@@ -34,3 +47,4 @@ atime.list <- atime(
   verbose=TRUE,
   times=5)
 
+```

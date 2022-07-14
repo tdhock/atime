@@ -1,4 +1,5 @@
-atime <- function(N, setup, times=5, verbose=FALSE, seconds.limit=0.01, ...){
+atime <- function(N, setup, times=10, verbose=FALSE, seconds.limit=0.01, ...){
+  kilobytes <- mem_alloc <- NULL
   formal.names <- names(formals())
   mc.args <- as.list(match.call()[-1])
   expr.list <- mc.args[!names(mc.args) %in% formal.names]
@@ -45,12 +46,23 @@ atime <- function(N, setup, times=5, verbose=FALSE, seconds.limit=0.01, ...){
 }
 
 plot.atime <- function(x, ...){
-  sec.dt <- data.table(panel="seconds", x[["timings"]])
-  mem.dt <- data.table(panel="kilobytes", x[["timings"]])
+  expr.name <- NULL
+  lattice::xyplot(
+    log10(median) ~ log10(N), x$timings, 
+    groups=expr.name, type="l", 
+    auto.key=list(space="right", points=FALSE, lines=TRUE))
 }
 
 print.atime <- function(x, ...){
-  cat("Timings for the following expressions and sizes:\n")
-  print(suppressWarnings(dcast(
-    x$timings, expr.name ~ ., list(min, max), value.var="N")))
+  N_max <- N_min <- expr.name <- NULL
+  summary.dt <- suppressWarnings(dcast(
+    x$timings, expr.name ~ ., list(min, max), value.var="N"))
+  expr.vec <- summary.dt[, paste0(
+    expr.name, "(N=", N_min, " to ", N_max, ")")]
+  cat(
+    nrow(x$timings),
+    " timings for ", 
+    paste(expr.vec, collapse=", "),
+    "\n",
+    sep="")
 }

@@ -1,0 +1,65 @@
+atime: Asymptotic Timing
+
+| [[file:tests/testthat][tests]]    | [[https://github.com/tdhock/binsegRcpp/actions][https://github.com/tdhock/atime/workflows/R-CMD-check/badge.svg]] |
+| [[https://github.com/jimhester/covr][coverage]] | [[https://app.codecov.io/gh/tdhock/binsegRcpp?branch=master][https://codecov.io/gh/tdhock/time/branch/master/graph/badge.svg]] |
+
+** Installation
+
+#+BEGIN_SRC R
+  if(require("remotes"))install.packages("remotes")
+  remotes::install_github("tdhock/atime")
+#+END_SRC
+
+** Usage
+
+The main function is =atime= for which you should specify at least
+these named arguments:
+- =N= is numeric vector of data sizes to vary.
+- =setup= is an expression to evaluate for every data size, before
+  timings.
+- there should also be at least one other named argument (an
+  expression to time for every size N, name is the label which will
+  appear on plots).
+
+#+BEGIN_SRC R
+  (atime.list <- atime::atime(
+    PCRE=regexpr(pattern, subject, perl=TRUE),
+    TRE=regexpr(pattern, subject, perl=FALSE),
+    setup={
+      subject <- paste(rep("a", N), collapse="")
+      pattern <- paste(rep(c("a?", "a"), each=N), collapse="")
+    },
+    N=1:30))
+#+END_SRC
+
+On my machine I got the following result:
+
+#+begin_src
+47 timings for PCRE(N=1 to 17), TRE(N=1 to 30)
+#+end_src
+
+The result above states the min and max N values that were run for
+each of the named expressions to time. In this case TRE was run all
+the way up to the max size specified in the N argument, but PCRE only
+went up to 17, because the default is to stop when the median time has
+exceeded 0.01 seconds (you can specify the =seconds.limit= argument to
+modify this behavior). To visualize the results you can do:
+
+#+BEGIN_SRC R
+plot(atime.list)
+#+END_SRC
+
+** Related work
+
+[[https://cloud.r-project.org/web/packages/bench/][bench]]::press does something similar, and is more flexible because it
+can do multi-dimensional grid search (not only over a single size N
+argument as atime does). However it can not store results if
+check=FALSE, results must be equal if check=TRUE, and there is no way
+to easily specify a time limit which stops for larger sizes (like
+seconds.limit argument in atime).
+
+[[https://github.com/Anirban166/testComplexity][testComplexity]]::asymptoticTimings does something similar, but only for
+one expression (not several), and there is no special setup arugment
+like atime (which means that the timing must include data setup code
+which may be irrelevant).
+
