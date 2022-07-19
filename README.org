@@ -1,7 +1,8 @@
 atime: Asymptotic Timing
 
-| [[file:tests/testthat][tests]]    | [[https://github.com/tdhock/binsegRcpp/actions][https://github.com/tdhock/atime/workflows/R-CMD-check/badge.svg]] |
-| [[https://github.com/jimhester/covr][coverage]] | [[https://app.codecov.io/gh/tdhock/binsegRcpp?branch=master][https://codecov.io/gh/tdhock/time/branch/master/graph/badge.svg]] |
+| [[file:tests/testthat][tests]]    | [[https://github.com/tdhock/atime/actions][https://github.com/tdhock/atime/workflows/R-CMD-check/badge.svg]]  |
+| [[https://github.com/jimhester/covr][coverage]] | [[https://app.codecov.io/gh/tdhock/atime?branch=master][https://codecov.io/gh/tdhock/atime/branch/master/graph/badge.svg]] |
+|          |                                                                  |
 
 ** Installation
 
