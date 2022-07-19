@@ -1,0 +1,86 @@
+<!--
+%\VignetteEngine{knitr::knitr}
+%\VignetteIndexEntry{Cumulative median}
+-->
+
+# Cumulative median
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+In this vignette we compare two different implementations of the
+cumulative median. The cumstats package provides a naive method, which
+uses the standard median function in a for loop. Each call to the
+standard median function is log-linear, so the total expected
+complexity is log-quadratic. The binsegRcpp package provides a
+different implementation that uses a log-linear algorithm, previously
+described in [the 2017 NeurIPS research paper Maximum Margin Interval
+Trees by Alexandre Drouin, Toby Hocking, Francois
+Laviolette](https://proceedings.neurips.cc/paper/2017/hash/2288f691b58edecadcc9a8691762b4fd-Abstract.html).
+
+```{r}
+atime.list <- atime::atime(
+  N=2^seq(1, 20),
+  setup={
+    set.seed(1)
+    data.vec <- rnorm(N)
+  },
+  "cumstats::cummedian"={
+    cumstats::cummedian(data.vec)
+  },
+  "binsegRcpp::cum_median"={
+    binsegRcpp::cum_median(data.vec)
+  },
+  seconds.limit=0.1,
+  times=5)
+
+library(data.table)
+if(require(ggplot2)){
+  line.dt <- atime.list$timings[, rbind(
+    data.table(N, expr.name, panel="seconds", value=median),
+    data.table(N, expr.name, panel="kilobytes", value=kilobytes))]
+  ribbon.df <- data.frame(panel="seconds", atime.list[["timings"]])
+  hline.df <- with(atime.list, data.frame(seconds.limit, panel="seconds"))
+  gg <- ggplot()+
+    theme_bw()+
+    facet_grid(panel ~ ., scales="free")+
+    geom_hline(aes(
+      yintercept=seconds.limit),
+      color="grey",
+      data=hline.df)+
+    geom_line(aes(
+      N, value, color=expr.name),
+      data=line.dt)+
+    geom_ribbon(aes(
+      N, ymin=min, ymax=max, fill=expr.name),
+      data=ribbon.df,
+      alpha=0.5)+
+    scale_x_log10()+
+    scale_y_log10("median line, min/max band")
+  if(require("directlabels")){
+    direct.label(gg, "top.polygons")
+  }else{
+    gg
+  }
+}
+```
+
+The plots above show significant speed differences between the two
+implementations of cumulative median. It is clear from the different
+asymptotic slopes that the empirical timings are consistent with the
+expected complexity, O(N log N) for binsegRcpp, and O(N^2 log N) for
+cumstats. The code below shows that the results of the two
+implementations are identical.
+
+```{r}
+result.wide <- dcast(atime.list$timings, N ~ expr.name, value.var="result")
+result.complete <- result.wide[sapply(`cumstats::cummedian`, length) == N]
+result.complete[, identical(`binsegRcpp::cum_median`,`cumstats::cummedian`)]
+```
+
+Conclusion: `binsegRcpp::cum_median` should be the preferred method
+for computing the cumulative median because it is much faster.
