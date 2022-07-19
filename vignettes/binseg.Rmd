@@ -71,7 +71,7 @@ if(require(ggplot2)){
       data=ribbon.df,
       alpha=0.5)+
     scale_x_log10()+
-    scale_y_log10("seconds (median line, min/max band)")
+    scale_y_log10("median line, min/max band")
   if(require("directlabels")){
     direct.label(gg, "right.polygons")+
       coord_cartesian(xlim=c(1,60))
