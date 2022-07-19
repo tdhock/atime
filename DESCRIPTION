@@ -24,4 +24,4 @@ Suggests:
     changepoint,
     LOPART
 VignetteBuilder: knitr
-
+Remotes: tdhock/binsegRcpp
