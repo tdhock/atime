@@ -12,6 +12,7 @@ references <- function
 (N, empirical, lower.limit=min(empirical),
   fun.list=NULL
 ){
+  fun.latex <- reference <- . <- NULL
   if(is.null(fun.list))fun.list <- references_funs
   data.table(fun.latex=names(fun.list))[, {
     fun <- fun.list[[fun.latex]]
@@ -24,6 +25,8 @@ references <- function
 }
 
 references_best <- function(L){
+  N <- expr.name <- . <- fun.name <- dist <- empirical <- reference <-
+    fun.latex <- overall.rank <- NULL
   DT <- L[["measurements"]]
   unit.col.vec <- c(
     kilobytes="kilobytes",
@@ -79,8 +82,8 @@ plot.references_best <- function(x, ...){
 }
 
 print.references_best <- function(x, ...){
-  N_max <- N_min <- expr.name <- NULL
-  summary.dt <- best.list$measurements[, .(
+  expr.name <- . <- fun.name <- unit <- NULL
+  summary.dt <- x$measurements[, .(
     summary=sprintf("%s %s", fun.name[1], unit[1])
   ), by=.(expr.name, fun.name)][, .(
     summary=paste(summary, collapse=", ")

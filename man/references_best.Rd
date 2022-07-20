@@ -1,5 +1,5 @@
-\name{atime}
-\alias{atime}
+\name{references_best}
+\alias{references_best}
 \title{Best references}
 \description{Compute best asymptotic references.}
 \usage{references_best(L)}

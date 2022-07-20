@@ -35,7 +35,6 @@ atime.list <- atime::atime(
   "binsegRcpp::cum_median"={
     binsegRcpp::cum_median(data.vec)
   },
-  seconds.limit=1,
   times=5)
 plot(atime.list)
 

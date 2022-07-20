@@ -38,7 +38,6 @@ viz.data <- function(get.seg.means, data.per.seg=10, penalty=1){
     "LOPART::LOPART"={
       LOPART::LOPART(data.vec, no.labels, penalty)
     },
-    seconds.limit=0.1,
     times=5)
   best.list <- atime::references_best(atime.list)
   if(require(ggplot2)){

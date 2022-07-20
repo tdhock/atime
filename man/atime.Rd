@@ -32,8 +32,9 @@ atime.list <- atime::atime(
   N=1:30)
 
 if(require("ggplot2")){
-  sec.df <- data.frame(panel="seconds", atime.list[["timings"]])
-  mem.df <- data.frame(panel="kilobytes", atime.list[["timings"]])
+  measurements <- atime.list[["measurements"]]
+  sec.df <- data.frame(panel="seconds", measurements)
+  mem.df <- data.frame(panel="kilobytes", measurements)
   hline.df <- with(atime.list, data.frame(seconds.limit, panel="seconds"))
   gg <- ggplot()+
     theme_bw()+
