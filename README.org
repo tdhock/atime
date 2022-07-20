@@ -81,7 +81,7 @@ to easily specify a time limit which stops for larger sizes (like
 seconds.limit argument in atime).
 
 [[https://github.com/Anirban166/testComplexity][testComplexity]]::asymptoticTimings does something similar, but only for
-one expression (not several), and there is no special setup arugment
+one expression (not several), and there is no special setup argument
 like atime (which means that the timing must include data setup code
 which may be irrelevant).
 
