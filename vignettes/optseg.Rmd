@@ -18,20 +18,19 @@ viz.data <- function(get.seg.means, data.per.seg=10, penalty=1){
   no.labels <- data.table(
     start=integer(), end=integer(), changes=integer())
   atime.list <- atime::atime(
-    N=1:20,
+    N=2^seq(1, 20),
     setup={
-      N.segs <- 2^N
-      seg.means <- get.seg.means(N.segs)
+      seg.means <- get.seg.means(N)
       mean.vec <- rep(seg.means, each=data.per.seg)
       set.seed(1)
-      data.vec <- rnorm(data.per.seg*N.segs, mean.vec, 0.2)
+      data.vec <- rnorm(data.per.seg*N, mean.vec, 0.2)
     },
     "changepoint::cpt.mean"={
       changepoint::cpt.mean(
         data.vec, method="PELT", penalty="Manual", pen.value=penalty)
     },
     "binsegRcpp::binseg_normal"={
-      binsegRcpp::binseg_normal(data.vec, N.segs)
+      binsegRcpp::binseg_normal(data.vec, N)
     },
     "fpop::Fpop"={
       fpop::Fpop(data.vec, penalty)
@@ -41,31 +40,33 @@ viz.data <- function(get.seg.means, data.per.seg=10, penalty=1){
     },
     seconds.limit=0.1,
     times=5)
+  best.list <- atime::references_best(atime.list)
   if(require(ggplot2)){
-    line.dt <- atime.list$timings[, rbind(
-      data.table(N, expr.name, panel="seconds", value=median),
-      data.table(N, expr.name, panel="kilobytes", value=kilobytes))]
-    ribbon.df <- data.frame(panel="seconds", atime.list[["timings"]])
-    hline.df <- with(atime.list, data.frame(seconds.limit, panel="seconds"))
+    hline.df <- with(atime.list, data.frame(seconds.limit, unit="seconds"))
     gg <- ggplot()+
       theme_bw()+
-      facet_grid(panel ~ ., scales="free")+
+      facet_grid(unit ~ ., scales="free")+
       geom_hline(aes(
         yintercept=seconds.limit),
         color="grey",
         data=hline.df)+
       geom_line(aes(
-        N, value, color=expr.name),
-        data=line.dt)+
+        N, empirical, color=expr.name),
+        data=best.list$meas)+
       geom_ribbon(aes(
         N, ymin=min, ymax=max, fill=expr.name),
-        data=ribbon.df,
+        data=best.list$meas[unit=="seconds"],
         alpha=0.5)+
       scale_x_log10()+
       scale_y_log10("median line, min/max band")
-    if(require("directlabels")){
-      direct.label(gg, "right.polygons")+
-        coord_cartesian(xlim=c(1,60))
+    if(require(directlabels)){
+      gg+
+        directlabels::geom_dl(aes(
+          N, empirical, color=expr.name, label=expr.class),
+          method="right.polygons",
+          data=best.list$meas)+
+        theme(legend.position="none")+
+        coord_cartesian(xlim=c(2,1e7))
     }else{
       gg
     }
@@ -85,7 +86,7 @@ viz.data(function(N.segs)1:N.segs)
 ```
 
 Results above show a more typical result: LOPART is slow/quadratic
-whereas other are fast/log-linear. 
+whereas others are fast/log-linear. 
 
 ```{r}
 viz.data(function(N.segs)1:N.segs, data.per.seg=1, penalty=1e10)

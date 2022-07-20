@@ -1,0 +1,94 @@
+references_funs <- list(
+  "1"=function(N)1,
+  "\\log N"=function(N)log10(log(N)),
+  N=identity,
+  "N \\log N"=function(N)log10(N) + log10(log(N)),
+  "N^2"=function(N)2*log10(N),
+  "N^2 \\log N"=function(N)2*log10(N) + log10(log(N)),
+  "N^3"=function(N)3*log10(N),
+  "2^N"=function(N)N*log10(2))
+
+references <- function
+(N, empirical, lower.limit=min(empirical),
+  fun.list=NULL
+){
+  if(is.null(fun.list))fun.list <- references_funs
+  data.table(fun.latex=names(fun.list))[, {
+    fun <- fun.list[[fun.latex]]
+    log10.vec <- fun(N)
+    data.table(
+      N, empirical,
+      reference=10^(log10.vec-max(log10.vec)+max(log10(empirical)))
+    )[lower.limit < reference]
+  }, by=.(fun.latex, fun.name=gsub("\\", "", fun.latex, fixed=TRUE))]
+}
+
+references_best <- function(L){
+  DT <- L[["measurements"]]
+  unit.col.vec <- c(
+    kilobytes="kilobytes",
+    seconds="median")
+  ref.dt.list <- list()
+  metric.dt.list <- list()
+  for(unit in names(unit.col.vec)){
+    col.name <- unit.col.vec[[unit]]
+    values <- DT[[col.name]]
+    only.positive <- values[0 < values]
+    if(length(only.positive)){
+      lower.limit <- min(only.positive)
+      all.refs <- DT[
+      , references(N, .SD[[col.name]], lower.limit)
+      , by=expr.name]
+      all.refs[, rank := rank(-N), by=.(expr.name, fun.name)]
+      second <- all.refs[rank==2]
+      second[, dist := log10(empirical/reference) ]
+      second[, sign := sign(dist)]
+      l.cols <- list(overall="expr.name", each.sign=c("expr.name","sign"))
+      for(best.type in names(l.cols)){
+        by <- l.cols[[best.type]]
+        second[
+        , paste0(best.type,".rank") := rank(abs(dist))
+        , by=by]
+      }
+      ref.dt.list[[unit]] <- data.table(unit, all.refs[
+        second,
+        on=.(expr.name, fun.name, fun.latex)])
+      best <- second[overall.rank==1, .(expr.name, fun.name, fun.latex)]
+      metric.dt.list[[unit]] <- data.table(unit, DT[
+        best, on=.(expr.name)
+      ][, `:=`(
+        expr.class=paste0(expr.name,"\n",fun.name),
+        expr.latex=sprintf("%s\n$O(%s)$", expr.name, fun.latex),
+        empirical=get(col.name)
+      )])
+    }
+  }
+  structure(list(
+    references=do.call(rbind, ref.dt.list),
+    measurements=do.call(rbind, metric.dt.list)),
+    class="references_best")
+}
+
+plot.references_best <- function(x, ...){
+  expr.name <- NULL
+  lattice::xyplot(
+    log10(empirical) ~ log10(N) | unit, x$measurements, 
+    groups=expr.name, type="l", 
+    ylab="log10(median)",
+    auto.key=list(space="right", points=FALSE, lines=TRUE))
+}
+
+print.references_best <- function(x, ...){
+  N_max <- N_min <- expr.name <- NULL
+  summary.dt <- best.list$measurements[, .(
+    summary=sprintf("%s %s", fun.name[1], unit[1])
+  ), by=.(expr.name, fun.name)][, .(
+    summary=paste(summary, collapse=", ")
+  ), by=expr.name]
+  summary.vec <- summary.dt[, sprintf("%s (%s)", expr.name, summary)]
+  cat(with(x, sprintf(
+    "%s measurements with %s references, best fit complexity: %s\n",
+    nrow(x[["measurements"]]),
+    nrow(x[["references"]]),
+    paste(summary.vec, collapse=", "))))
+}

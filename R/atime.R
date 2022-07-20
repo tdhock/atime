@@ -4,7 +4,7 @@ atime <- function(N, setup, times=10, verbose=FALSE, seconds.limit=0.01, ...){
   mc.args <- as.list(match.call()[-1])
   expr.list <- mc.args[!names(mc.args) %in% formal.names]
   done.vec <- structure(rep(FALSE, length(expr.list)), names=names(expr.list))
-  timing.dt.list <- list()
+  metric.dt.list <- list()
   for(N.value in N){
     not.done.yet <- names(done.vec)[!done.vec]
     if(length(not.done.yet)){
@@ -23,6 +23,7 @@ atime <- function(N, setup, times=10, verbose=FALSE, seconds.limit=0.01, ...){
       N.df <- eval(m.call, N.env)
       N.stats <- data.table(N=N.value, expr.name=not.done.yet, N.df)
       N.stats[, kilobytes := as.numeric(mem_alloc)/1024]
+      N.stats[, `:=`(mem_alloc=NULL, total_time=NULL, expression=NULL)]
       summary.funs <- list(
         median=median, min=min,
         q25=function(x)quantile(x,0.25),
@@ -35,21 +36,22 @@ atime <- function(N, setup, times=10, verbose=FALSE, seconds.limit=0.01, ...){
       done.pkgs <- N.stats[median > seconds.limit, paste(expr.name)]
       done.vec[done.pkgs] <- TRUE
       if(verbose)print(N.stats[, data.table(
-        N, expr.name, seconds.median=median, seconds.limit)])
-      timing.dt.list[[paste(N.value)]] <- N.stats
+        N, expr.name, seconds.median=median, kilobytes)],
+        class=FALSE)
+      metric.dt.list[[paste(N.value)]] <- N.stats
     }
   }
   structure(
     list(
       seconds.limit=seconds.limit,
-      timings=do.call(rbind, timing.dt.list)),
+      measurements=do.call(rbind, metric.dt.list)),
     class="atime")
 }
 
 plot.atime <- function(x, ...){
   expr.name <- NULL
   lattice::xyplot(
-    log10(median) ~ log10(N), x$timings, 
+    log10(median) ~ log10(N), x$measurements, 
     groups=expr.name, type="l", 
     ylab="log10(median seconds)",
     auto.key=list(space="right", points=FALSE, lines=TRUE))
@@ -58,12 +60,12 @@ plot.atime <- function(x, ...){
 print.atime <- function(x, ...){
   N_max <- N_min <- expr.name <- NULL
   summary.dt <- suppressWarnings(dcast(
-    x$timings, expr.name ~ ., list(min, max), value.var="N"))
+    x$measurements, expr.name ~ ., list(min, max), value.var="N"))
   expr.vec <- summary.dt[, paste0(
     expr.name, "(N=", N_min, " to ", N_max, ")")]
   cat(
-    nrow(x$timings),
-    " timings for ", 
+    nrow(x$measurements),
+    " measurements for ", 
     paste(expr.vec, collapse=", "),
     "\n",
     sep="")

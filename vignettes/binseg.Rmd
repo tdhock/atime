@@ -15,17 +15,16 @@ knitr::opts_chunk$set(
 ```{r}
 library(data.table)
 atime.list <- atime::atime(
-  N=2:20,
+  N=2^seq(2, 20),
   setup={
-    N.data <- 2^N
-    max.segs <- as.integer(N.data/2)
+    max.segs <- as.integer(N/2)
     max.changes <- max.segs-1L
     set.seed(1)
-    data.vec <- 1:N.data
+    data.vec <- 1:N
   },
   "changepoint::cpt.mean"={
     cpt.fit <- changepoint::cpt.mean(data.vec, method="BinSeg", Q=max.changes)
-    sort(c(N.data,cpt.fit@cpts.full[max.changes,]))
+    sort(c(N,cpt.fit@cpts.full[max.changes,]))
   },
   "binsegRcpp::binseg_normal"={
     binseg.fit <- binsegRcpp::binseg_normal(data.vec, max.segs)
@@ -33,32 +32,31 @@ atime.list <- atime::atime(
   },
   "fpop::multiBinSeg"={
     mbs.fit <- fpop::multiBinSeg(data.vec, max.changes)
-    sort(c(mbs.fit$t.est, N.data))
+    sort(c(mbs.fit$t.est, N))
   },
   "wbs::sbs"={
     wbs.fit <- wbs::sbs(data.vec)
     split.dt <- data.table(wbs.fit$res)[order(-min.th, scale)]
-    sort(split.dt[, c(N.data, cpt)][1:max.segs])
+    sort(split.dt[, c(N, cpt)][1:max.segs])
   },
   binsegRcpp.list={
     binseg.fit <- binsegRcpp::binseg(
       "mean_norm",data.vec, max.segs, container.str="list")
     sort(binseg.fit$splits$end)
   },
-  seconds.limit=0.1,
-  verbose=TRUE,
   times=5)
 plot(atime.list)
 
 if(require(ggplot2)){
-  line.dt <- atime.list$timings[, rbind(
-    data.table(N, expr.name, panel="seconds", value=median),
-    data.table(N, expr.name, panel="kilobytes", value=kilobytes))]
-  ribbon.df <- data.frame(panel="seconds", atime.list[["timings"]])
-  hline.df <- with(atime.list, data.frame(seconds.limit, panel="seconds"))
-  gg <- ggplot()+
+  measure.dt <- atime.list[["measurements"]]
+  line.dt <- measure.dt[, rbind(
+    data.table(N, expr.name, unit="seconds", value=median),
+    data.table(N, expr.name, unit="kilobytes", value=kilobytes))]
+  ribbon.df <- data.frame(unit="seconds", measure.dt)
+  hline.df <- with(atime.list, data.frame(seconds.limit, unit="seconds"))
+  gg.legend <- ggplot()+
     theme_bw()+
-    facet_grid(panel ~ ., scales="free")+
+    facet_grid(unit ~ ., scales="free")+
     geom_hline(aes(
       yintercept=seconds.limit),
       color="grey",
@@ -72,12 +70,12 @@ if(require(ggplot2)){
       alpha=0.5)+
     scale_x_log10()+
     scale_y_log10("median line, min/max band")
-  if(require("directlabels")){
-    direct.label(gg, "right.polygons")+
-      coord_cartesian(xlim=c(1,60))
+  (gg.show <- if(require(directlabels)){
+    direct.label(gg.legend, "right.polygons")+
+      coord_cartesian(xlim=c(1,1e7))
   }else{
-    gg
-  }
+    gg.legend
+  })
 }
 ```
 
@@ -85,3 +83,40 @@ The plots above show some speed differences between binary
 segmentation algorithms, but they could be even easier to see for
 larger data sizes (exercise for the reader: try modifying the `N` and
 `seconds.limit` arguments).
+
+The code below computes references which are aligned with the largest
+N for each expression, then adds the reference info to the ggplot
+using new line and direct label layers.
+
+```{r}
+best.list <- atime::references_best(atime.list)
+best.ref <- best.list$ref[overall.rank==1]
+if(require(ggplot2)){
+  gg.ref <- gg.show+
+    geom_line(aes(
+      N, reference, group=paste(fun.name, expr.name)),
+      color="grey",
+      data=best.ref)
+  if(require(directlabels)){
+    gg.ref+
+      directlabels::geom_dl(aes(
+        N, reference, label=fun.name),
+        data=best.ref,
+        color="grey",
+        method="bottom.polygons")
+  }else{
+    gg.ref
+  }
+}
+```
+
+It is clear from the plot above that 
+
+* the fastest packages are log-linear (fpop, wbs, binsegRcpp), 
+* that the binsegRcpp implementation that uses the list container is
+  much slower (quadratic).
+* the changepoint package uses a super-quadratic algorithm (actually
+  cubic, which you could see if you increase N even larger).
+* memory usage is much larger for changepoint than for the other
+  packages.
+

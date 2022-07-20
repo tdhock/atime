@@ -30,11 +30,11 @@ if(require(ggplot2)){
   gg <- ggplot()+
     geom_ribbon(aes(
       N, ymin=min, ymax=max, fill=expr.name),
-      data=atime.list$timing,
+      data=atime.list$meas,
       alpha=0.5)+
     geom_line(aes(
       N, median, color=expr.name),
-      data=atime.list$timing)+
+      data=atime.list$meas)+
     scale_x_log10()+
     scale_y_log10("seconds (median line, min/max band)")
   if(require("directlabels")){
@@ -62,19 +62,26 @@ atime.list <- atime::atime(
   times=3)
 plot(atime.list)
 
+best.list <- atime::references_best(atime.list)
 if(require(ggplot2)){
   gg <- ggplot()+
     geom_ribbon(aes(
       N, ymin=min, ymax=max, fill=expr.name),
-      data=atime.list$timing,
+      data=best.list$meas[unit=="seconds"],
       alpha=0.5)+
     geom_line(aes(
-      N, median, color=expr.name),
-      data=atime.list$timing)+
+      N, empirical, color=expr.name),
+      data=best.list$meas)+
+    facet_grid(unit ~ ., scales="free")+
+    theme(legend.position="none")+
     scale_x_log10()+
-    scale_y_log10("seconds (median line, min/max band)")
+    scale_y_log10("median line, min/max band")
   if(require("directlabels")){
-    direct.label(gg, "right.polygons")+
+    gg+
+      geom_dl(aes(
+        N, empirical, color=expr.name, label=expr.class),
+        method="right.polygons",
+        data=best.list$meas)+
       coord_cartesian(xlim=c(1,30))
   }else{
     gg
