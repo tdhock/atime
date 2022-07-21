@@ -1,6 +1,6 @@
 <!--
 %\VignetteEngine{knitr::knitr}
-%\VignetteIndexEntry{Worst case time complexity}
+%\VignetteIndexEntry{PeakSegDisk}
 -->
 
 ```{r setup, include = FALSE}
