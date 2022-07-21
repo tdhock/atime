@@ -1,7 +1,8 @@
 references_funs <- list(
   "1"=function(N)1,
   "\\log N"=function(N)log10(log(N)),
-  N=identity,
+  "\\sqrt N"=function(N)log10(sqrt(N)),
+  N=function(N)log10(N),
   "N \\log N"=function(N)log10(N) + log10(log(N)),
   "N^2"=function(N)2*log10(N),
   "N^2 \\log N"=function(N)2*log10(N) + log10(log(N)),
@@ -17,20 +18,33 @@ references <- function
   data.table(fun.latex=names(fun.list))[, {
     fun <- fun.list[[fun.latex]]
     log10.vec <- fun(N)
-    data.table(
+    one.fun <- data.table(
       N, empirical,
       reference=10^(log10.vec-max(log10.vec)+max(log10(empirical)))
-    )[lower.limit < reference]
+    )
+    above <- one.fun[lower.limit < reference]
+    if(1 < nrow(above)){
+      above
+    }else{
+      one.fun[(.N-1):.N]
+    }
   }, by=.(fun.latex, fun.name=gsub("\\", "", fun.latex, fixed=TRUE))]
 }
 
-references_best <- function(L){
+references_best <- function(L, unit.col.vec=NULL, more.units=NULL, fun.list=NULL){
   N <- expr.name <- . <- fun.name <- dist <- empirical <- reference <-
     fun.latex <- overall.rank <- NULL
   DT <- L[["measurements"]]
-  unit.col.vec <- c(
-    kilobytes="kilobytes",
-    seconds="median")
+  if(is.null(unit.col.vec)){
+    unit.col.vec <- c(
+      "kilobytes",
+      seconds="median")
+  }
+  if(!is.null(more.units)){
+    unit.col.vec <- c(unit.col.vec, more.units)
+  }
+  to.rep <- names(unit.col.vec) == ""
+  names(unit.col.vec)[to.rep] <- unit.col.vec[to.rep]
   ref.dt.list <- list()
   metric.dt.list <- list()
   for(unit in names(unit.col.vec)){
@@ -40,7 +54,7 @@ references_best <- function(L){
     if(length(only.positive)){
       lower.limit <- min(only.positive)
       all.refs <- DT[
-      , references(N, .SD[[col.name]], lower.limit)
+      , references(N, .SD[[col.name]], lower.limit, fun.list)
       , by=expr.name]
       all.refs[, rank := rank(-N), by=.(expr.name, fun.name)]
       second <- all.refs[rank==2]
@@ -78,6 +92,7 @@ plot.references_best <- function(x, ...){
     log10(empirical) ~ log10(N) | unit, x$measurements, 
     groups=expr.name, type="l", 
     ylab="log10(median)",
+    scales=list(relation="free"),
     auto.key=list(space="right", points=FALSE, lines=TRUE))
 }
 

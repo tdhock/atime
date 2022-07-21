@@ -1,6 +1,6 @@
 Changes in version 2022.7.20
 
-- new vignette: cum_median.
+- new vignettes: cum_median, PeakSegDisk.
 - new references_best function.
 
 Changes in version 2022.7.13

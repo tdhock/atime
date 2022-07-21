@@ -23,6 +23,6 @@ Suggests:
     fpop,
     changepoint,
     LOPART,
-    cumstats
-Remotes: tdhock/binsegRcpp
+    cumstats,
+    PeakSegDisk
 VignetteBuilder: knitr
