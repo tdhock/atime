@@ -1,3 +1,8 @@
+Changes in version 2022.7.22
+
+- new vignette: git.
+- new atime_versions function.
+
 Changes in version 2022.7.20
 
 - new vignettes: cum_median, PeakSegDisk.

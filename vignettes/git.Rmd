@@ -1,0 +1,66 @@
+<!--
+%\VignetteEngine{knitr::knitr}
+%\VignetteIndexEntry{Comparing git versions}
+-->
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+In this vignette we show you how to compare asymptotic timings of an R
+expression which uses different versions of a package. Let us consider
+the binsegRcpp package,
+
+```{r}
+tdir <- tempfile()
+dir.create(tdir)
+git2r::clone("https://github.com/tdhock/binsegRcpp", tdir)
+atime.list <- atime::atime_versions(
+  pkg.path=tdir,
+  N=2^seq(2, 20),
+  setup={
+    max.segs <- as.integer(N/2)
+    data.vec <- 1:N
+  },
+  expr=binsegRcpp::binseg_normal(data.vec, max.segs),
+  cv="908b77c411bc7f4fcbcf53759245e738ae724c3e",
+  "rm unord map"="dcd0808f52b0b9858352106cc7852e36d7f5b15d",
+  "mvl_construct"="5942af606641428315b0e63c7da331c4cd44c091")
+plot(atime.list)
+
+best.list <- atime::references_best(atime.list)
+if(require(ggplot2)){
+  hline.df <- with(atime.list, data.frame(seconds.limit, unit="seconds"))
+  gg <- ggplot()+
+    theme_bw()+
+    facet_grid(unit ~ ., scales="free")+
+    geom_hline(aes(
+      yintercept=seconds.limit),
+      color="grey",
+      data=hline.df)+
+    geom_line(aes(
+      N, empirical, color=expr.name),
+      data=best.list$meas)+
+    geom_ribbon(aes(
+      N, ymin=min, ymax=max, fill=expr.name),
+      data=best.list$meas[unit=="seconds"],
+      alpha=0.5)+
+    scale_x_log10()+
+    scale_y_log10("median line, min/max band")
+  if(require(directlabels)){
+    gg+
+      directlabels::geom_dl(aes(
+        N, empirical, color=expr.name, label=expr.name),
+        method="right.polygons",
+        data=best.list$meas)+
+      theme(legend.position="none")+
+      coord_cartesian(xlim=c(1,2e7))
+  }else{
+    gg
+  }
+}
+```
+
