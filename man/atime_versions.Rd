@@ -3,7 +3,9 @@
 \title{Asymptotic timing of git versions}
 \description{Computation time and memory for a single R expression
   evaluated using several different git versions.}
-\usage{atime_versions(pkg.path, N, setup, expr, times=10, seconds.limit=0.01, verbose=FALSE, ...)}
+\usage{atime_versions(
+pkg.path, N, setup, expr, sha.vec=NULL,
+times=10, seconds.limit=0.01, verbose=FALSE, ...)}
 \arguments{
   \item{pkg.path}{Path to git repo containing R package.}
   \item{N}{numeric vector of data sizes to vary.}
@@ -11,6 +13,7 @@
   \item{expr}{code with package double-colon prefix, for example
     Package::fun(argA, argB) which will be
     evaluated for each different package version.}
+  \item{sha.vec}{named character vector / list of SHA commit IDs.}
   \item{times}{number of times to evaluate each timed expression.}
   \item{verbose}{logical, print messages after every data size?}
   \item{seconds.limit}{if the median timing of any expression exceeds

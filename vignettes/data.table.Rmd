@@ -1,0 +1,155 @@
+<!--
+%\VignetteEngine{knitr::knitr}
+%\VignetteIndexEntry{Comparing git versions of data.table}
+-->
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+In this vignette we show you how to compare asymptotic timings of an R
+expression which uses different versions of a package. Let us consider
+the data.table package PR#4851
+
+```{r}
+library(data.table)
+pkg.path <- "~/R/data.table"
+repo <- git2r::repository(pkg.path)
+branch.list <- git2r::branches(repo)
+remote.name <- "origin"
+branch.name.vec <- "master"
+commit.list <- list()
+for(branch.name in branch.name.vec){
+  commit.list[[branch.name]] <- git2r::lookup_commit(
+    branch.list[[paste0(remote.name,"/",branch.name)]])
+}
+last.gmean.sha <- "ca52b7e38e7cafb3ee7aa268acdc1b4e5af6c3f0"
+commit.list[["gmean"]] <- git2r::lookup(repo, last.gmean.sha)
+mb.args <- unname(commit.list)
+commit.list[["merge_base"]] <- do.call(git2r::merge_base, mb.args)
+sha.vec <- sapply(commit.list, "[[", "sha")  
+
+
+  
+ver.exprs <- atime::atime_versions_exprs(
+  pkg.path=pkg.path,
+  expr=data.table:::`[.data.table`(
+    DT, , .(v3=mean(v3), na.rm=TRUE), by=id3),
+  sha.vec=sha.vec)
+atime.list <- atime::atime(
+  N=as.integer(10^seq(3, 6, by=0.5)),
+  setup={
+    setDTthreads(0L) ## 40
+    set.seed(108)
+    K = 1e2L
+    DT = list()
+    DT[["id3"]] = factor(sample(sprintf("id%010d",1:(N/K)), N, TRUE))
+    DT[["v3"]] =  round(runif(N,max=100),6)
+    setDT(DT)
+  }, 
+  expr.list = ver.exprs,
+  "na.rm=FALSE"=DT[, .(v3=mean(v3), na.rm=FALSE), by=id3],
+  results=FALSE
+)
+
+best.list <- atime::references_best(atime.list)
+both.dt <- best.list$meas
+library(ggplot2)
+ggplot()+
+  theme_bw()+
+  facet_grid(unit ~ ., scales="free")+
+  geom_line(aes(
+    N, empirical, color=expr.name),
+    data=both.dt)+
+  geom_ribbon(aes(
+    N, ymin=min, ymax=max, fill=expr.name),
+    data=both.dt[unit=="seconds"],
+    alpha=0.5)+
+  scale_x_log10()+
+  scale_y_log10("median line, min/max band")+
+  directlabels::geom_dl(aes(
+    N, empirical, color=expr.name, label=expr.name),
+    method="right.polygons",
+    data=both.dt)+
+  theme(legend.position="none")+
+  coord_cartesian(xlim=c(1e3, 5e6))
+```
+
+Another PR#5187
+
+```{r}
+library(data.table)
+falign <- function(x, y) {
+  i <- findInterval(as.numeric(x$date), as.numeric(y$date))
+  i[which(i == 0)] <- NA
+  x$price.adj <- x[, "price"] + y[i, "adjustment"]
+  x
+}
+falign.dt <- function(x, y) {
+  i <- findInterval(as.numeric(x$date), as.numeric(y$date))
+  i[which(i == 0)] <- NA
+  x[, price.adj := x[, "price"] + y[i, "adjustment"]]
+  x
+}
+setDTthreads(1)
+pkg.path <- "~/R/data.table"
+repo <- git2r::repository(pkg.path)
+branch.list <- git2r::branches(repo)
+remote.name <- "origin"
+branch.name.vec <- c("master","bmerge_numeric")
+commit.list <- list()
+for(branch.name in branch.name.vec){
+  commit.list[[branch.name]] <- git2r::lookup_commit(
+    branch.list[[paste0(remote.name,"/",branch.name)]])
+}
+mb.args <- unname(commit.list)
+commit.list[["merge_base"]] <- do.call(git2r::merge_base, mb.args)
+sha.vec <- sapply(commit.list, "[[", "sha")
+ver.exprs <- atime::atime_versions_exprs(
+  pkg.path=pkg.path,
+  expr=data.table::`[.data.table`(
+    x.dt, , price.adj := y.dt[x.dt, price+adjustment, roll=TRUE]),
+  sha.vec=sha.vec)
+atime.list <- atime::atime(
+  N=as.integer(10^seq(3, 6, by=0.5)),
+  setup={
+    x.df <- data.frame(
+      date = as.POSIXct("2000-1-1") + 1:N, price = rnorm(N))
+    x.dt <- data.table(x.df, key = "date")
+    n2 <- 100
+    y.df <- data.frame(
+      date = sort(sample(x.df$date, n2)), adjustment = runif(n2))
+    y.dt <- data.table(y.df, key = "date")
+  }, 
+  expr.list = ver.exprs,
+  falign=falign(x.df, y.df),
+  falign.dt=falign.dt(x.dt, y.dt),
+  seconds.limit=Inf,
+  results=FALSE
+)
+
+best.list <- atime::references_best(atime.list)
+both.dt <- best.list$meas
+library(ggplot2)
+ggplot()+
+  theme_bw()+
+  facet_grid(unit ~ ., scales="free")+
+  geom_line(aes(
+    N, empirical, color=expr.name),
+    data=both.dt)+
+  geom_ribbon(aes(
+    N, ymin=min, ymax=max, fill=expr.name),
+    data=both.dt[unit=="seconds"],
+    alpha=0.5)+
+  scale_x_log10()+
+  scale_y_log10("median line, min/max band")+
+  directlabels::geom_dl(aes(
+    N, empirical, color=expr.name, label=expr.name),
+    method="right.polygons",
+    data=both.dt)+
+  theme(legend.position="none")+
+  coord_cartesian(xlim=c(1e3, 5e6))
+```
