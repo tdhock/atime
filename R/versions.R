@@ -50,7 +50,7 @@ atime_versions_install <- function(Package, pkg.path, new.Package.vec, sha.vec, 
             paste0("R_init_", new.Package_))
         }
         find_replace(
-          file.path("src","Makevars.in"),
+          file.path("src","Makevars.*in"),
           Package_regex,
           new.Package_)
         find_replace(
@@ -61,8 +61,13 @@ atime_versions_install <- function(Package, pkg.path, new.Package.vec, sha.vec, 
           file.path("R", "onLoad.R"),
           sprintf('packageVersion\\("%s"\\)', Package),
           sprintf('packageVersion\\("%s"\\)', new.Package))
+        ## before installing, make sure directory has sha suffix, for
+        ## windows checks.
+        sha.path <- paste0(new.path,".",sha)
+        file.rename(new.path, sha.path)
         install.packages(
-          new.path, repos=NULL, type="source", verbose=verbose)
+          sha.path, repos=NULL, type="source", verbose=verbose)
+        file.rename(sha.path, new.path)
       }
     }
   }
