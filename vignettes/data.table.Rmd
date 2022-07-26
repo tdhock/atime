@@ -11,8 +11,165 @@ knitr::opts_chunk$set(
 ```
 
 In this vignette we show you how to compare asymptotic timings of an R
-expression which uses different versions of a package. Let us consider
-the data.table package PR#4851
+expression which uses different versions of the `data.table`
+package. 
+
+```{r}
+library(data.table)
+pkg.path <- "~/R/data.table"
+atime.list <- atime::atime_versions(
+  pkg.path=pkg.path,
+  N=as.integer(10^seq(0, 2, by=1)),
+  setup={
+    DT <- data.table(iris)[1:N]
+    cols <- names(DT)
+  }, 
+  expr={
+    measure.vars <- data.table:::measure(part, dim, sep=".", cols=cols)
+    data.table::melt.data.table(DT, measure.vars=measure.vars)
+  },
+  seconds.limit=Inf,
+  times=3,
+  master="c4a2085e35689a108d67dacb2f8261e4964d7e12",
+  sleepR="e94af3b11a6a9c1414702d3991ccf2ef5d701c61",
+  printC="b4fa6aa3111ec39e2124249510d0df11f76ae91d")
+
+best.list <- atime::references_best(atime.list)
+both.dt <- best.list$meas
+library(ggplot2)
+ggplot()+
+  theme_bw()+
+  facet_grid(unit ~ ., scales="free")+
+  geom_line(aes(
+    N, empirical, color=expr.name),
+    data=both.dt)+
+  geom_ribbon(aes(
+    N, ymin=min, ymax=max, fill=expr.name),
+    data=both.dt[unit=="seconds"],
+    alpha=0.5)+
+  scale_x_log10()+
+  scale_y_log10("median line, min/max band")+
+  directlabels::geom_dl(aes(
+    N, empirical, color=expr.name, label=expr.name),
+    method="right.polygons",
+    data=both.dt)+
+  theme(legend.position="none")
+
+```
+
+Another example is
+[PR#4655](https://github.com/Rdatatable/data.table/pull/4655) which
+fixes a slowdown caused by PR4164.
+
+```{r}
+library(data.table)
+atime.list <- atime::atime_versions(
+  pkg.path=pkg.path,
+  N=10^seq(0, 2)*5,
+  setup={
+    set.seed(123L)
+    dt = data.table(
+      ordered_id = seq_len(n),
+      value = replicate(n, data.table(val1 = sample(40)), simplify = FALSE))
+  },
+  expr=dt[, value[[1L]], by = ordered_id],
+  results = FALSE,
+  before4164="793f8545c363d222de18ac892bc7abb80154e724",
+  after4164="4aadde8f5a51cd7c8f3889964e7280432ec65bbc",
+  after4655="f3470bce8d2097bb6b1e3a92b5e93169d97e1cad")
+
+plot(atime.list)
+
+best.list <- atime::references_best(atime.list)
+both.dt <- best.list$meas
+library(ggplot2)
+ggplot()+
+  theme_bw()+
+  facet_grid(unit ~ ., scales="free")+
+  geom_line(aes(
+    N, empirical, color=expr.name),
+    data=both.dt)+
+  geom_ribbon(aes(
+    N, ymin=min, ymax=max, fill=expr.name),
+    data=both.dt[unit=="seconds"],
+    alpha=0.5)+
+  scale_x_log10()+
+  scale_y_log10("median line, min/max band")+
+  directlabels::geom_dl(aes(
+    N, empirical, color=expr.name, label=expr.name),
+    method="right.polygons",
+    data=both.dt)+
+  theme(legend.position="none")
+
+```
+
+Let us consider the data.table package
+[PR#4851](https://github.com/Rdatatable/data.table/pull/4851)
+
+```{r}
+library(data.table.788c585586798107f9eeb3263928f718ca1db81e)
+setDTthreads(0L) ## 40
+set.seed(108)
+N = 1e7L
+K = 1e2L
+DT = list()
+DT[["id3"]] = factor(sample(sprintf("id%010d",1:(N/K)), N, TRUE))
+DT[["v3"]] =  round(runif(N,max=100),6)
+options(datatable.verbose=TRUE, datatable.alloccol=1024, datatable.optimize=Inf)
+setDT(DT)
+system.time(DT[, .(v3=mean(v3, na.rm=FALSE)), by=id3])
+system.time(DT[, .(v3=mean(v3, na.rm=TRUE)), by=id3])
+system.time(data.table.788c585586798107f9eeb3263928f718ca1db81e:::`[.data.table`(DT, , .(v3 = mean(v3), na.rm = FALSE), by = id3))
+system.time(data.table.788c585586798107f9eeb3263928f718ca1db81e:::`[.data.table`(DT, , .(v3 = mean(v3), na.rm = TRUE), by = id3))
+```
+
+```r
+library(data.table) ## 1.13.5
+setDTthreads(0L) ## 40
+set.seed(108)
+N = 1e9L
+K = 1e2L
+DT = list()
+DT[["id3"]] = factor(sample(sprintf("id%010d",1:(N/K)), N, TRUE))
+DT[["v3"]] =  round(runif(N,max=100),6)
+setDT(DT)
+
+system.time(naf <- DT[, .(v3=mean(v3)), by=id3, verbose=TRUE])
+#Detected that j uses these columns: v3 
+#Finding groups using forderv ... forder.c received 1000000000 rows and 1 columns
+#5.615s elapsed (00:01:39 cpu) 
+#Finding group sizes from the positions (can be avoided to save RAM) ... 0.091s elapsed (0.074s cpu) 
+#Getting back original order ... forder.c received a vector type 'integer' length 10000000
+#1.037s elapsed (2.888s cpu) 
+#lapply optimization is on, j unchanged as 'list(mean(v3))'
+#GForce optimized j to 'list(gmean(v3))'
+#Making each group and running j (GForce TRUE) ... gforce initial population of grp took 0.319
+#gforce assign high and low took 4.399
+#This gsum took (narm=FALSE) ... gather took ... 2.107s
+#2.322s
+#gforce eval took 2.339
+#8.738s elapsed (00:02:39 cpu) 
+#
+#   user  system elapsed 
+#261.852  67.723  15.498 
+
+system.time(nat <- DT[, .(v3=mean(v3, na.rm=TRUE)), by=id3, verbose=TRUE])
+#Detected that j uses these columns: v3 
+#Finding groups using forderv ... forder.c received 1000000000 rows and 1 columns
+#5.799s elapsed (00:01:42 cpu) 
+#Finding group sizes from the positions (can be avoided to save RAM) ... 0.090s elapsed (0.074s cpu) 
+#Getting back original order ... forder.c received a vector type 'integer' length 10000000
+#2.608s elapsed (3.275s cpu) 
+#lapply optimization is on, j unchanged as 'list(mean(v3, na.rm = TRUE))'
+#GForce optimized j to 'list(gmean(v3, na.rm = TRUE))'
+#Making each group and running j (GForce TRUE) ... gforce initial population of grp took 0.346
+#gforce assign high and low took 4.978
+#gforce eval took 33.515
+#40.2s elapsed (00:02:24 cpu) 
+#
+#   user  system elapsed 
+#250.858  68.804  48.679
+```
 
 ```{r}
 library(data.table)
@@ -33,6 +190,10 @@ commit.list[["merge_base"]] <- do.call(git2r::merge_base, mb.args)
 sha.vec <- sapply(commit.list, "[[", "sha")  
 
 
+ver.exprs <- atime::atime_versions_exprs(
+  pkg.path=pkg.path,
+  expr=data.table:::gsum,
+  sha.vec=sha.vec)
   
 ver.exprs <- atime::atime_versions_exprs(
   pkg.path=pkg.path,
@@ -78,7 +239,54 @@ ggplot()+
   coord_cartesian(xlim=c(1e3, 5e6))
 ```
 
-Another PR#5187
+Another [PR#5187](https://github.com/Rdatatable/data.table/pull/5187)
+
+```r
+library(data.table)
+setDTthreads(1)
+n <- 1e7 
+x.df <- data.frame(date = as.POSIXct("2000-1-1") + 1:n, price = rnorm(n))
+x.dt <- data.table(x.df, key = "date")
+
+n2 <- 100
+y.df <- data.frame(date = sort(sample(x.df$date, n2)), adjustment = runif(n2))
+y.dt <- data.table(y.df, key = "date")
+
+falign <- function(x, y) {
+  i <- findInterval(as.numeric(x$date), as.numeric(y$date))
+  i[which(i == 0)] <- NA
+  x$price.adj <- x[, "price"] + y[i, "adjustment"]
+  x
+}
+
+falign.dt <- function(x, y) {
+  i <- findInterval(as.numeric(x$date), as.numeric(y$date))
+  i[which(i == 0)] <- NA
+  x[, price.adj := x[, "price"] + y[i, "adjustment"]]
+  x
+}
+
+microbenchmark::microbenchmark(
+  falign(x.df, y.df),
+  falign.dt(x.dt, y.dt),
+  x.dt[, price.adj := y.dt[x.dt, price+adjustment, roll=TRUE]],
+  times=10, unit="s"
+)
+
+# v1.14.0
+Unit: seconds
+                                                              expr       min        lq      mean    median        uq       max neval
+                                                falign(x.df, y.df) 0.1488798 0.1542454 0.1617588 0.1593861 0.1620447 0.1992783    10
+                                             falign.dt(x.dt, y.dt) 0.2815458 0.2901276 0.2958419 0.2960433 0.3009906 0.3185344    10
+ x.dt[, `:=`(price.adj, y.dt[x.dt, price + adjustment, roll = T])] 0.8177566 0.8206021 0.8365346 0.8349606 0.8461528 0.8593044    10
+
+# this branch as of now (3rd line down from 0.83 to 0.57 but still a lot slower than `findInterval`) : 
+                                                              expr       min        lq      mean    median        uq       max neval
+                                                falign(x.df, y.df) 0.1460495 0.1486709 0.1554336 0.1537538 0.1616508 0.1732326    10
+                                             falign.dt(x.dt, y.dt) 0.2766880 0.3006418 0.3010593 0.3025785 0.3060092 0.3161539    10
+ x.dt[, `:=`(price.adj, y.dt[x.dt, price + adjustment, roll = T])] 0.5418650 0.5635949 0.5735462 0.5717389 0.5876390 0.5971523    10
+
+```
 
 ```{r}
 library(data.table)
