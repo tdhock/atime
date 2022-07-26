@@ -96,7 +96,7 @@ atime_versions_exprs <- function(pkg.path, expr, sha.vec=NULL, verbose=FALSE, ..
       paste0(Package,"(:+)"),
       paste0(new.Package,"\\1"),
       old.lines)
-    a.args[[commit.name]] <- str2lang(paste(new.lines, collapse=" "))
+    a.args[[commit.name]] <- str2lang(paste(new.lines, collapse="\n"))
   }
   a.args
 }
