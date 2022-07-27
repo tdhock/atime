@@ -9,7 +9,7 @@ Description: Computing and visualizing comparative
 License: GPL-3
 URL: https://github.com/tdhock/atime
 BugReports: https://github.com/tdhock/atime/issues
-Imports: data.table, bench, lattice, git2r, Rcpp
+Imports: data.table, bench, lattice, git2r
 Suggests: 
     directlabels,
     ggplot2,
