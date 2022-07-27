@@ -27,6 +27,7 @@ results=TRUE, ...)}
 
 \examples{
 
+## Example 1: polynomial vs exponential time regex.
 atime.list <- atime::atime(
   PCRE=regexpr(pattern, subject, perl=TRUE),
   TRE=regexpr(pattern, subject, perl=FALSE),
@@ -63,6 +64,56 @@ if(require("ggplot2")){
   if(require("directlabels")){
     directlabels::direct.label(gg, "last.polygons")+
       coord_cartesian(xlim=c(1,40))
+  }else{
+    gg
+  }
+}
+
+## Example 2: split data table vs frame, constant factor difference.
+library(data.table)
+atime.list <- atime::atime(
+  N=as.integer(10^seq(1, 7)),
+  setup={
+    set.seed(1)
+    DT <- data.table(
+      x1 = rep(c("c","d"), l=N),
+      x2 = rep(c("x","y"), l=N),
+      x3 = rep(c("a","b"), l=N),
+      y = rnorm(N)
+    )[sample(.N)]
+    DF <- as.data.frame(DT)
+  },
+  frame=split(DF[names(DF) != "x1"], DF["x1"], drop = TRUE),
+  table=split(DT, by = "x1", keep.by = FALSE, drop = TRUE)
+)
+best.list <- atime::references_best(atime.list)
+
+if(require(ggplot2)){
+  hline.df <- with(atime.list, data.frame(seconds.limit, unit="seconds"))
+  gg <- ggplot()+
+    theme_bw()+
+    facet_grid(unit ~ ., scales="free")+
+    geom_hline(aes(
+      yintercept=seconds.limit),
+      color="grey",
+      data=hline.df)+
+    geom_line(aes(
+      N, empirical, color=expr.name),
+      data=best.list$meas)+
+    geom_ribbon(aes(
+      N, ymin=min, ymax=max, fill=expr.name),
+      data=best.list$meas[unit=="seconds"],
+      alpha=0.5)+
+    scale_x_log10()+
+    scale_y_log10("median line, min/max band")
+  if(require(directlabels)){
+    gg+
+      directlabels::geom_dl(aes(
+        N, empirical, color=expr.name, label=expr.name),
+        method="right.polygons",
+        data=best.list$meas)+
+      theme(legend.position="none")+
+      coord_cartesian(xlim=c(1,2e7))
   }else{
     gg
   }
