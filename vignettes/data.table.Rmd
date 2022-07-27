@@ -166,3 +166,9 @@ the timings of the commits.
 * since commit #4491 occured immediately after .dev-only, we can
   conclude that there is something in that commit which is responsible
   for the slowdown.
+
+Below we remove the installed packages,
+
+```{r}
+atime::atime_versions_remove("data.table")
+```

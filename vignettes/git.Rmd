@@ -66,3 +66,8 @@ if(require(ggplot2)){
 }
 ```
 
+Below we remove the installed packages,
+
+```{r}
+atime::atime_versions_remove("binsegRcpp")
+```

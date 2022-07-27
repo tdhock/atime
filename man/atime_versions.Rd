@@ -60,4 +60,6 @@ if(interactive()){
   plot(atime.list)
 }
 
+if(interactive())atime::atime_versions_remove("binsegRcpp")
+
 }

@@ -28,6 +28,13 @@ pkg.edit.default <- function(old.Package, new.Package, sha, new.pkg.path){
     paste0('useDynLib(', new.Package))
 }
 
+atime_versions_remove <- function(Package){
+  lib <- .libPaths()[1]
+  pkg.in.lib <- file.path(lib, Package)
+  pkg.sha.glob <- paste0(pkg.in.lib, ".*")
+  unlink(pkg.sha.glob, recursive=TRUE, force=TRUE)
+}
+
 atime_versions_install <- function(Package, pkg.path, new.Package.vec, sha.vec, verbose, pkg.edit.fun=pkg.edit.default){
   first.lib <- .libPaths()[1]
   pkgs.in.lib <- dir(first.lib)
