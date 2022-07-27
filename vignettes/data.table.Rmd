@@ -106,16 +106,24 @@ adapted from issue
   },
   results = FALSE,
   verbose = TRUE,
-  ".dev-only: revdep tweaks"="3fa8b20435d33b3d4b5c26fd9b0ac14c10b98800",
-  "Internal class aware coerceAs.\nAlready used in nafill and froll (#4491)"="85adf09e3463838d547977ae9bc75e3b37f9cbaf",
+  ##"character coercion warning\nin memrecycle unsuppressed;\nsee #4503"="909add00de2cca4184117462a9f2ae6d9acce443",
+  ##".dev-only: revdep tweaks"="3fa8b20435d33b3d4b5c26fd9b0ac14c10b98800",
+  ##"coerceAs does not emit\nextra warning anymore"="1edae4ffb0933f2b086443f11c4570b98036d490",
+  ##"Merge branch 'master' into coerceAs"="f4197ec491b7036048ae3766acffffbd59d04779",
+  ##"Merge branch 'master' into coerceAs"="d1746c4b7c3da4dbc1779defb952598903b937f7",
+  ## "move news item up"="fc9f2e5625adfbd7e655f14244b582a051cb4538",
+  "news item tweak"="be2f72e6f5c90622fe72e1c315ca05769a9dc854",
+  "simplify duplication in memrecycle"="e793f53466d99f86e70fc2611b708ae8c601a451",
+  ##"Internal class aware coerceAs.\nAlready used in nafill and froll (#4491)"="85adf09e3463838d547977ae9bc75e3b37f9cbaf",
   ##reshape2clarify4908="788c585586798107f9eeb3263928f718ca1db81e",
   ##fread_docs4745="8f425c69279eef8b743bb049c7c983e0b6f3543e",
   ##fread_nrows0L4694="374e20813f652b9f1729d26da1bad902979b06d6",
   ##scalar_logical4928="10463e32613bb9b400e54179d2ac92e655b22701",
   ##gmin_blank4847="45b8277e1cafe29a0e446d034185d6090b525e41",
   ##typo_in_link="a7325a38d7cfe072164c477e053bdefb18bdd8f8",
-  "1.14.3 dev master"="c4a2085e35689a108d67dacb2f8261e4964d7e12",
-  "1.14.0 on CRAN. Bump to 1.14.1"="263b53e50241914a22f7ba6a139b52162c9d7927"))
+  "1.14.0 on CRAN. Bump to 1.14.1"="263b53e50241914a22f7ba6a139b52162c9d7927",
+  "1.14.3 dev master"="c4a2085e35689a108d67dacb2f8261e4964d7e12"
+))
 ```
 
 The results can be plotted using the code below,
@@ -155,17 +163,16 @@ if(require(ggplot2)){
 }
 ```
 
-The figure above shows that there is a significant difference between
+The figure above shows that there are significant differences between
 the timings of the commits. 
 
-* commits labeled .dev-only and 1.14.0 on CRAN are fast (relatively
+* commits labeled news item tweak and 1.14.0 on CRAN are fast (relatively
   small computation time),
-* commits labeled 1.14.3 dev master and
-  [#4491](https://github.com/Rdatatable/data.table/pull/4491) are slow
-  (relatively large computation time).
-* since commit #4491 occured immediately after .dev-only, we can
+* commits labeled 1.14.3 dev master and simplify duplication in
+  memrecycle are slow (relatively large computation time).
+* since "simplify" occured immediately after "news," we can
   conclude that there is something in that commit which is responsible
-  for the slowdown.
+  for the slowdown, https://github.com/Rdatatable/data.table/issues/5371
 
 Below we remove the installed packages,
 
