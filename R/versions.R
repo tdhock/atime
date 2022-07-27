@@ -87,6 +87,7 @@ atime_versions_install <- function(Package, pkg.path, new.Package.vec, sha.vec, 
             cat("\n")
           }
         }
+        unlink(file.path(sha.path, "src", "*.o"))
         pkg.edit.fun(
           old.Package=Package, 
           new.Package=new.Package,
