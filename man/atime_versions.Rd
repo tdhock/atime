@@ -6,7 +6,8 @@
 \usage{atime_versions(
 pkg.path, N, setup, expr, sha.vec=NULL,
 times=10, seconds.limit=0.01, verbose=FALSE,
-pkg.edit.fun=pkg.edit.default, ...)}
+pkg.edit.fun=pkg.edit.default, results=TRUE,
+...)}
 \arguments{
   \item{pkg.path}{Path to git repo containing R package.}
   \item{N}{numeric vector of data sizes to vary.}
