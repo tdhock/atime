@@ -3,10 +3,13 @@
 \title{Asymptotic timing}
 \description{Computation time and memory for several R expressions of
   several different data sizes.}
-\usage{atime(N, setup, times, verbose=FALSE, seconds.limit=0.01, ...)}
+\usage{atime(
+N, setup, expr.list, times=10, seconds.limit=0.01, verbose=FALSE,
+results=TRUE, ...)}
 \arguments{
   \item{N}{numeric vector of data sizes to vary.}
   \item{setup}{expression to evaluate for every data size, before timings.}
+  \item{expr.list}{named list of expressions to time.}
   \item{times}{number of times to evaluate each timed expression.}
   \item{verbose}{logical, print messages after every data size?}
   \item{seconds.limit}{if the median timing of any expression exceeds
@@ -14,7 +17,9 @@
   \item{\dots}{named expressions to time.}
 }
 \details{Each iteration involves first computing the setup expression,
-  and then computing several times the \dots expressions.}
+  and then computing several times the \dots expressions. For
+  convenience, expressions may be specified either via code (\dots) or
+  data (\code{expr.list} arg).}
 \value{list of class atime with elements \code{seconds.limit} (numeric
   input param), \code{timings} (data table of results).}
 

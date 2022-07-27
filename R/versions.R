@@ -1,4 +1,34 @@
-atime_versions_install <- function(Package, pkg.path, new.Package.vec, sha.vec, verbose){
+glob_find_replace <- function(glob, FIND, REPLACE){
+  some.files <- Sys.glob(glob)
+  for(f in some.files){
+    l.old <- readLines(f)
+    l.new <- gsub(FIND, REPLACE, l.old)
+    writeLines(l.new, f)
+  }
+}
+
+pkg.edit.default <- function(old.Package, new.Package, sha, new.pkg.path){
+  pkg_find_replace <- function(glob, FIND, REPLACE){
+    glob_find_replace(file.path(new.pkg.path, glob), FIND, REPLACE)
+  }
+  pkg_find_replace(
+    "DESCRIPTION", 
+    paste0("Package:\\s+", old.Package),
+    paste("Package:", new.Package))
+  Package_ <- gsub(".", "_", old.Package, fixed=TRUE)
+  R_init_pkg <- paste0("R_init_", Package_)
+  new.Package_ <- paste0(Package_, "_", sha)
+  pkg_find_replace(
+    file.path("src", "RcppExports.cpp"),
+    R_init_pkg,
+    paste0("R_init_", new.Package_))
+  pkg_find_replace(
+    "NAMESPACE",
+    sprintf('useDynLib\\("?%s"?', Package_),
+    paste0('useDynLib(', new.Package))
+}
+
+atime_versions_install <- function(Package, pkg.path, new.Package.vec, sha.vec, verbose, pkg.edit.fun=pkg.edit.default){
   first.lib <- .libPaths()[1]
   pkgs.in.lib <- dir(first.lib)
   new.not.installed <- !new.Package.vec %in% pkgs.in.lib
@@ -20,67 +50,60 @@ atime_versions_install <- function(Package, pkg.path, new.Package.vec, sha.vec, 
         }
       }else{
         git2r::checkout(repo, branch=sha, force=TRUE)
-        find_replace <- function(glob, FIND, REPLACE){
-          some.files <- Sys.glob(file.path(new.path, glob))
-          for(f in some.files){
-            l.old <- readLines(f)
-            l.new <- gsub(FIND, REPLACE, l.old)
-            writeLines(l.new, f)
-          }
-        }
-        find_replace(
-          "DESCRIPTION", 
-          paste0("Package:\\s+", Package),
-          paste("Package:", new.Package))
-        Package_ <- gsub(".", "_", Package, fixed=TRUE)
-        Package_regex <- gsub(".", "_?", Package, fixed=TRUE)
-        new.Package_ <- paste0(Package_, "_", sha)
-        find_replace(
-          "NAMESPACE",
-          sprintf('useDynLib\\("?%s"?', Package_regex),
-          paste0('useDynLib(', new.Package_))
-        ## If there is compiled code then there must be a *.c or *.cpp
-        ## file with R_init_data_table which we need to replace with
-        ## R_init_data_table_sha.
-        R_init_pkg <- paste0("R_init_", Package_regex)
-        for(suffix in c("c", "cpp", "cc")){
-          find_replace(
-            file.path("src", paste0("*.", suffix)),
-            R_init_pkg,
-            paste0("R_init_", new.Package_))
-        }
-        find_replace(
-          file.path("src","Makevars.*in"),
-          Package_regex,
-          new.Package_)
-        find_replace(
-          file.path("R", "onLoad.R"),
-          Package_regex,
-          new.Package_)
-        find_replace(
-          file.path("R", "onLoad.R"),
-          sprintf('packageVersion\\("%s"\\)', Package),
-          sprintf('packageVersion\\("%s"\\)', new.Package))
-        ## before installing, make sure directory has sha suffix, for
-        ## windows checks.
+        ## before editing and installing, make sure directory has sha
+        ## suffix, for windows checks.
         sha.path <- paste0(new.path,".",sha)
         file.rename(new.path, sha.path)
+        grep_glob <- function(glob, pattern){
+          some.files <- Sys.glob(file.path(sha.path, glob))
+          out <- list()
+          for(f in some.files){
+            line.vec <- readLines(f)
+            match.vec <- grep(pattern, line.vec, value=TRUE)
+            if(length(match.vec)){
+              out[[f]] <- match.vec
+            }
+          }
+          out
+        }
+        print_pkg_info <- function(){
+          if(verbose){
+            cat("\nPackage info after editing and installation:\n")
+            out <- c(
+              grep_glob("DESCRIPTION", "^Package"),
+              grep_glob("NAMESPACE", "^useDynLib"),
+              grep_glob(file.path("src", "*.c"), "R_init_"),
+              grep_glob(file.path("src", "*.cpp"), "R_init_"))
+            src.files <- dir(file.path(sha.path, "src"))
+            out[["src/*.so|dll"]] <- grep("(so|dll)$", src.files, value=TRUE)
+            print(out)
+            cat("\n")
+          }
+        }
+        pkg.edit.fun(
+          old.Package=Package, 
+          new.Package=new.Package,
+          sha=sha, 
+          new.pkg.path=sha.path)
         install.packages(
           sha.path, repos=NULL, type="source", verbose=verbose)
+        print_pkg_info()
         file.rename(sha.path, new.path)
       }
     }
   }
 }  
 
-atime_versions <- function(pkg.path, N, setup, expr, sha.vec=NULL, times=10, seconds.limit=0.01, verbose=FALSE, results=TRUE, ...){
-  ver.args <- list(pkg.path, substitute(expr), sha.vec, verbose, ...)
+atime_versions <- function(pkg.path, N, setup, expr, sha.vec=NULL, times=10, seconds.limit=0.01, verbose=FALSE, pkg.edit.fun=pkg.edit.default, results=TRUE, ...){
+  ver.args <- list(
+    pkg.path, substitute(expr), sha.vec, verbose, pkg.edit.fun, ...)
   ver.exprs <- do.call(atime_versions_exprs, ver.args)
-  a.args <- list(N, substitute(setup), ver.exprs, times, seconds.limit, verbose, results)
+  a.args <- list(
+    N, substitute(setup), ver.exprs, times, seconds.limit, verbose, results)
   do.call(atime, a.args)
 }
 
-atime_versions_exprs <- function(pkg.path, expr, sha.vec=NULL, verbose=FALSE, ...){
+atime_versions_exprs <- function(pkg.path, expr, sha.vec=NULL, verbose=FALSE, pkg.edit.fun=pkg.edit.default, ...){
   formal.names <- names(formals())
   mc.args <- as.list(match.call()[-1])
   dots.vec <- mc.args[!names(mc.args) %in% formal.names]
@@ -90,7 +113,7 @@ atime_versions_exprs <- function(pkg.path, expr, sha.vec=NULL, verbose=FALSE, ..
   Package <- DESC.mat[,"Package"]
   new.Package.vec <- sprintf("%s.%s", Package, SHA.vec)
   atime_versions_install(
-    Package, pkg.path, new.Package.vec, SHA.vec, verbose)
+    Package, pkg.path, new.Package.vec, SHA.vec, verbose, pkg.edit.fun)
   a.args <- list()
   for(commit.i in seq_along(SHA.vec)){
     sha <- SHA.vec[[commit.i]]

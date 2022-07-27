@@ -1,3 +1,8 @@
+Changes in version 2022.7.26
+
+- new vignette: data.table.
+- new atime_versions_exprs function.
+
 Changes in version 2022.7.22
 
 - new vignette: git.
