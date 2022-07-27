@@ -11,9 +11,10 @@ results=TRUE, ...)}
   \item{setup}{expression to evaluate for every data size, before timings.}
   \item{expr.list}{named list of expressions to time.}
   \item{times}{number of times to evaluate each timed expression.}
-  \item{verbose}{logical, print messages after every data size?}
   \item{seconds.limit}{if the median timing of any expression exceeds
     this many seconds, then no timings for larger N are computed.}
+  \item{verbose}{logical, print messages after every data size?}
+  \item{results}{logical, save results?}
   \item{\dots}{named expressions to time.}
 }
 \details{Each iteration involves first computing the setup expression,
