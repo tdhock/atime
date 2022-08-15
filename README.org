@@ -6,7 +6,7 @@ atime: Asymptotic Timing
 ** Installation
 
 #+BEGIN_SRC R
-  if(require("remotes"))install.packages("remotes")
+  if(!require("remotes"))install.packages("remotes")
   remotes::install_github("tdhock/atime")
 #+END_SRC
 
