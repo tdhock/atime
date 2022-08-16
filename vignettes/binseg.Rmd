@@ -12,6 +12,18 @@ knitr::opts_chunk$set(
 )
 ```
 
+In this vignette we explore the differences in asymptotic time
+complexity between different implementations of binary segmentation.
+
+## Asymptotic time/memory measurement of different R expressions
+
+The code below uses the following arguments:
+
+* `N` is a numeric vector of data sizes,
+* `setup` is an R expression to create the data,
+* the other arguments have names to identify them in the results, and
+  values which are R expressions to time,
+
 ```{r}
 library(data.table)
 atime.list <- atime::atime(
@@ -41,20 +53,24 @@ atime.list <- atime::atime(
   },
   binsegRcpp.list={
     binseg.fit <- binsegRcpp::binseg(
-      "mean_norm",data.vec, max.segs, container.str="list")
+      "mean_norm", data.vec, max.segs, container.str="list")
     sort(binseg.fit$splits$end)
   },
+  ##seconds.limit=0.1,
   times=5)
 plot(atime.list)
+```
 
+The default plot method creates a log-log plot of median time vs data
+size, for each of the specified R expressions. You can use
+`references_best` to get a tall/long data table that can be plotted to
+show both empirical time and memory complexity:
+
+```{r}
+best.list <- atime::references_best(atime.list)
 if(require(ggplot2)){
-  measure.dt <- atime.list[["measurements"]]
-  line.dt <- measure.dt[, rbind(
-    data.table(N, expr.name, unit="seconds", value=median),
-    data.table(N, expr.name, unit="kilobytes", value=kilobytes))]
-  ribbon.df <- data.frame(unit="seconds", measure.dt)
   hline.df <- with(atime.list, data.frame(seconds.limit, unit="seconds"))
-  gg.legend <- ggplot()+
+  gg.both <- ggplot()+
     theme_bw()+
     facet_grid(unit ~ ., scales="free")+
     geom_hline(aes(
@@ -62,61 +78,137 @@ if(require(ggplot2)){
       color="grey",
       data=hline.df)+
     geom_line(aes(
-      N, value, color=expr.name),
-      data=line.dt)+
+      N, empirical, color=expr.name),
+      data=best.list$meas)+
     geom_ribbon(aes(
       N, ymin=min, ymax=max, fill=expr.name),
-      data=ribbon.df,
+      data=best.list$meas[unit=="seconds"],
       alpha=0.5)+
     scale_x_log10()+
     scale_y_log10("median line, min/max band")
-  (gg.show <- if(require(directlabels)){
-    direct.label(gg.legend, "right.polygons")+
-      coord_cartesian(xlim=c(1,1e7))
+  if(require(directlabels)){
+    gg.both+
+      directlabels::geom_dl(aes(
+        N, empirical, color=expr.name, label=expr.name),
+        method="right.polygons",
+        data=best.list$meas)+
+      theme(legend.position="none")+
+      coord_cartesian(xlim=c(1,2e7))
   }else{
-    gg.legend
-  })
+    gg.both
+  }
 }
 ```
 
 The plots above show some speed differences between binary
 segmentation algorithms, but they could be even easier to see for
 larger data sizes (exercise for the reader: try modifying the `N` and
-`seconds.limit` arguments).
+`seconds.limit` arguments). You can also see that memory usage is much
+larger for changepoint than for the other packages.
 
-The code below computes references which are aligned with the largest
-N for each expression, then adds the reference info to the ggplot
-using new line and direct label layers.
+## Closest asymptotic references
+
+You can use code like below to compute asymptotic references which are
+best fit for each expression. We do the best fit by adjusting each
+reference to the largest N, and then ranking each reference by
+distance to the measurement of the second to largest N. The code below
+uses `each.sign.rank==1` to compute the closest reference above and
+below,
 
 ```{r}
-best.list <- atime::references_best(atime.list)
-best.ref <- best.list$ref[overall.rank==1]
+best.refs <- best.list$ref[each.sign.rank==1]
+time.refs <- best.refs[unit=="seconds"]
+```
+
+Then you can plot these references with the empirical data using the
+ggplot code below,
+
+```{r}
+ref.color <- "red"
 if(require(ggplot2)){
-  gg.ref <- gg.show+
+  gg <- ggplot()+
     geom_line(aes(
-      N, reference, group=paste(fun.name, expr.name)),
-      color="grey",
-      data=best.ref)
+      N, reference, group=fun.name),
+      color=ref.color,
+      data=time.refs)+
+    geom_line(aes(
+      N, empirical),
+      size=1,
+      data=best.list$meas[unit=="seconds"])+
+    scale_x_log10()+
+    scale_y_log10("median line, min/max band")+
+    facet_wrap("expr.name")+
+    theme_bw()
   if(require(directlabels)){
-    gg.ref+
+    gg+
       directlabels::geom_dl(aes(
         N, reference, label=fun.name),
-        data=best.ref,
-        color="grey",
+        data=time.refs,
+        color=ref.color,
         method="bottom.polygons")
   }else{
-    gg.ref
+    gg
   }
 }
 ```
 
-It is clear from the plot above that 
+## Custom asymptotic references
+
+If you have one or more expected time complexity classes that you want
+to compare with your empirical measurements, you can use the
+`fun.list` argument:
+
+```{r}
+my.refs <- list(
+  "N \\log N"=function(N)log10(N) + log10(log(N)),
+  "N^2"=function(N)2*log10(N),
+  "N^3"=function(N)3*log10(N))
+my.best <- atime::references_best(atime.list, fun.list=my.refs)
+```
+
+Note that in the code above, each R function should take as input the
+data size `N` and output log base 10 of the reference function.
+
+```{r}
+my.best.time.refs <- my.best$ref[unit=="seconds"]
+if(require(ggplot2)){
+  gg <- ggplot()+
+    geom_line(aes(
+      N, reference, group=fun.name),
+      color=ref.color,
+      data=my.best.time.refs)+
+    geom_line(aes(
+      N, empirical),
+      size=1,
+      data=best.list$meas[unit=="seconds"])+
+    scale_x_log10()+
+    scale_y_log10("median line, min/max band")+
+    facet_wrap("expr.name")+
+    theme_bw()
+  if(require(directlabels)){
+    gg+
+      directlabels::geom_dl(aes(
+        N, reference, label=fun.name),
+        data=my.best.time.refs,
+        color=ref.color,
+        method="bottom.polygons")
+  }else{
+    gg
+  }
+}
+```
+
+From the plot above you should be able to see the asymptotic time
+complexity class of each algorithm.
 
 * the fastest packages are log-linear (fpop, wbs, binsegRcpp), 
 * that the binsegRcpp implementation that uses the list container is
   much slower (quadratic).
 * the changepoint package uses a super-quadratic algorithm (actually
   cubic, which you could see if you increase N even larger).
-* memory usage is much larger for changepoint than for the other
-  packages.
 
+## Exercises for the reader
+
+* increase `seconds.limit` to see the differences more clearly.
+* compute and plot asymptotic references for memory instead of time
+  (including expected memory complexity, linear).
