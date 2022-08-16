@@ -32,7 +32,13 @@ atime_versions_remove <- function(Package){
   lib <- .libPaths()[1]
   pkg.in.lib <- file.path(lib, Package)
   pkg.sha.glob <- paste0(pkg.in.lib, ".*")
-  unlink(pkg.sha.glob, recursive=TRUE, force=TRUE)
+  code <- unlink(pkg.sha.glob, recursive=TRUE, force=TRUE)
+  paths.after <- Sys.glob(pkg.sha.glob)
+  pkgs.after <- basename(paths.after)
+  if(length(pkgs.after)){
+    warning("packages were not removed, probably because they are currently loaded (fix by restarting R): ", paste(pkgs.after, collapse=", "))
+  }
+  code
 }
 
 atime_versions_install <- function(Package, pkg.path, new.Package.vec, sha.vec, verbose, pkg.edit.fun=pkg.edit.default){
@@ -62,32 +68,6 @@ atime_versions_install <- function(Package, pkg.path, new.Package.vec, sha.vec, 
         ## suffix, for windows checks.
         sha.path <- paste0(new.path,".",sha)
         file.rename(new.path, sha.path)
-        grep_glob <- function(glob, pattern){
-          some.files <- Sys.glob(file.path(sha.path, glob))
-          out <- list()
-          for(f in some.files){
-            line.vec <- readLines(f)
-            match.vec <- grep(pattern, line.vec, value=TRUE)
-            if(length(match.vec)){
-              out[[f]] <- match.vec
-            }
-          }
-          out
-        }
-        print_pkg_info <- function(){
-          if(verbose){
-            cat("\nPackage info after editing and installation:\n")
-            out <- c(
-              grep_glob("DESCRIPTION", "^Package"),
-              grep_glob("NAMESPACE", "^useDynLib"),
-              grep_glob(file.path("src", "*.c"), "R_init_"),
-              grep_glob(file.path("src", "*.cpp"), "R_init_"))
-            src.files <- dir(file.path(sha.path, "src"))
-            out[["src/*.so|dll"]] <- grep("(so|dll)$", src.files, value=TRUE)
-            print(out)
-            cat("\n")
-          }
-        }
         unlink(file.path(sha.path, "src", "*.o"))
         pkg.edit.fun(
           old.Package=Package, 
@@ -96,7 +76,30 @@ atime_versions_install <- function(Package, pkg.path, new.Package.vec, sha.vec, 
           new.pkg.path=sha.path)
         install.packages(
           sha.path, repos=NULL, type="source", verbose=verbose)
-        print_pkg_info()
+        if(verbose){
+          cat("\nPackage info after editing and installation:\n")
+          grep_glob <- function(glob, pattern){
+            some.files <- Sys.glob(file.path(sha.path, glob))
+            out <- list()
+            for(f in some.files){
+              line.vec <- readLines(f)
+              match.vec <- grep(pattern, line.vec, value=TRUE)
+              if(length(match.vec)){
+                out[[f]] <- match.vec
+              }
+            }
+            out
+          }
+          out <- c(
+            grep_glob("DESCRIPTION", "^Package"),
+            grep_glob("NAMESPACE", "^useDynLib"),
+            grep_glob(file.path("src", "*.c"), "R_init_"),
+            grep_glob(file.path("src", "*.cpp"), "R_init_"))
+          src.files <- dir(file.path(sha.path, "src"))
+          out[["src/*.so|dll"]] <- grep("(so|dll)$", src.files, value=TRUE)
+          print(out)
+          cat("\n")
+        }
         file.rename(sha.path, new.path)
       }
     }
