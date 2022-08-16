@@ -24,5 +24,6 @@ Suggests:
     changepoint,
     LOPART,
     cumstats,
-    PeakSegDisk
+    PeakSegDisk,
+    callr
 VignetteBuilder: knitr

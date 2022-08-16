@@ -37,7 +37,8 @@ atime_versions_remove <- function(Package){
 
 atime_versions_install <- function(Package, pkg.path, new.Package.vec, sha.vec, verbose, pkg.edit.fun=pkg.edit.default){
   first.lib <- .libPaths()[1]
-  pkgs.in.lib <- dir(first.lib)
+  DESC.in.lib <- Sys.glob(file.path(first.lib, "*", "DESCRIPTION"))
+  pkgs.in.lib <- basename(dirname(DESC.in.lib))
   new.not.installed <- !new.Package.vec %in% pkgs.in.lib
   if(any(new.not.installed)){
     tdir <- tempfile()

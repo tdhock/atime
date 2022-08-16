@@ -48,15 +48,32 @@ if(interactive() && requireNamespace("changepoint")){
     cv="908b77c411bc7f4fcbcf53759245e738ae724c3e",
     "rm unord map"="dcd0808f52b0b9858352106cc7852e36d7f5b15d",
     "mvl_construct"="5942af606641428315b0e63c7da331c4cd44c091")
-  atime.list <- atime::atime(
-    N=2^seq(2, 20),
-    setup={
-      max.segs <- as.integer(N/2)
-      data.vec <- 1:N
-    },
-    expr.list=expr.list,
-    changepoint=changepoint::cpt.mean(
-      data.vec, penalty="Manual", pen.value=0, method="BinSeg", Q=max.segs-1))
+  atime.list <- if(requireNamespace("callr")){
+    run.atime <- function(ELIST){
+      atime::atime(
+        N=2^seq(2, 20),
+        setup={
+          max.segs <- as.integer(N/2)
+          data.vec <- 1:N
+        },
+        expr.list=ELIST,
+        changepoint=changepoint::cpt.mean(
+          data.vec, penalty="Manual", pen.value=0, method="BinSeg",
+          Q=max.segs-1))
+    }
+    callr::r(run.atime, list(expr.list))
+  }else{
+    atime::atime(
+      N=2^seq(2, 20),
+      setup={
+        max.segs <- as.integer(N/2)
+        data.vec <- 1:N
+      },
+      expr.list=expr.list,
+      changepoint=changepoint::cpt.mean(
+        data.vec, penalty="Manual", pen.value=0, method="BinSeg",
+        Q=max.segs-1))
+  }
   plot(atime.list)
 }
 
