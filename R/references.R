@@ -18,9 +18,10 @@ references <- function
   data.table(fun.latex=names(fun.list))[, {
     fun <- fun.list[[fun.latex]]
     log10.vec <- fun(N)
+    last.empirical <- empirical[which.max(N)]
     one.fun <- data.table(
       N, empirical,
-      reference=10^(log10.vec-max(log10.vec)+max(log10(empirical)))
+      reference=10^(log10.vec-max(log10.vec)+log10(last.empirical))
     )
     above <- one.fun[lower.limit < reference]
     if(1 < nrow(above)){
