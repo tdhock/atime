@@ -56,74 +56,68 @@ adapted from issue
 [#5424](https://github.com/Rdatatable/data.table/pull/5424).
 
 ```{r}
-(atime.list <- atime::atime_versions(
-  pkg.path=tdir,
-  pkg.edit.fun=function(old.Package, new.Package, sha, new.pkg.path){
-    pkg_find_replace <- function(glob, FIND, REPLACE){
-      atime::glob_find_replace(file.path(new.pkg.path, glob), FIND, REPLACE)
-    }
-    Package_regex <- gsub(".", "_?", old.Package, fixed=TRUE)
-    R_init_pkg <- paste0("R_init_", Package_regex)
-    Package_ <- gsub(".", "_", old.Package, fixed=TRUE)
-    new.Package_ <- paste0(Package_, "_", sha)
-    pkg_find_replace(
-      "DESCRIPTION", 
-      paste0("Package:\\s+", old.Package),
-      paste("Package:", new.Package))
-    pkg_find_replace(
-      file.path("src","Makevars.*in"),
-      Package_regex,
-      new.Package_)
-    pkg_find_replace(
-      file.path("R", "onLoad.R"),
-      Package_regex,
-      new.Package_)
-    pkg_find_replace(
-      file.path("R", "onLoad.R"),
-      sprintf('packageVersion\\("%s"\\)', old.Package),
-      sprintf('packageVersion\\("%s"\\)', new.Package))
-    pkg_find_replace(
-      file.path("src", "init.c"),
-      R_init_pkg,
-      paste0("R_init_", new.Package_))
-    pkg_find_replace(
-      "NAMESPACE",
-      sprintf('useDynLib\\("?%s"?', Package_regex),
-      paste0('useDynLib(', new.Package_))
-  },
-  N = 10^seq(3, 8),
-  setup={
-    n <- N/100
-    set.seed(1L)
-    dt <- data.table(
-      g = sample(seq_len(n), N, TRUE),
-      x = runif(N),
-      key = "g")
-  },
-  expr={
-    dt_mod <- copy(dt)
-    data.table:::`[.data.table`(dt_mod, , N := .N, by = g)
-  },
-  results = FALSE,
-  verbose = TRUE,
-  ##"character coercion warning\nin memrecycle unsuppressed;\nsee #4503"="909add00de2cca4184117462a9f2ae6d9acce443",
-  ##".dev-only: revdep tweaks"="3fa8b20435d33b3d4b5c26fd9b0ac14c10b98800",
-  ##"coerceAs does not emit\nextra warning anymore"="1edae4ffb0933f2b086443f11c4570b98036d490",
-  ##"Merge branch 'master' into coerceAs"="f4197ec491b7036048ae3766acffffbd59d04779",
-  ##"Merge branch 'master' into coerceAs"="d1746c4b7c3da4dbc1779defb952598903b937f7",
-  ## "move news item up"="fc9f2e5625adfbd7e655f14244b582a051cb4538",
-  "news item tweak"="be2f72e6f5c90622fe72e1c315ca05769a9dc854",
-  "simplify duplication in memrecycle"="e793f53466d99f86e70fc2611b708ae8c601a451",
-  ##"Internal class aware coerceAs.\nAlready used in nafill and froll (#4491)"="85adf09e3463838d547977ae9bc75e3b37f9cbaf",
-  ##reshape2clarify4908="788c585586798107f9eeb3263928f718ca1db81e",
-  ##fread_docs4745="8f425c69279eef8b743bb049c7c983e0b6f3543e",
-  ##fread_nrows0L4694="374e20813f652b9f1729d26da1bad902979b06d6",
-  ##scalar_logical4928="10463e32613bb9b400e54179d2ac92e655b22701",
-  ##gmin_blank4847="45b8277e1cafe29a0e446d034185d6090b525e41",
-  ##typo_in_link="a7325a38d7cfe072164c477e053bdefb18bdd8f8",
-  "1.14.0 on CRAN. Bump to 1.14.1"="263b53e50241914a22f7ba6a139b52162c9d7927",
-  "1.14.3 dev master"="c4a2085e35689a108d67dacb2f8261e4964d7e12"
-))
+run.atime <- function(TDIR){
+  atime::atime_versions(
+    pkg.path=TDIR,
+    pkg.edit.fun=function(old.Package, new.Package, sha, new.pkg.path){
+      pkg_find_replace <- function(glob, FIND, REPLACE){
+        atime::glob_find_replace(file.path(new.pkg.path, glob), FIND, REPLACE)
+      }
+      Package_regex <- gsub(".", "_?", old.Package, fixed=TRUE)
+      R_init_pkg <- paste0("R_init_", Package_regex)
+      Package_ <- gsub(".", "_", old.Package, fixed=TRUE)
+      new.Package_ <- paste0(Package_, "_", sha)
+      pkg_find_replace(
+        "DESCRIPTION", 
+        paste0("Package:\\s+", old.Package),
+        paste("Package:", new.Package))
+      pkg_find_replace(
+        file.path("src","Makevars.*in"),
+        Package_regex,
+        new.Package_)
+      pkg_find_replace(
+        file.path("R", "onLoad.R"),
+        Package_regex,
+        new.Package_)
+      pkg_find_replace(
+        file.path("R", "onLoad.R"),
+        sprintf('packageVersion\\("%s"\\)', old.Package),
+        sprintf('packageVersion\\("%s"\\)', new.Package))
+      pkg_find_replace(
+        file.path("src", "init.c"),
+        R_init_pkg,
+        paste0("R_init_", new.Package_))
+      pkg_find_replace(
+        "NAMESPACE",
+        sprintf('useDynLib\\("?%s"?', Package_regex),
+        paste0('useDynLib(', new.Package_))
+    },
+    N = 10^seq(3, 8),
+    setup={
+      n <- N/100
+      set.seed(1L)
+      dt <- data.table(
+        g = sample(seq_len(n), N, TRUE),
+        x = runif(N),
+        key = "g")
+    },
+    expr={
+      dt_mod <- copy(dt)
+      data.table:::`[.data.table`(dt_mod, , N := .N, by = g)
+    },
+    results = FALSE,
+    verbose = TRUE,
+    "news item tweak"="be2f72e6f5c90622fe72e1c315ca05769a9dc854",
+    "simplify duplication in memrecycle"="e793f53466d99f86e70fc2611b708ae8c601a451",
+    "1.14.0 on CRAN. Bump to 1.14.1"="263b53e50241914a22f7ba6a139b52162c9d7927",
+    "1.14.3 dev master"="c4a2085e35689a108d67dacb2f8261e4964d7e12")
+}
+atime.list <- if(requireNamespace("callr")){
+  requireNamespace("atime")
+  callr::r(run.atime, list(tdir))
+}else{
+  run.atime(tdir)
+}
 ```
 
 The results can be plotted using the code below,
