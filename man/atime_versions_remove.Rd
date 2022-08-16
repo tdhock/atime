@@ -8,7 +8,6 @@
   \item{Package}{Name of package without SHA.}
 }
 \details{The library searched is the first on \code{.libPaths()}.}
-\value{nothing.}
-
+\value{integer exit status code from unlink, non-zero if removal failed.}
 \author{Toby Dylan Hocking}
 
