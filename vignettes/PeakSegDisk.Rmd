@@ -45,9 +45,7 @@ intervals computing during the algorithm, then computes the best
 asymptotic references: 
 
 ```{r}
-atime.list$measurements[, intervals := {
-  result[[1]]$loss$mean.intervals
-}, by=.(expr.name, N)]
+atime.list$measurements[, sapply(result, function(L)L$loss$mean.intervals)]
 best.list <- atime::references_best(atime.list, more.units="intervals")
 plot(best.list)
 ```

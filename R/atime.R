@@ -1,9 +1,10 @@
-atime <- function(N, setup, times=10, verbose=FALSE, seconds.limit=0.01, ...){
+atime <- function(N, setup, expr.list=NULL, times=10, seconds.limit=0.01, verbose=FALSE, results=TRUE, ...){
   kilobytes <- mem_alloc <- NULL
   formal.names <- names(formals())
   mc.args <- as.list(match.call()[-1])
-  expr.list <- mc.args[!names(mc.args) %in% formal.names]
-  done.vec <- structure(rep(FALSE, length(expr.list)), names=names(expr.list))
+  dots.list <- mc.args[!names(mc.args) %in% formal.names]
+  elist <- c(expr.list, dots.list)
+  done.vec <- structure(rep(FALSE, length(elist)), names=names(elist))
   metric.dt.list <- list()
   for(N.value in N){
     not.done.yet <- names(done.vec)[!done.vec]
@@ -14,10 +15,14 @@ atime <- function(N, setup, times=10, verbose=FALSE, seconds.limit=0.01, ...){
       m.list <- list(bench::mark, iterations=times,check=FALSE)
       N.env$result.list <- list()
       for(expr.name in not.done.yet){
-        expr <- expr.list[[expr.name]]
-        m.list[[expr.name]] <- substitute(
-          result.list[[NAME]] <- EXPR,
-          list(NAME=expr.name, EXPR=expr))
+        expr <- elist[[expr.name]]
+        m.list[[expr.name]] <- if(results){
+          substitute(
+            result.list[[NAME]] <- EXPR,
+            list(NAME=expr.name, EXPR=expr))
+        }else{
+          expr
+        }
       }
       m.call <- as.call(m.list)
       N.df <- eval(m.call, N.env)
@@ -32,7 +37,9 @@ atime <- function(N, setup, times=10, verbose=FALSE, seconds.limit=0.01, ...){
       for(fun.name in names(summary.funs)){
         N.stats[[fun.name]] <- sapply(N.df[["time"]], summary.funs[[fun.name]])
       }
-      N.stats$result <- N.env$result.list
+      if(results){
+        N.stats$result <- N.env$result.list
+      }
       done.pkgs <- N.stats[median > seconds.limit, paste(expr.name)]
       done.vec[done.pkgs] <- TRUE
       if(verbose)print(N.stats[, data.table(

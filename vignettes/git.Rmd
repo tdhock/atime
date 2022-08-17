@@ -10,30 +10,91 @@ knitr::opts_chunk$set(
 )
 ```
 
+## Basic usage, `atime_versions` function
+
 In this vignette we show you how to compare asymptotic timings of an R
-expression which uses different versions of a package. Let us consider
+expression which uses different versions of a package. Let us begin by cloning
 the binsegRcpp package,
 
 ```{r}
 tdir <- tempfile()
 dir.create(tdir)
 git2r::clone("https://github.com/tdhock/binsegRcpp", tdir)
-atime.list <- atime::atime_versions(
-  pkg.path=tdir,
-  N=2^seq(2, 20),
-  setup={
-    max.segs <- as.integer(N/2)
-    data.vec <- 1:N
-  },
-  expr=binsegRcpp::binseg_normal(data.vec, max.segs),
-  cv="908b77c411bc7f4fcbcf53759245e738ae724c3e",
-  "rm unord map"="dcd0808f52b0b9858352106cc7852e36d7f5b15d",
-  "mvl_construct"="5942af606641428315b0e63c7da331c4cd44c091")
-plot(atime.list)
+```
 
-best.list <- atime::references_best(atime.list)
+Next, we define a helper function `run.atime` that will run
+`atime_versions`, which is a simple way to compare different github
+versions of a function:
+
+```{r}
+run.atime.versions <- function(TDIR){
+  atime::atime_versions(
+    pkg.path=TDIR,
+    N=2^seq(2, 20),
+    setup={
+      max.segs <- as.integer(N/2)
+      data.vec <- 1:N
+    },
+    expr=binsegRcpp::binseg_normal(data.vec, max.segs),
+    cv="908b77c411bc7f4fcbcf53759245e738ae724c3e",
+    "rm unord map"="dcd0808f52b0b9858352106cc7852e36d7f5b15d",
+    "mvl_construct"="5942af606641428315b0e63c7da331c4cd44c091")
+}
+```
+
+Here is an explanation of the arguments specified above:
+
+* `pkg.path` is the path to the github repository containing the R package,
+* `N` is a numeric vector of data sizes,
+* `setup` is an R expression which will be run to create data for each size `N`,
+* `expr` is an R expression which will be timed for each package
+  version. Under the hood, a different R package is created for each
+  package version, with package names like Package.SHA,
+  `binsegRcpp.908b77c411bc7f4fcbcf53759245e738ae724c3e`. This `expr`
+  must contain double or triple colon package name prefix code, like
+  `binsegRcpp::binseg_normal` above, which will be translated to
+  several different version-specific expressions, like
+  `binsegRcpp.908b77c411bc7f4fcbcf53759245e738ae724c3e::binseg_normal`.
+* The remaining arguments specify the different package versions
+  (names for labels, values for SHA version IDs).
+
+Note that in your code you don't have to create a helper function like
+`run.atime.versions` in the code above. We do it in the package example code,
+in order to run the different versions of the code using `callr::r`,
+in a separate R process. This allows us to avoid CRAN warnings about
+unexpected files found in the package check directory, by safely
+delete/remove the installed packages, after having run the example
+code. In the code block below we compute the timings,
+
+```{r}
+atime.ver.list <- if(requireNamespace("callr")){
+  requireNamespace("atime")
+  callr::r(run.atime.versions, list(tdir))
+}else{
+  run.atime.versions(tdir)
+}
+names(atime.ver.list$measurements)
+atime.ver.list$measurements[, .(N, expr.name, min, median, max, kilobytes)]
+```
+
+The result is a list with a `measurements` data table that contains
+measurements of time in seconds (`min`, `median`, `max`) and memory
+usage (`kilobytes`) for every version (`expr.name`) and data size
+(`N`). A more convenient version of the data for plotting can be
+obtained via the code below:
+
+```{r}
+best.ver.list <- atime::references_best(atime.ver.list)
+names(best.ver.list$measurements)
+best.ver.list$measurements[, .(N, expr.name, unit, empirical)]
+```
+
+The data table above is a tall/long version of the same data, which
+can be plotted using the code below:
+
+```{r}
 if(require(ggplot2)){
-  hline.df <- with(atime.list, data.frame(seconds.limit, unit="seconds"))
+  hline.df <- with(atime.ver.list, data.frame(seconds.limit, unit="seconds"))
   gg <- ggplot()+
     theme_bw()+
     facet_grid(unit ~ ., scales="free")+
@@ -43,10 +104,10 @@ if(require(ggplot2)){
       data=hline.df)+
     geom_line(aes(
       N, empirical, color=expr.name),
-      data=best.list$meas)+
+      data=best.ver.list$meas)+
     geom_ribbon(aes(
       N, ymin=min, ymax=max, fill=expr.name),
-      data=best.list$meas[unit=="seconds"],
+      data=best.ver.list$meas[unit=="seconds"],
       alpha=0.5)+
     scale_x_log10()+
     scale_y_log10("median line, min/max band")
@@ -55,7 +116,7 @@ if(require(ggplot2)){
       directlabels::geom_dl(aes(
         N, empirical, color=expr.name, label=expr.name),
         method="right.polygons",
-        data=best.list$meas)+
+        data=best.ver.list$meas)+
       theme(legend.position="none")+
       coord_cartesian(xlim=c(1,2e7))
   }else{
@@ -64,3 +125,70 @@ if(require(ggplot2)){
 }
 ```
 
+## Advanced usage, `atime_versions_exprs` with `atime`
+
+What if you wanted to compare different versions of one R package, to
+another R package? Continuing the example above, we can get a list of
+expressions, each one for a different version of the package, via the
+code below:
+
+```{r}
+(ver.list <- atime::atime_versions_exprs(
+  pkg.path=tdir,
+  expr=binsegRcpp::binseg_normal(data.vec, max.segs),
+  cv="908b77c411bc7f4fcbcf53759245e738ae724c3e",
+  "rm unord map"="dcd0808f52b0b9858352106cc7852e36d7f5b15d",
+  "mvl_construct"="5942af606641428315b0e63c7da331c4cd44c091"))
+```
+
+The `ver.list` created above can be augmented with other expressions,
+such as the following alternative implementation of binary
+segmentation from the changepoint package,
+
+```{r}
+expr.list <- c(ver.list, if(requireNamespace("changepoint")){
+  list(changepoint=substitute(changepoint::cpt.mean(
+    data.vec, penalty="Manual", pen.value=0, method="BinSeg",
+    Q=max.segs-1)))
+})
+```
+
+The `expr.list` created above can be provided as an argument to the
+`atime` function as in the code below,
+
+```{r}
+run.atime <- function(ELIST){
+  atime::atime(
+    N=2^seq(2, 20),
+    setup={
+      max.segs <- as.integer(N/2)
+      data.vec <- 1:N
+    },
+    expr.list=ELIST)
+}
+atime.list <- if(requireNamespace("callr")){
+  requireNamespace("atime")
+  callr::r(run.atime, list(expr.list))
+}else{
+  run.atime(expr.list)
+}
+atime.list$measurements[, .(N, expr.name, median, kilobytes)]
+```
+
+The results above show that timings were computed for the three
+different versions of the binsegRcpp code, along with the changepoint
+code. These data can be plotted via the default method as in the code
+below,
+
+```{r}
+refs.best <- atime::references_best(atime.list)
+plot(refs.best)
+```
+
+## Cleanup
+
+Below we remove the installed packages, in order to avoid CRAN warnings:
+
+```{r}
+atime::atime_versions_remove("binsegRcpp")
+```
