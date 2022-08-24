@@ -45,7 +45,7 @@ intervals computing during the algorithm, then computes the best
 asymptotic references: 
 
 ```{r}
-atime.list$measurements[, sapply(result, function(L)L$loss$mean.intervals)]
+atime.list$measurements[, intervals := sapply(result, function(L)L$loss$mean.intervals)]
 best.list <- atime::references_best(atime.list, more.units="intervals")
 plot(best.list)
 ```
@@ -59,14 +59,9 @@ data. Next we plot the same data using a different method.
 
 ```{r}
 if(require(ggplot2)){
-  hline.df <- with(atime.list, data.frame(seconds.limit, unit="seconds"))
   gg <- ggplot()+
     theme_bw()+
     facet_grid(unit ~ ., scales="free")+
-    geom_hline(aes(
-      yintercept=seconds.limit),
-      color="grey",
-      data=hline.df)+
     geom_line(aes(
       N, empirical, color=expr.name),
       data=best.list$meas)+
@@ -83,7 +78,7 @@ if(require(ggplot2)){
         method="right.polygons",
         data=best.list$meas)+
       theme(legend.position="none")+
-      coord_cartesian(xlim=c(10,3000))
+      coord_cartesian(xlim=c(5,3000))
   }else{
     gg
   })
@@ -111,8 +106,7 @@ if(require(ggplot2)){
         label=fun.name),
         data=best.ref,
         color="grey",
-        method="left.polygons")+
-      coord_cartesian(xlim=c(5,3000))
+        method="left.polygons")
   }else{
     gg.ref
   }
