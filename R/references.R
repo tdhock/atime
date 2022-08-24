@@ -48,9 +48,18 @@ references_best <- function(L, unit.col.vec=NULL, more.units=NULL, fun.list=NULL
   names(unit.col.vec)[to.rep] <- unit.col.vec[to.rep]
   ref.dt.list <- list()
   metric.dt.list <- list()
+  not.found <- unit.col.vec[!unit.col.vec %in% names(DT)]
+  if(length(not.found)){
+    stop(
+      "some units were not found (fix by creating columns in measurements): ",
+      paste(not.found, collapse=", "))
+  }
   for(unit in names(unit.col.vec)){
     col.name <- unit.col.vec[[unit]]
     values <- DT[[col.name]]
+    if(!is.numeric(values)){
+      stop("each unit must be numeric, but ", unit, " is not")
+    }
     only.positive <- values[0 < values]
     if(length(only.positive)){
       lower.limit <- min(only.positive)
