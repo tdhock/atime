@@ -42,6 +42,8 @@ pkg.edit.fun=pkg.edit.default, results=TRUE,
 
 \examples{
 
+\donttest{
+
 tdir <- tempfile()
 dir.create(tdir)
 git2r::clone("https://github.com/tdhock/binsegRcpp", tdir)
@@ -68,5 +70,7 @@ refs.best <- atime::references_best(atime.list)
 plot(refs.best)
 
 atime::atime_versions_remove("binsegRcpp")
+
+}
 
 }

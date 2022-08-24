@@ -38,6 +38,8 @@ pkg.edit.fun=pkg.edit.default, ...)}
 
 \examples{
 
+\donttest{
+
 if(requireNamespace("changepoint")){
   tdir <- tempfile()
   dir.create(tdir)
@@ -71,5 +73,7 @@ if(requireNamespace("changepoint")){
 }
 
 atime::atime_versions_remove("binsegRcpp")
+
+}
 
 }
