@@ -38,7 +38,7 @@ pkg.edit.fun=pkg.edit.default, ...)}
 
 \examples{
 
-if(interactive() && requireNamespace("changepoint")){
+if(requireNamespace("changepoint")){
   tdir <- tempfile()
   dir.create(tdir)
   git2r::clone("https://github.com/tdhock/binsegRcpp", tdir)
@@ -70,6 +70,6 @@ if(interactive() && requireNamespace("changepoint")){
   plot(refs.best)
 }
 
-if(interactive())atime::atime_versions_remove("binsegRcpp")
+atime::atime_versions_remove("binsegRcpp")
 
 }

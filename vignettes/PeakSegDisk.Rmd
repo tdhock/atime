@@ -8,7 +8,6 @@ knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
 )
-options(width=100)
 ```
 
 The time complexity of the Dynamic Programming algorithm implemented
@@ -18,6 +17,7 @@ intervals for real Mono27ac data, and synthetic count data which are
 always increasing.
 
 ```{r}
+old.opt <- options(width=100)
 data(Mono27ac, package="PeakSegDisk", envir=environment())
 library(data.table)
 penalty <- 1e6
@@ -130,3 +130,7 @@ From the plot above it is clear that
 Exercise for the reader: to see the expected asymptotic time
 complexity in the last plot, re-do the previous analyses, increasing
 the penalty as well as the max data size N.
+
+```{r}
+options(old.opt)
+```
