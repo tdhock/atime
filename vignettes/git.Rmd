@@ -17,6 +17,7 @@ expression which uses different versions of a package. Let us begin by cloning
 the binsegRcpp package,
 
 ```{r}
+old.opt <- options(width=100)
 tdir <- tempfile()
 dir.create(tdir)
 git2r::clone("https://github.com/tdhock/binsegRcpp", tdir)
@@ -59,12 +60,13 @@ Here is an explanation of the arguments specified above:
   (names for labels, values for SHA version IDs).
 
 Note that in your code you don't have to create a helper function like
-`run.atime.versions` in the code above. We do it in the package example code,
-in order to run the different versions of the code using `callr::r`,
-in a separate R process. This allows us to avoid CRAN warnings about
-unexpected files found in the package check directory, by safely
-delete/remove the installed packages, after having run the example
-code. In the code block below we compute the timings,
+`run.atime.versions` in the code above. We do it in the package
+vignette code, in order to run the different versions of the code
+using `callr::r`, in a separate R process. This allows us to avoid
+CRAN warnings about unexpected files found in the package check
+directory, by safely delete/remove the installed packages, after
+having run the example code. In the code block below we compute the
+timings,
 
 ```{r}
 atime.ver.list <- if(requireNamespace("callr")){
@@ -191,4 +193,5 @@ Below we remove the installed packages, in order to avoid CRAN warnings:
 
 ```{r}
 atime::atime_versions_remove("binsegRcpp")
+options(old.opt)
 ```

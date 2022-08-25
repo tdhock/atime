@@ -40,39 +40,31 @@ pkg.edit.fun=pkg.edit.default, ...)}
 
 \donttest{
 
-if(requireNamespace("changepoint")){
-  tdir <- tempfile()
-  dir.create(tdir)
-  git2r::clone("https://github.com/tdhock/binsegRcpp", tdir)
-  expr.list <- atime::atime_versions_exprs(
-    pkg.path=tdir,
-    expr=binsegRcpp::binseg_normal(data.vec, max.segs),
-    cv="908b77c411bc7f4fcbcf53759245e738ae724c3e",
-    "rm unord map"="dcd0808f52b0b9858352106cc7852e36d7f5b15d",
-    "mvl_construct"="5942af606641428315b0e63c7da331c4cd44c091")
-  run.atime <- function(ELIST){
-    atime::atime(
+  if(requireNamespace("changepoint")){
+    tdir <- tempfile()
+    dir.create(tdir)
+    git2r::clone("https://github.com/tdhock/binsegRcpp", tdir)
+    expr.list <- atime::atime_versions_exprs(
+      pkg.path=tdir,
+      expr=binsegRcpp::binseg_normal(data.vec, max.segs),
+      cv="908b77c411bc7f4fcbcf53759245e738ae724c3e",
+      "rm unord map"="dcd0808f52b0b9858352106cc7852e36d7f5b15d",
+      "mvl_construct"="5942af606641428315b0e63c7da331c4cd44c091")
+    atime.list <- atime::atime(
       N=2^seq(2, 20),
       setup={
         max.segs <- as.integer(N/2)
         data.vec <- 1:N
       },
-      expr.list=ELIST,
+      expr.list=expr.list,
       changepoint=changepoint::cpt.mean(
         data.vec, penalty="Manual", pen.value=0, method="BinSeg",
         Q=max.segs-1))
+    refs.best <- atime::references_best(atime.list)
+    plot(refs.best)
   }
-  atime.list <- if(requireNamespace("callr")){
-    requireNamespace("atime")
-    callr::r(run.atime, list(expr.list))
-  }else{
-    run.atime(expr.list)
-  }
-  refs.best <- atime::references_best(atime.list)
-  plot(refs.best)
-}
 
-atime::atime_versions_remove("binsegRcpp")
+  atime::atime_versions_remove("binsegRcpp")
 
 }
 

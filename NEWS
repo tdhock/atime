@@ -1,3 +1,7 @@
+Changes in version 2022.8.25
+
+- remove callr in examples (keep in vignette).
+
 Changes in version 2022.8.24
 
 - CRAN suggestions.
