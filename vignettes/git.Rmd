@@ -27,10 +27,10 @@ Next, to satisfy the CRAN requirement that we can not install packages
 to the default library, we must create a library under /tmp,
 
 ```{r}
-lib.path <- tempfile()
-dir.create(lib.path)
-.libPaths(c(lib.path, .libPaths()))
-.libPaths()
+tmp.lib.path <- tempfile()
+dir.create(tmp.lib.path)
+lib.path.vec <- c(tmp.lib.path, .libPaths())
+.libPaths(lib.path.vec)
 ```
 
 Next, we define a helper function `run.atime` that will run
@@ -38,7 +38,8 @@ Next, we define a helper function `run.atime` that will run
 versions of a function:
 
 ```{r}
-run.atime.versions <- function(PKG.PATH){
+run.atime.versions <- function(PKG.PATH, LIB.PATH){
+  if(!missing(LIB.PATH)).libPaths(LIB.PATH)
   atime::atime_versions(
     pkg.path=PKG.PATH,
     N=2^seq(2, 20),
@@ -81,7 +82,7 @@ timings,
 ```{r}
 atime.ver.list <- if(requireNamespace("callr")){
   requireNamespace("atime")
-  callr::r(run.atime.versions, list(pkg.path))
+  callr::r(run.atime.versions, list(pkg.path, lib.path.vec))
 }else{
   run.atime.versions(pkg.path)
 }
@@ -169,7 +170,8 @@ The `expr.list` created above can be provided as an argument to the
 `atime` function as in the code below,
 
 ```{r}
-run.atime <- function(ELIST){
+run.atime <- function(ELIST, LIB.PATH){
+  if(!missing(LIB.PATH)).libPaths(LIB.PATH)
   atime::atime(
     N=2^seq(2, 20),
     setup={
@@ -180,7 +182,7 @@ run.atime <- function(ELIST){
 }
 atime.list <- if(requireNamespace("callr")){
   requireNamespace("atime")
-  callr::r(run.atime, list(expr.list))
+  callr::r(run.atime, list(expr.list, lib.path.vec))
 }else{
   run.atime(expr.list)
 }
