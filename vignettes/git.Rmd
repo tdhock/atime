@@ -13,8 +13,8 @@ knitr::opts_chunk$set(
 ## Basic usage, `atime_versions` function
 
 In this vignette we show you how to compare asymptotic timings of an R
-expression which uses different versions of a package. Let us begin by cloning
-the binsegRcpp package,
+expression which uses different versions of a package. Let us begin by
+cloning the binsegRcpp package,
 
 ```{r}
 old.opt <- options(width=100)
@@ -76,8 +76,10 @@ vignette code, in order to run the different versions of the code
 using `callr::r`, in a separate R process. This allows us to avoid
 CRAN warnings about unexpected files found in the package check
 directory, by safely delete/remove the installed packages, after
-having run the example code. In the code block below we compute the
-timings,
+having run the example code. For a more typical usage see
+`example(atime_versions, package="atime")`.
+
+In the code block below we compute the timings,
 
 ```{r}
 atime.ver.list <- if(requireNamespace("callr")){
@@ -186,6 +188,13 @@ atime.list <- if(requireNamespace("callr")){
 }else{
   run.atime(expr.list)
 }
+```
+
+Again note in the code above that we defined a helper function,
+`run.atime`, and used `callr::r`, to avoid CRAN issues. For a more
+typical usage see `example(atime_versions_exprs, package="atime")`.
+
+```{r}
 atime.list$measurements[, .(N, expr.name, median, kilobytes)]
 ```
 
