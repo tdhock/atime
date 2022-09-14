@@ -6,21 +6,32 @@
 ```{r setup, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
-  comment = "#>"
+  comment = "#>",
+  eval = FALSE
 )
 ```
 
 ## Basic usage, `atime_versions` function
 
 In this vignette we show you how to compare asymptotic timings of an R
-expression which uses different versions of a package. Let us begin by cloning
-the binsegRcpp package,
+expression which uses different versions of a package. Let us begin by
+cloning the binsegRcpp package,
 
 ```{r}
 old.opt <- options(width=100)
-tdir <- tempfile()
-dir.create(tdir)
-git2r::clone("https://github.com/tdhock/binsegRcpp", tdir)
+pkg.path <- tempfile()
+dir.create(pkg.path)
+git2r::clone("https://github.com/tdhock/binsegRcpp", pkg.path)
+```
+
+Next, to satisfy the CRAN requirement that we can not install packages
+to the default library, we must create a library under /tmp,
+
+```{r}
+tmp.lib.path <- tempfile()
+dir.create(tmp.lib.path)
+lib.path.vec <- c(tmp.lib.path, .libPaths())
+.libPaths(lib.path.vec)
 ```
 
 Next, we define a helper function `run.atime` that will run
@@ -28,9 +39,10 @@ Next, we define a helper function `run.atime` that will run
 versions of a function:
 
 ```{r}
-run.atime.versions <- function(TDIR){
+run.atime.versions <- function(PKG.PATH, LIB.PATH){
+  if(!missing(LIB.PATH)).libPaths(LIB.PATH)
   atime::atime_versions(
-    pkg.path=TDIR,
+    pkg.path=PKG.PATH,
     N=2^seq(2, 20),
     setup={
       max.segs <- as.integer(N/2)
@@ -65,15 +77,17 @@ vignette code, in order to run the different versions of the code
 using `callr::r`, in a separate R process. This allows us to avoid
 CRAN warnings about unexpected files found in the package check
 directory, by safely delete/remove the installed packages, after
-having run the example code. In the code block below we compute the
-timings,
+having run the example code. For a more typical usage see
+`example(atime_versions, package="atime")`.
+
+In the code block below we compute the timings,
 
 ```{r}
 atime.ver.list <- if(requireNamespace("callr")){
   requireNamespace("atime")
-  callr::r(run.atime.versions, list(tdir))
+  callr::r(run.atime.versions, list(pkg.path, lib.path.vec))
 }else{
-  run.atime.versions(tdir)
+  run.atime.versions(pkg.path)
 }
 names(atime.ver.list$measurements)
 atime.ver.list$measurements[, .(N, expr.name, min, median, max, kilobytes)]
@@ -136,7 +150,7 @@ code below:
 
 ```{r}
 (ver.list <- atime::atime_versions_exprs(
-  pkg.path=tdir,
+  pkg.path=pkg.path,
   expr=binsegRcpp::binseg_normal(data.vec, max.segs),
   cv="908b77c411bc7f4fcbcf53759245e738ae724c3e",
   "rm unord map"="dcd0808f52b0b9858352106cc7852e36d7f5b15d",
@@ -159,7 +173,8 @@ The `expr.list` created above can be provided as an argument to the
 `atime` function as in the code below,
 
 ```{r}
-run.atime <- function(ELIST){
+run.atime <- function(ELIST, LIB.PATH){
+  if(!missing(LIB.PATH)).libPaths(LIB.PATH)
   atime::atime(
     N=2^seq(2, 20),
     setup={
@@ -170,10 +185,17 @@ run.atime <- function(ELIST){
 }
 atime.list <- if(requireNamespace("callr")){
   requireNamespace("atime")
-  callr::r(run.atime, list(expr.list))
+  callr::r(run.atime, list(expr.list, lib.path.vec))
 }else{
   run.atime(expr.list)
 }
+```
+
+Again note in the code above that we defined a helper function,
+`run.atime`, and used `callr::r`, to avoid CRAN issues. For a more
+typical usage see `example(atime_versions_exprs, package="atime")`.
+
+```{r}
 atime.list$measurements[, .(N, expr.name, median, kilobytes)]
 ```
 
