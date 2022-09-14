@@ -1,6 +1,6 @@
 Changes in version 2022.9.8
 
-- git vignette uses .libPaths under /tmp, for CRAN.
+- git vignette uses eval=F, .libPaths under /tmp, for CRAN.
 - try() in binseg and cum_median vignettes, for CRAN.
 
 Changes in version 2022.8.25
