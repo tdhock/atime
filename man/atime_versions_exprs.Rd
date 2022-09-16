@@ -38,7 +38,7 @@ pkg.edit.fun=pkg.edit.default, ...)}
 
 \examples{
 
-\donttest{
+if(FALSE){
 
   if(requireNamespace("changepoint")){
     tdir <- tempfile()

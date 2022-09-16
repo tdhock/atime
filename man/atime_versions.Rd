@@ -42,7 +42,7 @@ pkg.edit.fun=pkg.edit.default, results=TRUE,
 
 \examples{
 
-\donttest{
+if(FALSE){
 
   tdir <- tempfile()
   dir.create(tdir)
