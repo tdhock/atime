@@ -120,4 +120,30 @@ if(require(ggplot2)){
   }
 }
 
+## Example 3: combine inside or outside for loop.
+atime.list <- atime::atime(
+  N=as.integer(10^seq(0, 5), by=0.25),
+  setup={
+    Nrow <- 1e3
+    DF <- data.frame(
+      x1 = rep(c("c","d"), l=Nrow),
+      x2 = rep(c("x","y"), l=Nrow),
+      x3 = rep(c("a","b"), l=Nrow))
+  },
+  inside={
+    big.frame <- data.frame()
+    for(table.i in 1:N){
+      big.frame <- rbind(big.frame, DF)
+    }
+  },
+  outside={
+    big.frame.list <- list()
+    for(table.i in 1:N){
+      big.frame.list[[table.i]] <- DF
+    }
+    do.call(rbind, big.frame.list)
+  }
+)
+plot(atime.list)
+
 }
