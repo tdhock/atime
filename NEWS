@@ -1,3 +1,7 @@
+Changes in version 2022.9.16
+
+- if(FALSE) in atime_versions*.Rd examples, for CRAN.
+
 Changes in version 2022.9.8
 
 - git vignette uses eval=F, .libPaths under /tmp, for CRAN.
