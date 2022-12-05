@@ -16,116 +16,74 @@ expression which uses different versions of the `data.table` package,
 which we clone from github using the code below,
 
 ```{r}
-tdir <- tempfile()
-dir.create(tdir)
-git2r::clone("https://github.com/Rdatatable/data.table", tdir)
-```
-
-After cloning the git repo, we give the repo path as the `pkg.path`
-argument to `atime_versions` in the code below. We also need the
-following arguments:
-
-* `N` is the sequence of data sizes,
-* `setup` is an expression that will be evaluated for every data size,
-  prior to measuring time/memory,
-* `expr` is an expression that will be evaluated for all of the
-  different git commit versions. It must call a function from the
-  cloned package, using double or triple colon prefix (the package
-  named before the colons will be replaced by a new package name that
-  uses the commit SHA hash). Below we use `data.table:::[.data.table`,
-  which will become something like
-  `data.table.3fa8b20435d33b3d4b5c26fd9b0ac14c10b98800:::[.data.table`
-  for each of the different package versions.
-
-In the code below we also use
-
-* `results=FALSE` to save memory (in the case there is no need to
-  store the result of evaluating `expr` for each package version).
-* `pkg.edit.fun` to specify how the package must be edited so that it
-  can install and load using a version-specific package name
-  `PKG.SHA`. It is not necessary to specify `pkg.edit.fun` for typical
-  packages (no compiled code, or Rcpp), but `data.table` is an
-  interesting example use case for `pkg.edit.fun` since it specifies a
-  custom shared object file name in `Makevars`, and it has some custom
-  version checking code in `onLoad.R`.
-
-The other arguments in the code below have names which identify the
-different versions of the code, and values which are commit SHA
-hashes. The particular commits chosen below were recommended by [git
-bisect](https://git-scm.com/docs/git-bisect), and the expressions were
-adapted from issue
-[#5424](https://github.com/Rdatatable/data.table/pull/5424).
-
-```{r}
-run.atime <- function(TDIR){
-  atime::atime_versions(
-    pkg.path=TDIR,
-    pkg.edit.fun=function(old.Package, new.Package, sha, new.pkg.path){
-      pkg_find_replace <- function(glob, FIND, REPLACE){
-        atime::glob_find_replace(file.path(new.pkg.path, glob), FIND, REPLACE)
-      }
-      Package_regex <- gsub(".", "_?", old.Package, fixed=TRUE)
-      R_init_pkg <- paste0("R_init_", Package_regex)
-      Package_ <- gsub(".", "_", old.Package, fixed=TRUE)
-      new.Package_ <- paste0(Package_, "_", sha)
-      pkg_find_replace(
-        "DESCRIPTION", 
-        paste0("Package:\\s+", old.Package),
-        paste("Package:", new.Package))
-      pkg_find_replace(
-        file.path("src","Makevars.*in"),
-        Package_regex,
-        new.Package_)
-      pkg_find_replace(
-        file.path("R", "onLoad.R"),
-        Package_regex,
-        new.Package_)
-      pkg_find_replace(
-        file.path("R", "onLoad.R"),
-        sprintf('packageVersion\\("%s"\\)', old.Package),
-        sprintf('packageVersion\\("%s"\\)', new.Package))
-      pkg_find_replace(
-        file.path("src", "init.c"),
-        R_init_pkg,
-        paste0("R_init_", new.Package_))
-      pkg_find_replace(
-        "NAMESPACE",
-        sprintf('useDynLib\\("?%s"?', Package_regex),
-        paste0('useDynLib(', new.Package_))
-    },
-    N = 10^seq(3, 8),
-    setup={
-      n <- N/100
-      set.seed(1L)
-      dt <- data.table(
-        g = sample(seq_len(n), N, TRUE),
-        x = runif(N),
-        key = "g")
-    },
-    expr={
-      dt_mod <- copy(dt)
-      data.table:::`[.data.table`(dt_mod, , N := .N, by = g)
-    },
-    results = FALSE,
-    verbose = TRUE,
-    "news item tweak"="be2f72e6f5c90622fe72e1c315ca05769a9dc854",
-    "simplify duplication in memrecycle"="e793f53466d99f86e70fc2611b708ae8c601a451",
-    "1.14.0 on CRAN. Bump to 1.14.1"="263b53e50241914a22f7ba6a139b52162c9d7927",
-    "1.14.3 dev master"="c4a2085e35689a108d67dacb2f8261e4964d7e12")
+if(FALSE){
+  atime::atime_versions_remove("data.table")
 }
-atime.list <- if(requireNamespace("callr")){
-  requireNamespace("atime")
-  callr::r(run.atime, list(tdir))
-}else{
-  run.atime(tdir)
+pkg.edit.fun <- function(old.Package, new.Package, sha, new.pkg.path){
+  pkg_find_replace <- function(glob, FIND, REPLACE){
+    atime::glob_find_replace(file.path(new.pkg.path, glob), FIND, REPLACE)
+  }
+  Package_regex <- gsub(".", "_?", old.Package, fixed=TRUE)
+  R_init_pkg <- paste0("R_init_", Package_regex)
+  Package_ <- gsub(".", "_", old.Package, fixed=TRUE)
+  new.Package_ <- paste0(Package_, "_", sha)
+  pkg_find_replace(
+    "DESCRIPTION", 
+    paste0("Package:\\s+", old.Package),
+    paste("Package:", new.Package))
+  pkg_find_replace(
+    file.path("src","Makevars.*in"),
+    Package_regex,
+    new.Package_)
+  pkg_find_replace(
+    file.path("R", "onLoad.R"),
+    Package_regex,
+    new.Package_)
+  pkg_find_replace(
+    file.path("R", "cedta.R"),
+    'nsname=="data.table"',
+    'nsname==packageName()')
+  pkg_find_replace(
+    file.path("R", "onLoad.R"),
+    sprintf('packageVersion\\("%s"\\)', old.Package),
+    sprintf('packageVersion\\("%s"\\)', new.Package))
+  pkg_find_replace(
+    file.path("src", "init.c"),
+    R_init_pkg,
+    paste0("R_init_", new.Package_))
+  pkg_find_replace(
+    "NAMESPACE",
+    sprintf('useDynLib\\("?%s"?', Package_regex),
+    paste0('useDynLib(', new.Package_))
 }
 ```
 
-The results can be plotted using the code below,
+## no aggregation, no missing cells in result
 
 ```{r}
+atime.list <- atime::atime_versions(
+  pkg.path="~/R/data.table",
+  pkg.edit.fun=pkg.edit.fun,
+  N = 10^seq(1, 7),
+  setup={
+    divisor=5
+    x=seq(0,N-1)
+    i=x %/% divisor
+    j=x %% divisor
+    DT=data.table::data.table(x,i,j)
+  },
+  expr={
+    data.table::dcast(DT, i ~ j, value.var="x")
+  },
+  results = FALSE,
+  verbose = TRUE,
+  seconds.limit=1,
+  times=10,
+  INTEGER.before.loop="6a93cb1218c94c650dfe3d1ac5d572c9469c5c91",
+  INTEGER.in.loop="50553069b636b15cdcf15741e7e00de999b2a36a",
+  master.1.14.7="cb8aeff9453acec878e5ab8515cda0d302c943eb",
+  release.1.14.6="3e5d038ee4a800104b665ac39392ceed46b1189d")
 best.list <- atime::references_best(atime.list)
-both.dt <- best.list$meas
 if(require(ggplot2)){
   hline.df <- with(atime.list, data.frame(seconds.limit, unit="seconds"))
   gg <- ggplot()+
@@ -144,33 +102,145 @@ if(require(ggplot2)){
       alpha=0.5)+
     scale_x_log10()+
     scale_y_log10("median line, min/max band")
-  if(require(directlabels)){
+  gg.out <- if(require(directlabels)){
     gg+
       directlabels::geom_dl(aes(
         N, empirical, color=expr.name, label=expr.name),
         method="right.polygons",
         data=best.list$meas)+
       theme(legend.position="none")+
-      coord_cartesian(xlim=c(1e3,1e10))
+      coord_cartesian(xlim=c(1e3,1e8))
   }else{
     gg
   }
+  png("~/R/pr5549-no-agg-no-missing.png", width=7, height=7, units="in", res=100)
+  print(gg.out)
+  dev.off()
 }
 ```
 
-The figure above shows that there are significant differences between
-the timings of the commits. 
-
-* commits labeled news item tweak and 1.14.0 on CRAN are fast (relatively
-  small computation time),
-* commits labeled 1.14.3 dev master and simplify duplication in
-  memrecycle are slow (relatively large computation time).
-* since "simplify" occured immediately after "news," we can
-  conclude that there is something in that commit which is responsible
-  for the slowdown, https://github.com/Rdatatable/data.table/issues/5371
-
-Below we remove the installed packages,
+## no aggregation, 50\% missing cells in result
 
 ```{r}
-atime::atime_versions_remove("data.table")
+atime.list <- atime::atime_versions(
+  pkg.path="~/R/data.table",
+  pkg.edit.fun=pkg.edit.fun,
+  N = 10^seq(1, 7),
+  setup={
+    divisor=5
+    x=seq(0,N-1)
+    i=x %/% divisor
+    j=x %% divisor
+    set.seed(1)
+    DT=data.table::data.table(x,i,j)[sample(.N, .N/2)]
+  },
+  expr={
+    data.table::dcast(DT, i ~ j, value.var="x")
+  },
+  results = FALSE,
+  verbose = TRUE,
+  seconds.limit=1,
+  times=10,
+  INTEGER.before.loop="6a93cb1218c94c650dfe3d1ac5d572c9469c5c91",
+  INTEGER.in.loop="50553069b636b15cdcf15741e7e00de999b2a36a",
+  master.1.14.7="cb8aeff9453acec878e5ab8515cda0d302c943eb",
+  release.1.14.6="3e5d038ee4a800104b665ac39392ceed46b1189d")
+best.list <- atime::references_best(atime.list)
+if(require(ggplot2)){
+  hline.df <- with(atime.list, data.frame(seconds.limit, unit="seconds"))
+  gg <- ggplot()+
+    theme_bw()+
+    facet_grid(unit ~ ., scales="free")+
+    geom_hline(aes(
+      yintercept=seconds.limit),
+      color="grey",
+      data=hline.df)+
+    geom_line(aes(
+      N, empirical, color=expr.name),
+      data=best.list$meas)+
+    geom_ribbon(aes(
+      N, ymin=min, ymax=max, fill=expr.name),
+      data=best.list$meas[unit=="seconds"],
+      alpha=0.5)+
+    scale_x_log10()+
+    scale_y_log10("median line, min/max band")
+  gg.out <- if(require(directlabels)){
+    gg+
+      directlabels::geom_dl(aes(
+        N, empirical, color=expr.name, label=expr.name),
+        method="right.polygons",
+        data=best.list$meas)+
+      theme(legend.position="none")+
+      coord_cartesian(xlim=c(1e3,1e8))
+  }else{
+    gg
+  }
+  png("~/R/pr5549-no-agg-half-missing.png", width=7, height=7, units="in", res=100)
+  print(gg.out)
+  dev.off()
+}
 ```
+
+## min aggregation
+
+```{r}
+atime.list <- atime::atime_versions(
+  pkg.path="~/R/data.table",
+  pkg.edit.fun=pkg.edit.fun,
+  N = 10^seq(1, 7),
+  setup={
+    divisor=5
+    x=seq(0,N-1)
+    i=x %/% divisor
+    grp = floor(i/2)
+    j=x %% divisor
+    set.seed(1)
+    DT=data.table::data.table(x,i,j,grp)
+  },
+  expr={
+    data.table::dcast(DT, grp ~ j, list(min, length), value.var="x")
+  },
+  results = FALSE,
+  verbose = TRUE,
+  seconds.limit=1,
+  times=10,
+  INTEGER.before.loop="6a93cb1218c94c650dfe3d1ac5d572c9469c5c91",
+  INTEGER.in.loop="50553069b636b15cdcf15741e7e00de999b2a36a",
+  master.1.14.7="cb8aeff9453acec878e5ab8515cda0d302c943eb",
+  release.1.14.6="3e5d038ee4a800104b665ac39392ceed46b1189d")
+best.list <- atime::references_best(atime.list)
+if(require(ggplot2)){
+  hline.df <- with(atime.list, data.frame(seconds.limit, unit="seconds"))
+  gg <- ggplot()+
+    theme_bw()+
+    facet_grid(unit ~ ., scales="free")+
+    geom_hline(aes(
+      yintercept=seconds.limit),
+      color="grey",
+      data=hline.df)+
+    geom_line(aes(
+      N, empirical, color=expr.name),
+      data=best.list$meas)+
+    geom_ribbon(aes(
+      N, ymin=min, ymax=max, fill=expr.name),
+      data=best.list$meas[unit=="seconds"],
+      alpha=0.5)+
+    scale_x_log10()+
+    scale_y_log10("median line, min/max band")
+  gg.out <- if(require(directlabels)){
+    gg+
+      directlabels::geom_dl(aes(
+        N, empirical, color=expr.name, label=expr.name),
+        method="right.polygons",
+        data=best.list$meas)+
+      theme(legend.position="none")+
+      coord_cartesian(xlim=c(1e3,1e8))
+  }else{
+    gg
+  }
+  png("~/R/pr5549-min-agg.png", width=7, height=7, units="in", res=100)
+  print(gg.out)
+  dev.off()
+}
+```
+
