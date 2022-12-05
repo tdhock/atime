@@ -19,6 +19,9 @@ which we clone from github using the code below,
 if(FALSE){
   atime::atime_versions_remove("data.table")
 }
+pkg.path <- tempfile()
+dir.create(pkg.path)
+git2r::clone("https://github.com/Rdatatable/data.table", pkg.path)
 pkg.edit.fun <- function(old.Package, new.Package, sha, new.pkg.path){
   pkg_find_replace <- function(glob, FIND, REPLACE){
     atime::glob_find_replace(file.path(new.pkg.path, glob), FIND, REPLACE)
@@ -62,7 +65,7 @@ pkg.edit.fun <- function(old.Package, new.Package, sha, new.pkg.path){
 
 ```{r}
 atime.list <- atime::atime_versions(
-  pkg.path="~/R/data.table",
+  pkg.path=pkg.path,
   pkg.edit.fun=pkg.edit.fun,
   N = 10^seq(1, 7),
   setup={
@@ -123,7 +126,7 @@ if(require(ggplot2)){
 
 ```{r}
 atime.list <- atime::atime_versions(
-  pkg.path="~/R/data.table",
+  pkg.path=pkg.path,
   pkg.edit.fun=pkg.edit.fun,
   N = 10^seq(1, 7),
   setup={
@@ -185,7 +188,7 @@ if(require(ggplot2)){
 
 ```{r}
 atime.list <- atime::atime_versions(
-  pkg.path="~/R/data.table",
+  pkg.path=pkg.path,
   pkg.edit.fun=pkg.edit.fun,
   N = 10^seq(1, 7),
   setup={
