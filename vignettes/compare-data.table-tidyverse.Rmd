@@ -18,7 +18,7 @@ memory) of common operations using `data.table` and tidyverse functions.
 
 ```{r}
 library(data.table)
-is.toby <- system("whoami", intern=TRUE) %in% c("tdhock", "th798")
+is.toby <- system("whoami", intern=TRUE) %in% c("tdhock", "nau\\th798")
 seconds.limit <- if(is.toby)1 else 0.01
 aplot <- function(atime.list, my.title, xmax, xlab){
   best.list <- atime::references_best(atime.list)
