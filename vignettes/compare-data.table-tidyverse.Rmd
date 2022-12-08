@@ -1,0 +1,150 @@
+<!--
+%\VignetteEngine{knitr::knitr}
+%\VignetteIndexEntry{Comparing data.table with tidyverse}
+-->
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  eval = FALSE
+)
+```
+
+In this vignette we compare computational requirements (time and
+memory) of common operations using `data.table` and tidyverse functions.
+
+## Setup
+```{r}
+library(data.table)
+aplot <- function(atime.list, my.title, xmax, xlab){
+  best.list <- atime::references_best(atime.list)
+  both.dt <- best.list$meas
+  if(require(ggplot2)){
+    hline.df <- with(atime.list, data.frame(seconds.limit, unit="seconds"))
+    gg <- ggplot()+
+      ggtitle(my.title)+
+      theme_bw()+
+      facet_grid(unit ~ ., scales="free")+
+      geom_hline(aes(
+        yintercept=seconds.limit),
+        color="grey",
+        data=hline.df)+
+      geom_line(aes(
+        N, empirical, color=expr.name),
+        data=best.list$meas)+
+      geom_ribbon(aes(
+        N, ymin=min, ymax=max, fill=expr.name),
+        data=best.list$meas[unit=="seconds"],
+        alpha=0.5)+
+      scale_x_log10(xlab)+
+      scale_y_log10("median line, min/max band")
+    if(require(directlabels)){
+      gg+
+        directlabels::geom_dl(aes(
+          N, empirical, color=expr.name, label=expr.name),
+          method="right.polygons",
+          data=best.list$meas)+
+        theme(legend.position="none")+
+        coord_cartesian(xlim=c(NA,xmax))
+    }else{
+      gg
+    }
+  }
+}
+```
+
+
+## Writing CSV
+
+```{r}
+atime.list <- atime::atime(
+  N=10^seq(1, 7),
+  setup={
+    N.cols <- 10
+    set.seed(1)
+    mat <- matrix(rnorm(N*N.cols), N, N.cols)
+    name.list <- list()
+    for(fun in c("fwrite", "write_csv", "write.csv")){
+      name.list[[fun]] <- file.path(
+        tempdir(), sprintf("10_real_cols_%s_%d.csv", fun, N))
+    }
+    dt <- data.table(mat)
+  },
+  seconds.limit = 0.1,
+  "utils::write.csv"=utils::write.csv(dt, name.list$write.csv),
+  "data.table::fwrite"=data.table::fwrite(dt, name.list$fwrite),
+  "readr::write_csv"=readr::write_csv(dt, name.list$write_csv))
+aplot(atime.list, "Write CSV with 10 random normal real columns", 1e7, "Number of rows")
+```
+
+```{r}
+atime.list <- atime::atime(
+  N=10^seq(1, 7),
+  setup={
+    N.cols <- 10
+    set.seed(1)
+    mat <- matrix("data", N, N.cols)
+    name.list <- list()
+    for(fun in c("fwrite", "write_csv", "write.csv")){
+      name.list[[fun]] <- file.path(
+        tempdir(), sprintf("10_chr_cols_%s_%d.csv", fun, N))
+    }
+    dt <- data.table(mat)
+  },
+  seconds.limit = 0.1,
+  "utils::write.csv"=utils::write.csv(dt, name.list$write.csv),
+  "data.table::fwrite"=data.table::fwrite(dt, name.list$fwrite),
+  "readr::write_csv"=readr::write_csv(dt, name.list$write_csv))
+aplot(atime.list, "Write CSV with 10 character columns", 1e7, "Number of rows")
+```
+
+```{r}
+atime.list <- atime::atime(
+  N=10^seq(1, 7),
+  setup={
+    N.rows <- 10
+    set.seed(1)
+    mat <- matrix(rnorm(N.rows*N), N.rows, N)
+    name.list <- list()
+    for(fun in c("fwrite", "write_csv", "write.csv")){
+      name.list[[fun]] <- file.path(
+        tempdir(), sprintf("10_real_rows_%s_%d.csv", fun, N))
+    }
+    dt <- data.table(mat)
+  },
+  seconds.limit = 0.1,
+  "utils::write.csv"=utils::write.csv(dt, name.list$write.csv),
+  "data.table::fwrite"=data.table::fwrite(dt, name.list$fwrite),
+  "readr::write_csv"=readr::write_csv(dt, name.list$write_csv))
+aplot(atime.list, "Write CSV with 10 random normal real rows", 1e7, "Number of columns")
+```
+
+```{r}
+atime.list <- atime::atime(
+  N=10^seq(1, 7),
+  setup={
+    N.rows <- 10
+    set.seed(1)
+    mat <- matrix("data", N.rows, N)
+    name.list <- list()
+    for(fun in c("fwrite", "write_csv", "write.csv")){
+      name.list[[fun]] <- file.path(
+        tempdir(), sprintf("10_chr_cols_%s_%d.csv", fun, N))
+    }
+    dt <- data.table(mat)
+  },
+  seconds.limit = 0.1,
+  "utils::write.csv"=utils::write.csv(dt, name.list$write.csv),
+  "data.table::fwrite"=data.table::fwrite(dt, name.list$fwrite),
+  "readr::write_csv"=readr::write_csv(dt, name.list$write_csv))
+aplot(atime.list, "Write CSV with 10 character rows", 1e7, "Number of columns")
+```
+
+The comparisons above show significant advantages for `data.table` for
+writing CSV data with a large number of columns:
+
+* asymptotically less memory 
+* constant factors less time
+
+## Reading CSV

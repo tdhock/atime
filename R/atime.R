@@ -18,7 +18,7 @@ atime <- function(N, setup, expr.list=NULL, times=10, seconds.limit=0.01, verbos
         expr <- elist[[expr.name]]
         m.list[[expr.name]] <- if(results){
           substitute(
-            result.list[[NAME]] <- EXPR,
+            result.list[NAME] <- list(EXPR),
             list(NAME=expr.name, EXPR=expr))
         }else{
           expr
@@ -27,8 +27,10 @@ atime <- function(N, setup, expr.list=NULL, times=10, seconds.limit=0.01, verbos
       m.call <- as.call(m.list)
       N.df <- eval(m.call, N.env)
       N.stats <- data.table(N=N.value, expr.name=not.done.yet, N.df)
-      N.stats[, kilobytes := as.numeric(mem_alloc)/1024]
-      N.stats[, `:=`(mem_alloc=NULL, total_time=NULL, expression=NULL)]
+      N.stats[, `:=`(
+        kilobytes=as.numeric(mem_alloc)/1024,
+        result=NULL,
+        mem_alloc=NULL, total_time=NULL, expression=NULL)]
       summary.funs <- list(
         median=median, min=min,
         q25=function(x)quantile(x,0.25),
@@ -38,7 +40,7 @@ atime <- function(N, setup, expr.list=NULL, times=10, seconds.limit=0.01, verbos
         N.stats[[fun.name]] <- sapply(N.df[["time"]], summary.funs[[fun.name]])
       }
       if(results){
-        N.stats$result <- N.env$result.list
+        N.stats$result[] <- N.env$result.list
       }
       done.pkgs <- N.stats[median > seconds.limit, paste(expr.name)]
       done.vec[done.pkgs] <- TRUE
