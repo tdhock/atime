@@ -15,8 +15,11 @@ In this vignette we compare computational requirements (time and
 memory) of common operations using `data.table` and tidyverse functions.
 
 ## Setup
+
 ```{r}
 library(data.table)
+is.toby <- system("whoami", intern=TRUE) %in% c("tdhock", "th798")
+seconds.limit <- if(is.toby)1 else 0.01
 aplot <- function(atime.list, my.title, xmax, xlab){
   best.list <- atime::references_best(atime.list)
   both.dt <- best.list$meas
@@ -71,7 +74,8 @@ atime.list <- atime::atime(
     }
     dt <- data.table(mat)
   },
-  seconds.limit = 0.1,
+  seconds.limit = seconds.limit,
+  results=FALSE,
   "utils::write.csv"=utils::write.csv(dt, name.list$write.csv),
   "data.table::fwrite"=data.table::fwrite(dt, name.list$fwrite),
   "readr::write_csv"=readr::write_csv(dt, name.list$write_csv))
@@ -83,7 +87,6 @@ atime.list <- atime::atime(
   N=10^seq(1, 7),
   setup={
     N.cols <- 10
-    set.seed(1)
     mat <- matrix("data", N, N.cols)
     name.list <- list()
     for(fun in c("fwrite", "write_csv", "write.csv")){
@@ -92,7 +95,8 @@ atime.list <- atime::atime(
     }
     dt <- data.table(mat)
   },
-  seconds.limit = 0.1,
+  seconds.limit = seconds.limit,
+  results=FALSE,
   "utils::write.csv"=utils::write.csv(dt, name.list$write.csv),
   "data.table::fwrite"=data.table::fwrite(dt, name.list$fwrite),
   "readr::write_csv"=readr::write_csv(dt, name.list$write_csv))
@@ -113,7 +117,8 @@ atime.list <- atime::atime(
     }
     dt <- data.table(mat)
   },
-  seconds.limit = 0.1,
+  seconds.limit = seconds.limit,
+  results=FALSE,
   "utils::write.csv"=utils::write.csv(dt, name.list$write.csv),
   "data.table::fwrite"=data.table::fwrite(dt, name.list$fwrite),
   "readr::write_csv"=readr::write_csv(dt, name.list$write_csv))
@@ -125,16 +130,16 @@ atime.list <- atime::atime(
   N=10^seq(1, 7),
   setup={
     N.rows <- 10
-    set.seed(1)
     mat <- matrix("data", N.rows, N)
     name.list <- list()
     for(fun in c("fwrite", "write_csv", "write.csv")){
       name.list[[fun]] <- file.path(
-        tempdir(), sprintf("10_chr_cols_%s_%d.csv", fun, N))
+        tempdir(), sprintf("10_chr_rows_%s_%d.csv", fun, N))
     }
     dt <- data.table(mat)
   },
-  seconds.limit = 0.1,
+  seconds.limit = seconds.limit,
+  results=FALSE,
   "utils::write.csv"=utils::write.csv(dt, name.list$write.csv),
   "data.table::fwrite"=data.table::fwrite(dt, name.list$fwrite),
   "readr::write_csv"=readr::write_csv(dt, name.list$write_csv))
@@ -148,3 +153,79 @@ writing CSV data with a large number of columns:
 * constant factors less time
 
 ## Reading CSV
+
+```{r}
+csv.dt <- nc::capture_first_vec(
+  Sys.glob(file.path(tempdir(), "10_real_cols_fwrite*")),
+  N.rows="[0-9]+", as.integer,
+  ".csv")[order(N.rows)]
+atime.list <- atime::atime(
+  N=csv.dt$N.rows,
+  setup={
+    f.csv <- file.path(tempdir(), sprintf("10_real_cols_fwrite_%d.csv", N))
+  },
+  seconds.limit = seconds.limit,
+  results=FALSE,
+  "utils::read.csv"=utils::read.csv(f.csv),
+  "data.table::fread"=data.table::fread(f.csv),
+  "readr::read_csv"=readr::read_csv(f.csv))
+aplot(atime.list, "Read CSV with 10 real columns", 1e7, "Number of rows")
+```
+
+```{r}
+csv.dt <- nc::capture_first_vec(
+  Sys.glob(file.path(tempdir(), "10_chr_cols_fwrite*")),
+  N.rows="[0-9]+", as.integer,
+  ".csv")[order(N.rows)]
+atime.list <- atime::atime(
+  N=csv.dt$N.rows,
+  setup={
+    f.csv <- file.path(tempdir(), sprintf("10_chr_cols_fwrite_%d.csv", N))
+  },
+  seconds.limit = seconds.limit,
+  results=FALSE,
+  "utils::read.csv"=utils::read.csv(f.csv),
+  "data.table::fread"=data.table::fread(f.csv),
+  "readr::read_csv"=readr::read_csv(f.csv))
+aplot(atime.list, "Read CSV with 10 character columns", 1e7, "Number of rows")
+```
+
+```{r}
+csv.dt <- nc::capture_first_vec(
+  Sys.glob(file.path(tempdir(), "10_real_rows_fwrite*")),
+  N.cols="[0-9]+", as.integer,
+  ".csv")[order(N.cols)]
+atime.list <- atime::atime(
+  N=csv.dt$N.cols,
+  setup={
+    f.csv <- file.path(tempdir(), sprintf("10_real_rows_fwrite_%d.csv", N))
+  },
+  seconds.limit = seconds.limit,
+  results=FALSE,
+  "utils::read.csv"=utils::read.csv(f.csv),
+  "data.table::fread"=data.table::fread(f.csv),
+  "readr::read_csv"=readr::read_csv(f.csv))
+aplot(atime.list, "Read CSV with 10 real rows", 1e7, "Number of columns")
+```
+
+```{r}
+csv.dt <- nc::capture_first_vec(
+  Sys.glob(file.path(tempdir(), "10_chr_rows_fwrite*")),
+  N.cols="[0-9]+", as.integer,
+  ".csv")[order(N.cols)]
+atime.list <- atime::atime(
+  N=csv.dt$N.cols,
+  setup={
+    f.csv <- file.path(tempdir(), sprintf("10_chr_rows_fwrite_%d.csv", N))
+  },
+  seconds.limit = seconds.limit,
+  results=FALSE,
+  "utils::read.csv"=utils::read.csv(f.csv),
+  "data.table::fread"=data.table::fread(f.csv),
+  "readr::read_csv"=readr::read_csv(f.csv))
+aplot(atime.list, "Read CSV with 10 character rows", 1e7, "Number of columns")
+```
+
+From the comparisons above it can be seen that fread uses much less
+time and memory than the alternatives.
+
