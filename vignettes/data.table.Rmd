@@ -90,6 +90,7 @@ best.list <- atime::references_best(atime.list)
 if(require(ggplot2)){
   hline.df <- with(atime.list, data.frame(seconds.limit, unit="seconds"))
   gg <- ggplot()+
+    ggtitle("no aggregation, no missing cells in result")+
     theme_bw()+
     facet_grid(unit ~ ., scales="free")+
     geom_hline(aes(
@@ -152,6 +153,7 @@ best.list <- atime::references_best(atime.list)
 if(require(ggplot2)){
   hline.df <- with(atime.list, data.frame(seconds.limit, unit="seconds"))
   gg <- ggplot()+
+    ggtitle("no aggregation, 50% missing cells in result")+
     theme_bw()+
     facet_grid(unit ~ ., scales="free")+
     geom_hline(aes(
@@ -215,6 +217,7 @@ best.list <- atime::references_best(atime.list)
 if(require(ggplot2)){
   hline.df <- with(atime.list, data.frame(seconds.limit, unit="seconds"))
   gg <- ggplot()+
+    ggtitle("fun.aggregate=min")+
     theme_bw()+
     facet_grid(unit ~ ., scales="free")+
     geom_hline(aes(
