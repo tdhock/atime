@@ -229,3 +229,92 @@ aplot(atime.list, "Read CSV with 10 character rows", 1e7, "Number of columns")
 From the comparisons above it can be seen that fread uses much less
 time and memory than the alternatives.
 
+## Summarize by group
+
+The next problem is motivated by a common operation in machine
+learning code: computing the mean/SD over cross-validation folds.
+
+```{r}
+atime.list <- atime::atime(
+  N=as.integer(10^seq(0, 7, by=0.5)),
+  setup={
+    n.folds <- 10
+    loss.dt <- data.table(
+      name="loss", 
+      fold=rep(1:n.folds, each=2*N),
+      loss=rnorm(2*N*n.folds),
+      set=rep(c("subtrain","validation"),each=N),
+      epoch=1:N,
+      key=c("set","epoch","fold"))
+  },
+  results=FALSE,
+  seconds.limit=seconds.limit,
+  "base::by"={
+    base::by(
+      loss.dt$loss, 
+      list(loss.dt$set, loss.dt$epoch), 
+      function(values)c(
+        loss_length=length(values),
+        loss_mean=mean(values), 
+        loss_sd=sd(values)))
+  },
+  "base::tapply"={
+    base::tapply(
+      loss.dt$loss, 
+      list(loss.dt$set, loss.dt$epoch), 
+      function(values)c(
+        loss_length=length(values),
+        loss_mean=mean(values), 
+        loss_sd=sd(values)))
+  }, 
+  "stats::aggregate"={
+    res <- stats::aggregate(
+      loss ~ set + epoch, 
+      loss.dt, 
+      function(values)list(c(
+        loss_length=length(values),
+        loss_mean=mean(values), 
+        loss_sd=sd(values))))
+    data.frame(
+      subset(res, select=-loss), 
+      do.call(rbind, res$loss))
+  },
+  "data.table::`[.data.table`"={
+    loss.dt[, .(
+      loss_length=.N,
+      loss_mean=mean(loss),
+      loss_sd=sd(loss)
+    ), by=.(set, epoch)]
+  }, 
+  "data.table::dcast"={
+    dcast(
+      loss.dt,
+      set + epoch ~ .,
+      list(length, mean, sd),
+      value.var="loss")
+  }, 
+  "dplyr::summarise"={
+    loss.dt |> 
+      dplyr::group_by(set, epoch) |> 
+      dplyr::summarise(
+        loss_length=length(loss),
+        loss_mean=mean(loss), 
+        loss_sd=sd(loss))
+  }, 
+  "tidyr::pivot_wider"={
+    loss.dt |> 
+      tidyr::pivot_wider(
+        id_cols = c(set,epoch), 
+        values_from=loss, 
+        names_from=name, 
+        values_fn=function(values)list(c(
+          loss_length=length(values),
+          loss_mean=mean(values), 
+          loss_sd=sd(values)))) |> 
+      tidyr::unnest_wider(loss)
+  })
+aplot(atime.list, "Length, Mean, SD over 10 folds for each epoch and set", 1e7, "Number of epochs")
+```
+
+The comparison above shows that using `[.data.table` is by far the
+fastest way to compute the Mean and SD over folds.
