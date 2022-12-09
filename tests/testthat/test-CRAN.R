@@ -54,3 +54,13 @@ test_that("results returned when some results are NULL and others not", {
   expect_is(atime.list$mea$result, "list")
 })
 
+test_that("sensible error when duplicate names", {
+  expect_error({
+    atime::atime(
+      N=10^seq(-3, 0),
+      setup={},
+      fast=1,
+      expr.list = list(fast=2))
+  }, "each expression must have a unique name, problems: fast")
+})
+

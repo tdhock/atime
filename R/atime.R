@@ -4,6 +4,11 @@ atime <- function(N, setup, expr.list=NULL, times=10, seconds.limit=0.01, verbos
   mc.args <- as.list(match.call()[-1])
   dots.list <- mc.args[!names(mc.args) %in% formal.names]
   elist <- c(expr.list, dots.list)
+  name.tab <- table(names(elist))
+  bad.names <- names(name.tab)[name.tab>1]
+  if(length(bad.names))stop(
+    "each expression must have a unique name, problems: ", 
+    paste(bad.names, collapse=", "))
   done.vec <- structure(rep(FALSE, length(elist)), names=names(elist))
   metric.dt.list <- list()
   for(N.value in N){
