@@ -318,3 +318,114 @@ aplot(atime.list, "Length, Mean, SD over 10 folds for each epoch and set", 1e7, 
 
 The comparison above shows that using `[.data.table` is by far the
 fastest way to compute the Mean and SD over folds.
+
+## Join / merge
+
+```{r}
+i <- 1:100
+DT <- CJ(letter=LETTERS, i)[, x := rnorm(.N)]
+setkey(DT, letter, i)
+DF <- data.frame(DT)
+rownames(DF) <- with(DF, paste0(letter, i))
+atime.list <- atime::atime(
+  N=10^seq(1, 7),
+  setup={
+    select.dt <- data.table(
+      letter=sample(LETTERS, N, replace=TRUE),
+      i=sample(i, N, replace=TRUE),
+      y=rnorm(N))
+    setkey(select.dt, letter, i)
+    select.df <- data.frame(select.dt)
+  },
+  "data.table::`[.data.table`"=DT[select.dt, x+y],
+  "data.table::merge"=data.table::merge.data.table(DT,select.dt)[, x+y],
+  "base::merge.data.frame"=with(base::merge.data.frame(DF, select.df, by=c('letter','i')), x+y),
+  "[+paste0"=with(select.df, DF[paste0(letter,i),"x"]+y),
+  "dplyr::inner_join"=with(dplyr::inner_join(DT, select.dt, by=c('letter','i')), x+y))
+aplot(atime.list, "Join and sum", 1e7, "Size of output vector")
+```
+
+## Join and summarize
+
+```{r}
+i <- 1:100
+DT <- CJ(letter=LETTERS, i)[, x := rnorm(.N)]
+setkey(DT, letter, i)
+DF <- data.frame(DT)
+rownames(DF) <- with(DF, paste0(letter, i))
+atime.list <- atime::atime(
+  N=as.integer(10^seq(0, 7, by=0.5)),
+  setup={
+    select.dt <- data.table(
+      letter=sample(LETTERS, N, replace=TRUE),
+      i=sample(i, N, replace=TRUE),
+      y=rnorm(N))
+    setkey(select.dt, letter, i)
+    select.df <- data.frame(select.dt)
+  },
+  seconds.limit=seconds.limit,
+  "data.table::`[.data.table`"={
+    select.dt[DT, .(rows=.N, diff=mean(y)-x), by=.EACHI, nomatch=0L]
+  },
+  "base::by"={
+    do.call(rbind, base::by(
+      select.df, 
+      with(select.df, paste0(letter, i)), 
+      function(sdf){
+        srow <- sdf[1,]
+        data.frame(
+          srow[,c("letter","i")],
+          rows=nrow(sdf), 
+          diff=mean(sdf$y)-DF[with(srow,paste0(letter,i)),"x"])
+      }))
+  }, 
+  "dplyr::inner_join"={
+    dplyr::inner_join(DT, select.dt, by=c('letter','i')) |> 
+      dplyr::group_by(letter, i) |> 
+      dplyr::summarise(rows=length(y), diff=mean(y)-x[1])
+  })
+aplot(atime.list, "Join and summarize", 1e10, "Rows in join table")
+```
+
+## Rolling join
+
+This situation arises when you want to compute the average in a
+regular grid over some irregularly spaced numbers.
+
+```{r}
+digits <- 1
+grid.space <- 10^(-digits)
+offset <- grid.space/2
+atime.list <- atime::atime(
+  N=10^seq(1:7),
+  setup={
+    set.seed(1)
+    X <- runif(N)
+    Y <- 10*X+rnorm(N)
+  }, 
+  "data.table::[roll=nearest"={
+    irreg.dt <- data.table(X, Y, key="X")
+    grid <- seq(offset, 1-offset, by=grid.space)
+    reg.dt <- data.table(grid, X=grid, key="X")
+    join.dt <- reg.dt[irreg.dt, roll="nearest"]
+    join.dt[, .(Y.N=.N, Y.mean=mean(Y), Y.sd=sd(Y)), by=grid]
+  },
+  "round,data.table"={
+    data.table(
+      grid=round(X+offset, digits=digits)-offset,
+      Y
+    )[, .(
+      Y.N=.N, 
+      Y.mean=mean(Y), 
+      Y.sd=sd(Y)
+    ), by=grid]
+  },
+  "round,aggregate"={
+    grid <- round(X+offset, digits=digits)-offset
+    aggregate(Y ~ grid, FUN=function(values)c(
+      N=length(values),
+      mean=mean(values),
+      sd=sd(values)))
+  })
+aplot(atime.list, "Join and summarize", 1e10, "Rows in join table")
+```
