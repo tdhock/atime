@@ -18,7 +18,7 @@ memory) of common operations using `data.table` and tidyverse functions.
 
 ```{r}
 library(data.table)
-##Sys.getenv("SLURM_JOB_CPUS_PER_NODE", 1)
+as.integer(Sys.getenv("SLURM_JOB_CPUS_PER_NODE", "1"))
 max.threads <- parallel::detectCores()
 is.toby <- system("whoami", intern=TRUE) %in% c("tdhock", "nau\\th798")
 ##seconds.limit <- if(is.toby)1 else 0.01
@@ -96,6 +96,23 @@ atime.list <- atime_write(function(N, N.cols=10){
   set.seed(1)
   matrix(rnorm(N*N.cols), N, N.cols)
 }, "10_real_cols_%s_%d.csv")
+c("#543005",#dark brown
+  "#8C510A", "#BF812D", "#DFC27D", "#F6E8C3",
+  "#F5F5F5",  #white
+  "#C7EAE5", "#80CDC1", "#35978F", "#01665E",
+  "#003C30")#dark teal
+expr.colors <- c(
+  "#67001F",#dark red
+  "#B2182B", "#D6604D", "#F4A582", "#FDDBC7",
+  "#FFFFFF", #white
+  "#E0E0E0", "#BABABA", "#878787", "#4D4D4D",
+  "#1A1A1A",
+  "utils::write.csv"="deepskyblue")#almost black
+names(expr.colors)[c(5,3,1)] <- paste0(
+  "data.table::fwrite\nTHREADS=",threads.vec)
+names(expr.colors)[c(7,9,11)] <- paste0(
+  "readr::write_csv\nTHREADS=",threads.vec)
+some.colors <- expr.colors[names(expr.colors)!=""]
 aplot(atime.list, "Write CSV with 10 random normal real columns", 1e7, "Number of rows")
 ```
 
