@@ -270,6 +270,7 @@ learning code: computing the mean/SD over cross-validation folds.
 atime::atime_grid(
   list(THREADS=threads.vec),
   "[.data.table"={
+    data.table::setDTthreads(THREADS)
     loss.dt[, .(
       loss_length=.N,
       loss_mean=mean(loss),

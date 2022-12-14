@@ -85,7 +85,7 @@ test_that("atime_grid two params, two exprs", {
 test_that("atime_grid error for THREADS not used", {
   expect_error({
     atime::atime_grid(
-      list(THREADS=threads.vec),
+      list(THREADS=1:3),
       "[.data.table"={
         loss.dt[, .(
           loss_length=.N,
@@ -94,4 +94,18 @@ test_that("atime_grid error for THREADS not used", {
         ), by=.(set, epoch)]
       })
   }, "each param should be present in each expr, problems: THREADS not in [.data.table", fixed=TRUE)
+})
+
+test_that("atime_grid ok when THREADS used", {
+  expr.list <- atime::atime_grid(
+    list(THREADS=1:3),
+    "[.data.table"={
+      data.table::setDTthreads(THREADS)
+      loss.dt[, .(
+        loss_length=.N,
+        loss_mean=mean(loss),
+        loss_sd=sd(loss)
+      ), by=.(set, epoch)]
+    })
+  expect_equal(length(expr.list), 3)
 })
