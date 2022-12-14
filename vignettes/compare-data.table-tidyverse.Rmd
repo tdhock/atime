@@ -64,50 +64,38 @@ aplot <- function(atime.list, my.title, xmax, xlab){
 ## Writing CSV
 
 ```{r}
-default.expr <- function(default, expr){
-  as.list(match.call()[-1])
-}
-expr.templates <- list(
-  "data.table::fwrite"=default.expr(NULL, {
+threads.vec <- unique(as.integer(c(1, max.threads/2, max.threads)))
+expr.list <- atime::atime_grid(
+  list(THREADS=threads.vec),
+  "data.table::fwrite"={
     data.table::setDTthreads(THREADS)
     data.table::fwrite(dt, name.list$fwrite, showProgress = FALSE)
-  }),
-  "readr::write_csv"=default.expr(readr::readr_threads(), {
+  }, 
+  "readr::write_csv"={
     readr::write_csv(
       dt, name.list$write_csv, progress = FALSE, num_threads = THREADS)
-  }))
-expr.list <- list()
-for(fun.name in names(expr.templates)){
-  template.list <- expr.templates[[fun.name]]
-  threads.list <- list(
-    "1"=1, 
-    max=max.threads, 
-    default=template.list$default)
-  for(threads.name in names(threads.list)){
-    threads.env <- list(THREADS=threads.list[[threads.name]])
-    expr.name <- paste0(fun.name, "\nthreads=", threads.name)
-    expr.list[[expr.name]] <- eval(substitute(
-      substitute(EXPR, threads.env), 
-      list(EXPR=template.list$expr)))
-  }
+  })
+atime_write <- function(make.mat.fun, fmt){
+  atime::atime(
+    N=10^seq(1, 7),
+    setup={
+      mat <- make.mat.fun(N)
+      name.list <- list()
+      for(fun in c("fwrite", "write_csv", "write.csv")){
+        name.list[[fun]] <- file.path(
+          tempdir(), sprintf(fmt, fun, N))
+      }
+      dt <- data.table(mat)
+    },
+    seconds.limit = seconds.limit,
+    results=FALSE,
+    expr.list=expr.list,
+    "utils::write.csv"=utils::write.csv(dt, name.list$write.csv))
 }
-atime.list <- atime::atime(
-  N=10^seq(1, 7),
-  setup={
-    N.cols <- 10
-    set.seed(1)
-    mat <- matrix(rnorm(N*N.cols), N, N.cols)
-    name.list <- list()
-    for(fun in c("fwrite", "write_csv", "write.csv")){
-      name.list[[fun]] <- file.path(
-        tempdir(), sprintf("10_real_cols_%s_%d.csv", fun, N))
-    }
-    dt <- data.table(mat)
-  },
-  seconds.limit = seconds.limit,
-  results=FALSE,
-  expr.list=expr.list,
-  "utils::write.csv"=utils::write.csv(dt, name.list$write.csv))
+atime.list <- atime_write(function(N, N.cols=10){
+  set.seed(1)
+  matrix(rnorm(N*N.cols), N, N.cols)
+}, "10_real_cols_%s_%d.csv")
 aplot(atime.list, "Write CSV with 10 random normal real columns", 1e7, "Number of rows")
 ```
 
@@ -184,6 +172,11 @@ writing CSV data with a large number of columns:
 ## Reading CSV
 
 ```{r}
+atime::atime_grid(
+  list(THREADS=threads.vec, LAZY=c(TRUE, FALSE)),
+  "readr::read_csv"={
+    readr::read_csv(f.csv, num_threads = THREADS, lazy = LAZY)
+  })
 csv.dt <- nc::capture_first_vec(
   Sys.glob(file.path(tempdir(), "10_real_cols_fwrite*")),
   N.rows="[0-9]+", as.integer,

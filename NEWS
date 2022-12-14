@@ -1,3 +1,7 @@
+Changes in version 2022.12.14
+
+- new functions atime_grid and atime_exprs.
+
 Changes in version 2022.9.16
 
 - if(FALSE) in atime_versions*.Rd examples, for CRAN.

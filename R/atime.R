@@ -1,3 +1,60 @@
+atime_grid <- function
+(param.list,
+  arg.name.fun=function(name.vec, value.vec){
+    paste0(name.vec,"=",value.vec)
+  },
+  expr.name.fun=function(expr.str, arg.vec){
+    paste0(expr.str,"\n",arg.vec)
+  }, 
+  collapse=",",
+  ...){
+  if(!is.list(param.list)){
+    stop("param.list must be a named list of parameters")
+  }
+  if(is.null(names(param.list)) || any(names(param.list)=="")){
+    stop("each element of param.list must be named")
+  }
+  param.dt <- do.call(CJ, param.list)
+  formal.names <- names(formals())
+  mc.args <- as.list(match.call()[-1])
+  elist <- mc.args[!names(mc.args) %in% formal.names]
+  if(is.null(names(elist)) || any(names(elist)=="")){
+    stop("each expression in ... must be named")
+  }
+  value.mat <- sapply(param.dt, paste)
+  name.value.mat <- matrix(
+    arg.name.fun(colnames(value.mat)[col(value.mat)], value.mat),
+    nrow(value.mat), ncol(value.mat))
+  name.value.vec <- apply(name.value.mat, 1, paste, collapse=collapse)
+  out.list <- list()
+  for(expr.name in names(elist)){
+    for(param.i in 1:nrow(param.dt)){
+      out.name <- expr.name.fun(expr.name, name.value.vec[[param.i]])
+      out.list[[out.name]] <- eval(substitute(
+        substitute(EXPR, param.dt[param.i]), 
+        list(EXPR=elist[[expr.name]])))
+    }
+  }
+  out.list
+}
+
+atime_exprs <- function(expr, env.list=NULL, ...){
+  formal.names <- names(formals())
+  mc.args <- as.list(match.call()[-1])
+  dots.list <- mc.args[!names(mc.args) %in% formal.names]
+  elist <- c(env.list, dots.list)
+  if(is.null(names(elist)) || any(names(elist)=="")){
+    stop("each element of env.list and ... must be named")
+  }
+  out.list <- list()
+  for(expr.name in names(elist)){
+    out.list[[expr.name]] <- substitute(
+      substitute(EXPR, elist[[expr.name]]),
+      list(EXPR=expr))
+  }
+  out.list
+}
+
 atime <- function(N, setup, expr.list=NULL, times=10, seconds.limit=0.01, verbose=FALSE, results=TRUE, ...){
   kilobytes <- mem_alloc <- NULL
   formal.names <- names(formals())
