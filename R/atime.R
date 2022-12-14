@@ -1,5 +1,5 @@
 atime_grid <- function
-(param.list,
+(param.list=list(),
   arg.name.fun=function(name.vec, value.vec){
     paste0(name.vec,"=",value.vec)
   },
@@ -11,16 +11,17 @@ atime_grid <- function
   if(!is.list(param.list)){
     stop("param.list must be a named list of parameters")
   }
-  if(is.null(names(param.list)) || any(names(param.list)=="")){
+  if(any(names(param.list)=="")){
     stop("each element of param.list must be named")
   }
-  param.dt <- do.call(CJ, param.list)
   formal.names <- names(formals())
   mc.args <- as.list(match.call()[-1])
   elist <- mc.args[!names(mc.args) %in% formal.names]
   if(is.null(names(elist)) || any(names(elist)=="")){
     stop("each expression in ... must be named")
   }
+  if(length(param.list)==0)return(elist)
+  param.dt <- do.call(CJ, param.list)
   ## check to make sure each param is in each expr.
   one.param.list <- as.list(param.dt[1])
   problem.list <- list()

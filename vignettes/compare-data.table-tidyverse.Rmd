@@ -7,7 +7,9 @@
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
-  eval = FALSE
+  eval = TRUE,
+  fig.width=14,
+  fig.height=14
 )
 ```
 
@@ -23,7 +25,7 @@ max.threads <- parallel::detectCores()
 threads.vec <- unique(as.integer(c(1, max.threads/2, max.threads)))
 is.toby <- system("whoami", intern=TRUE) %in% c("tdhock", "nau\\th798")
 ##seconds.limit <- if(is.toby)1 else 0.01
-seconds.limit <- 0.01
+seconds.limit <- 1
 aplot <- function(atime.list, my.title, xmax, max.seconds, xlab, color.vec=NULL){
   best.list <- atime::references_best(atime.list)
   both.dt <- best.list$meas
@@ -105,7 +107,7 @@ atime_write <- function(make.mat.fun, fmt){
 }
 if(FALSE){
   RColorBrewer::display.brewer.all()
-  dput(RColorBrewer::brewer.pal(Inf, "PRGn"))
+  dput(RColorBrewer::brewer.pal(Inf, "Set2"))
   dput(RColorBrewer::brewer.pal(Inf, "RdGy"))
 }
 PRGn <- c(
@@ -267,7 +269,7 @@ The next problem is motivated by a common operation in machine
 learning code: computing the mean/SD over cross-validation folds.
 
 ```{r}
-atime::atime_grid(
+summary.expr.list <- c(atime::atime_grid(
   list(THREADS=threads.vec),
   "[.data.table"={
     data.table::setDTthreads(THREADS)
@@ -276,8 +278,75 @@ atime::atime_grid(
       loss_mean=mean(loss),
       loss_sd=sd(loss)
     ), by=.(set, epoch)]
-  })
-atime.list <- atime::atime(
+  }),
+  atime::atime_grid(
+    "base::by"={
+      base::by(
+        loss.dt$loss, 
+        list(loss.dt$set, loss.dt$epoch), 
+        function(values)c(
+          loss_length=length(values),
+          loss_mean=mean(values), 
+          loss_sd=sd(values)))
+    },
+    "base::tapply"={
+      base::tapply(
+        loss.dt$loss, 
+        list(loss.dt$set, loss.dt$epoch), 
+        function(values)c(
+          loss_length=length(values),
+          loss_mean=mean(values), 
+          loss_sd=sd(values)))
+    }, 
+    "stats::aggregate"={
+      res <- stats::aggregate(
+        loss ~ set + epoch, 
+        loss.dt, 
+        function(values)list(c(
+          loss_length=length(values),
+          loss_mean=mean(values), 
+          loss_sd=sd(values))))
+      data.frame(
+        subset(res, select=-loss), 
+        do.call(rbind, res$loss))
+    },
+    "data.table::dcast"={
+      dcast(
+        loss.dt,
+        set + epoch ~ .,
+        list(length, mean, sd),
+        value.var="loss")
+    }, 
+    "dplyr::summarise"={
+      loss.dt |> 
+      dplyr::group_by(set, epoch) |> 
+      dplyr::summarise(
+        loss_length=length(loss),
+        loss_mean=mean(loss), 
+        loss_sd=sd(loss))
+    }, 
+    "tidyr::pivot_wider"={
+      loss.dt |> 
+      tidyr::pivot_wider(
+        id_cols = c(set,epoch), 
+        values_from=loss, 
+        names_from=name, 
+        values_fn=function(values)list(c(
+          loss_length=length(values),
+          loss_mean=mean(values), 
+          loss_sd=sd(values)))) |> 
+          tidyr::unnest_wider(loss)
+    }))
+summary.colors <- c(
+  "#D6604D",
+  "#B2182B",
+  "#67001F",#dark red
+  "#66C2A5", "#FC8D62", "#8DA0CB", "#E78AC3", "#A6D854", "#FFD92F", 
+  "#E5C494", "#B3B3B3")
+names(summary.colors)[1:length(summary.expr.list)] <- names(summary.expr.list)
+summary.colors <- summary.colors[names(summary.colors)!=""]
+options(dplyr.summarise.inform=FALSE)
+summary.atime.list <- atime::atime(
   N=as.integer(10^seq(0, 7, by=0.5)),
   setup={
     n.folds <- 10
@@ -291,64 +360,8 @@ atime.list <- atime::atime(
   },
   results=FALSE,
   seconds.limit=seconds.limit,
-  "base::by"={
-    base::by(
-      loss.dt$loss, 
-      list(loss.dt$set, loss.dt$epoch), 
-      function(values)c(
-        loss_length=length(values),
-        loss_mean=mean(values), 
-        loss_sd=sd(values)))
-  },
-  "base::tapply"={
-    base::tapply(
-      loss.dt$loss, 
-      list(loss.dt$set, loss.dt$epoch), 
-      function(values)c(
-        loss_length=length(values),
-        loss_mean=mean(values), 
-        loss_sd=sd(values)))
-  }, 
-  "stats::aggregate"={
-    res <- stats::aggregate(
-      loss ~ set + epoch, 
-      loss.dt, 
-      function(values)list(c(
-        loss_length=length(values),
-        loss_mean=mean(values), 
-        loss_sd=sd(values))))
-    data.frame(
-      subset(res, select=-loss), 
-      do.call(rbind, res$loss))
-  },
-  "data.table::dcast"={
-    dcast(
-      loss.dt,
-      set + epoch ~ .,
-      list(length, mean, sd),
-      value.var="loss")
-  }, 
-  "dplyr::summarise"={
-    loss.dt |> 
-      dplyr::group_by(set, epoch) |> 
-      dplyr::summarise(
-        loss_length=length(loss),
-        loss_mean=mean(loss), 
-        loss_sd=sd(loss))
-  }, 
-  "tidyr::pivot_wider"={
-    loss.dt |> 
-      tidyr::pivot_wider(
-        id_cols = c(set,epoch), 
-        values_from=loss, 
-        names_from=name, 
-        values_fn=function(values)list(c(
-          loss_length=length(values),
-          loss_mean=mean(values), 
-          loss_sd=sd(values)))) |> 
-      tidyr::unnest_wider(loss)
-  })
-aplot(atime.list, "Length, Mean, SD over 10 folds for each epoch and set", 1e7, "Number of epochs")
+  expr.list=summary.expr.list)
+aplot(summary.atime.list, "Length, Mean, SD over 10 folds for each epoch and set", 1e7, 1e1, "Number of epochs", summary.colors)
 ```
 
 The comparison above shows that using `[.data.table` is by far the
@@ -377,7 +390,7 @@ atime.list <- atime::atime(
   "base::merge.data.frame"=with(base::merge.data.frame(DF, select.df, by=c('letter','i')), x+y),
   "[+paste0"=with(select.df, DF[paste0(letter,i),"x"]+y),
   "dplyr::inner_join"=with(dplyr::inner_join(DT, select.dt, by=c('letter','i')), x+y))
-aplot(atime.list, "Join and sum", 1e7, "Size of output vector")
+aplot(atime.list, "Join and sum", 1e7, 1e1, "Size of output vector")
 ```
 
 ## Join and summarize
@@ -419,7 +432,7 @@ atime.list <- atime::atime(
       dplyr::group_by(letter, i) |> 
       dplyr::summarise(rows=length(y), diff=mean(y)-x[1])
   })
-aplot(atime.list, "Join and summarize", 1e10, "Rows in join table")
+aplot(atime.list, "Join and summarize", 1e10, 1e1, "Rows in join table")
 ```
 
 ## Rolling join
@@ -462,5 +475,5 @@ atime.list <- atime::atime(
       mean=mean(values),
       sd=sd(values)))
   })
-aplot(atime.list, "Join and summarize", 1e10, "Rows in join table")
+aplot(atime.list, "Join and summarize", 1e10, 1e1, "Rows in join table")
 ```
