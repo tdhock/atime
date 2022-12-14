@@ -18,8 +18,11 @@ memory) of common operations using `data.table` and tidyverse functions.
 
 ```{r}
 library(data.table)
+##Sys.getenv("SLURM_JOB_CPUS_PER_NODE", 1)
+max.threads <- parallel::detectCores()
 is.toby <- system("whoami", intern=TRUE) %in% c("tdhock", "nau\\th798")
-seconds.limit <- if(is.toby)1 else 0.01
+##seconds.limit <- if(is.toby)1 else 0.01
+seconds.limit <- 0.01
 aplot <- function(atime.list, my.title, xmax, xlab){
   best.list <- atime::references_best(atime.list)
   both.dt <- best.list$meas
@@ -61,6 +64,33 @@ aplot <- function(atime.list, my.title, xmax, xlab){
 ## Writing CSV
 
 ```{r}
+default.expr <- function(default, expr){
+  as.list(match.call()[-1])
+}
+expr.templates <- list(
+  "data.table::fwrite"=default.expr(NULL, {
+    data.table::setDTthreads(THREADS)
+    data.table::fwrite(dt, name.list$fwrite, showProgress = FALSE)
+  }),
+  "readr::write_csv"=default.expr(readr::readr_threads(), {
+    readr::write_csv(
+      dt, name.list$write_csv, progress = FALSE, num_threads = THREADS)
+  }))
+expr.list <- list()
+for(fun.name in names(expr.templates)){
+  template.list <- expr.templates[[fun.name]]
+  threads.list <- list(
+    "1"=1, 
+    max=max.threads, 
+    default=template.list$default)
+  for(threads.name in names(threads.list)){
+    threads.env <- list(THREADS=threads.list[[threads.name]])
+    expr.name <- paste0(fun.name, "\nthreads=", threads.name)
+    expr.list[[expr.name]] <- eval(substitute(
+      substitute(EXPR, threads.env), 
+      list(EXPR=template.list$expr)))
+  }
+}
 atime.list <- atime::atime(
   N=10^seq(1, 7),
   setup={
@@ -76,9 +106,8 @@ atime.list <- atime::atime(
   },
   seconds.limit = seconds.limit,
   results=FALSE,
-  "utils::write.csv"=utils::write.csv(dt, name.list$write.csv),
-  "data.table::fwrite"=data.table::fwrite(dt, name.list$fwrite),
-  "readr::write_csv"=readr::write_csv(dt, name.list$write_csv))
+  expr.list=expr.list,
+  "utils::write.csv"=utils::write.csv(dt, name.list$write.csv))
 aplot(atime.list, "Write CSV with 10 random normal real columns", 1e7, "Number of rows")
 ```
 
