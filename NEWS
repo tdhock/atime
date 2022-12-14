@@ -1,6 +1,6 @@
 Changes in version 2022.12.14
 
-- new functions atime_grid and atime_exprs.
+- new function atime_grid.
 
 Changes in version 2022.9.16
 

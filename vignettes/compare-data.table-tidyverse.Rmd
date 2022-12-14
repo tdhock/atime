@@ -20,17 +20,22 @@ memory) of common operations using `data.table` and tidyverse functions.
 library(data.table)
 as.integer(Sys.getenv("SLURM_JOB_CPUS_PER_NODE", "1"))
 max.threads <- parallel::detectCores()
+threads.vec <- unique(as.integer(c(1, max.threads/2, max.threads)))
 is.toby <- system("whoami", intern=TRUE) %in% c("tdhock", "nau\\th798")
 ##seconds.limit <- if(is.toby)1 else 0.01
 seconds.limit <- 0.01
-aplot <- function(atime.list, my.title, xmax, xlab){
+aplot <- function(atime.list, my.title, xmax, max.seconds, xlab, color.vec=NULL){
   best.list <- atime::references_best(atime.list)
   both.dt <- best.list$meas
+  blank.dt <- data.table(x=both.dt$N[1], y=max.seconds, unit="seconds")
   if(require(ggplot2)){
     hline.df <- with(atime.list, data.frame(seconds.limit, unit="seconds"))
     gg <- ggplot()+
       ggtitle(my.title)+
       theme_bw()+
+      geom_blank(aes(
+        x, y),
+        data=blank.dt)+
       facet_grid(unit ~ ., scales="free")+
       geom_hline(aes(
         yintercept=seconds.limit),
@@ -45,6 +50,11 @@ aplot <- function(atime.list, my.title, xmax, xlab){
         alpha=0.5)+
       scale_x_log10(xlab)+
       scale_y_log10("median line, min/max band")
+    if(!is.null(color.vec)){
+      gg <- gg+
+        scale_color_manual(values=color.vec)+
+        scale_fill_manual(values=color.vec)
+    }
     if(require(directlabels)){
       gg+
         directlabels::geom_dl(aes(
@@ -63,18 +73,10 @@ aplot <- function(atime.list, my.title, xmax, xlab){
 
 ## Writing CSV
 
+First we define some code which will be used in all of the writing
+benchmarks,
+
 ```{r}
-threads.vec <- unique(as.integer(c(1, max.threads/2, max.threads)))
-expr.list <- atime::atime_grid(
-  list(THREADS=threads.vec),
-  "data.table::fwrite"={
-    data.table::setDTthreads(THREADS)
-    data.table::fwrite(dt, name.list$fwrite, showProgress = FALSE)
-  }, 
-  "readr::write_csv"={
-    readr::write_csv(
-      dt, name.list$write_csv, progress = FALSE, num_threads = THREADS)
-  })
 atime_write <- function(make.mat.fun, fmt){
   atime::atime(
     N=10^seq(1, 7),
@@ -89,95 +91,86 @@ atime_write <- function(make.mat.fun, fmt){
     },
     seconds.limit = seconds.limit,
     results=FALSE,
-    expr.list=expr.list,
+    expr.list=atime::atime_grid(
+      list(THREADS=threads.vec),
+      "data.table::fwrite"={
+        data.table::setDTthreads(THREADS)
+        data.table::fwrite(dt, name.list$fwrite, showProgress = FALSE)
+      }, 
+      "readr::write_csv"={
+        readr::write_csv(
+          dt, name.list$write_csv, progress = FALSE, num_threads = THREADS)
+      }),
     "utils::write.csv"=utils::write.csv(dt, name.list$write.csv))
 }
-atime.list <- atime_write(function(N, N.cols=10){
-  set.seed(1)
-  matrix(rnorm(N*N.cols), N, N.cols)
-}, "10_real_cols_%s_%d.csv")
-c("#543005",#dark brown
-  "#8C510A", "#BF812D", "#DFC27D", "#F6E8C3",
-  "#F5F5F5",  #white
-  "#C7EAE5", "#80CDC1", "#35978F", "#01665E",
-  "#003C30")#dark teal
+if(FALSE){
+  RColorBrewer::display.brewer.all()
+  dput(RColorBrewer::brewer.pal(Inf, "PRGn"))
+  dput(RColorBrewer::brewer.pal(Inf, "RdGy"))
+}
+PRGn <- c(
+  "#40004B", "#762A83", "#9970AB", "#C2A5CF", "#E7D4E8",
+  "#F7F7F7", 
+  "#D9F0D3", "#A6DBA0", "#5AAE61", "#1B7837", "#00441B")
 expr.colors <- c(
   "#67001F",#dark red
   "#B2182B", "#D6604D", "#F4A582", "#FDDBC7",
-  "#FFFFFF", #white
+  "#FFFFFF",#white
   "#E0E0E0", "#BABABA", "#878787", "#4D4D4D",
-  "#1A1A1A",
-  "utils::write.csv"="deepskyblue")#almost black
-names(expr.colors)[c(5,3,1)] <- paste0(
-  "data.table::fwrite\nTHREADS=",threads.vec)
-names(expr.colors)[c(7,9,11)] <- paste0(
-  "readr::write_csv\nTHREADS=",threads.vec)
-some.colors <- expr.colors[names(expr.colors)!=""]
-aplot(atime.list, "Write CSV with 10 random normal real columns", 1e7, "Number of rows")+scale_color_manual(values=some.colors)+scale_fill_manual(values=some.colors)
+  "#1A1A1A",#almost black
+  "utils::write.csv"="deepskyblue")
+names(expr.colors)[c(3,2,1)] <- paste0(
+  "data.table::fwrite THREADS=",threads.vec)
+names(expr.colors)[c(9,10,11)] <- paste0(
+  "readr::write_csv THREADS=",threads.vec)
+write.colors <- expr.colors[names(expr.colors)!=""]
 ```
 
-```{r}
-atime.list <- atime::atime(
-  N=10^seq(1, 7),
-  setup={
-    N.cols <- 10
-    mat <- matrix("data", N, N.cols)
-    name.list <- list()
-    for(fun in c("fwrite", "write_csv", "write.csv")){
-      name.list[[fun]] <- file.path(
-        tempdir(), sprintf("10_chr_cols_%s_%d.csv", fun, N))
-    }
-    dt <- data.table(mat)
-  },
-  seconds.limit = seconds.limit,
-  results=FALSE,
-  "utils::write.csv"=utils::write.csv(dt, name.list$write.csv),
-  "data.table::fwrite"=data.table::fwrite(dt, name.list$fwrite),
-  "readr::write_csv"=readr::write_csv(dt, name.list$write_csv))
-aplot(atime.list, "Write CSV with 10 character columns", 1e7, "Number of rows")
-```
+The code below is for real numbers with a constant number of columns,
+and a variable number of rows.
 
 ```{r}
-atime.list <- atime::atime(
-  N=10^seq(1, 7),
-  setup={
-    N.rows <- 10
-    set.seed(1)
-    mat <- matrix(rnorm(N.rows*N), N.rows, N)
-    name.list <- list()
-    for(fun in c("fwrite", "write_csv", "write.csv")){
-      name.list[[fun]] <- file.path(
-        tempdir(), sprintf("10_real_rows_%s_%d.csv", fun, N))
-    }
-    dt <- data.table(mat)
-  },
-  seconds.limit = seconds.limit,
-  results=FALSE,
-  "utils::write.csv"=utils::write.csv(dt, name.list$write.csv),
-  "data.table::fwrite"=data.table::fwrite(dt, name.list$fwrite),
-  "readr::write_csv"=readr::write_csv(dt, name.list$write_csv))
-aplot(atime.list, "Write CSV with 10 random normal real rows", 1e7, "Number of columns")
+random_real <- function(N.rows, N.cols){
+  set.seed(1)
+  matrix(rnorm(N.rows*N.cols), N.rows, N.cols)
+}
+write.real.vary.rows <- atime_write(
+  function(N.rows, N.cols=10)random_real(N.rows, N.cols),
+  "10_real_cols_%s_%d.csv")
+aplot(write.real.vary.rows, "Write CSV with 10 random normal real columns", 1e7, 1e1, "Number of rows", write.colors)
 ```
 
+The code below writes real numbers with a constant number of rows, and
+a variable number of columns.
+
 ```{r}
-atime.list <- atime::atime(
-  N=10^seq(1, 7),
-  setup={
-    N.rows <- 10
-    mat <- matrix("data", N.rows, N)
-    name.list <- list()
-    for(fun in c("fwrite", "write_csv", "write.csv")){
-      name.list[[fun]] <- file.path(
-        tempdir(), sprintf("10_chr_rows_%s_%d.csv", fun, N))
-    }
-    dt <- data.table(mat)
-  },
-  seconds.limit = seconds.limit,
-  results=FALSE,
-  "utils::write.csv"=utils::write.csv(dt, name.list$write.csv),
-  "data.table::fwrite"=data.table::fwrite(dt, name.list$fwrite),
-  "readr::write_csv"=readr::write_csv(dt, name.list$write_csv))
-aplot(atime.list, "Write CSV with 10 character rows", 1e7, "Number of columns")
+write.real.vary.cols <- atime_write(
+  function(N.cols, N.rows=10)random_real(N.rows, N.cols),
+  "10_real_rows_%s_%d.csv")
+aplot(write.real.vary.cols, "Write CSV with 10 random normal real rows", 1e7, 1e1, "Number of columns", write.colors)
+```
+
+The code below is for character data with a constant number of
+columns, and a variable number of rows.
+
+```{r}
+chr_mat <- function(N.rows, N.cols){
+  matrix("'quoted data'", N.rows, N.cols)
+}
+write.chr.vary.rows <- atime_write(
+  function(N.rows,N.cols=10)chr_mat(N.rows, N.cols),
+  "10_chr_cols_%s_%d.csv")
+aplot(write.chr.vary.rows, "Write CSV with 10 character columns", 1e7, 1e1, "Number of rows", write.colors)
+```
+
+The code below is for character data with a constant number of
+rows, and a variable number of columns.
+
+```{r}
+write.chr.vary.cols <- atime_write(
+  function(N.cols, N.rows=10)chr_mat(N.rows, N.cols),
+  "10_chr_rows_%s_%d.csv")
+aplot(write.chr.vary.cols, "Write CSV with 10 character rows", 1e7, 1e1, "Number of columns", write.colors)
 ```
 
 The comparisons above show significant advantages for `data.table` for
@@ -188,81 +181,81 @@ writing CSV data with a large number of columns:
 
 ## Reading CSV
 
-```{r}
-atime::atime_grid(
-  list(THREADS=threads.vec, LAZY=c(TRUE, FALSE)),
-  "readr::read_csv"={
-    readr::read_csv(f.csv, num_threads = THREADS, lazy = LAZY)
-  })
-csv.dt <- nc::capture_first_vec(
-  Sys.glob(file.path(tempdir(), "10_real_cols_fwrite*")),
-  N.rows="[0-9]+", as.integer,
-  ".csv")[order(N.rows)]
-atime.list <- atime::atime(
-  N=csv.dt$N.rows,
-  setup={
-    f.csv <- file.path(tempdir(), sprintf("10_real_cols_fwrite_%d.csv", N))
-  },
-  seconds.limit = seconds.limit,
-  results=FALSE,
-  "utils::read.csv"=utils::read.csv(f.csv),
-  "data.table::fread"=data.table::fread(f.csv),
-  "readr::read_csv"=readr::read_csv(f.csv))
-aplot(atime.list, "Read CSV with 10 real columns", 1e7, "Number of rows")
-```
+First we define a function which we will use for all of the read
+benchmarks,
 
 ```{r}
-csv.dt <- nc::capture_first_vec(
-  Sys.glob(file.path(tempdir(), "10_chr_cols_fwrite*")),
-  N.rows="[0-9]+", as.integer,
-  ".csv")[order(N.rows)]
-atime.list <- atime::atime(
-  N=csv.dt$N.rows,
-  setup={
-    f.csv <- file.path(tempdir(), sprintf("10_chr_cols_fwrite_%d.csv", N))
-  },
-  seconds.limit = seconds.limit,
-  results=FALSE,
-  "utils::read.csv"=utils::read.csv(f.csv),
-  "data.table::fread"=data.table::fread(f.csv),
-  "readr::read_csv"=readr::read_csv(f.csv))
-aplot(atime.list, "Read CSV with 10 character columns", 1e7, "Number of rows")
+read.expr.list <- c(atime::atime_grid(
+  list(LAZY=c(TRUE, FALSE), THREADS=threads.vec),
+  "readr::read_csv"=readr::read_csv(
+    f.csv, num_threads = THREADS, lazy = LAZY,
+    show_col_types=FALSE, progress=FALSE)),
+  atime::atime_grid(
+    list(THREADS=threads.vec),
+    "data.table::fread"={
+      data.table::setDTthreads(THREADS)
+      data.table::fread(f.csv, showProgress=FALSE)
+    }),
+  "utils::read.csv"=quote(utils::read.csv(f.csv)))
+atime_read <- function(glob){  
+  fmt <- sub("[*]", "%d", glob)
+  csv.dt <- nc::capture_first_vec(
+    Sys.glob(file.path(tempdir(), glob)),
+    N="[0-9]+", as.integer,
+    ".csv")[order(N)]
+  atime::atime(
+    N=csv.dt$N,
+    setup={
+      f.csv <- file.path(tempdir(), sprintf(fmt, N))
+    },
+    seconds.limit = seconds.limit,
+    results=FALSE,
+    expr.list=read.expr.list)
+}
+PRGn <- c(
+  "#40004B", "#762A83", "#9970AB", "#C2A5CF", "#E7D4E8",#5
+  "#F7F7F7", #6
+  "#D9F0D3", "#A6DBA0", "#5AAE61", "#1B7837", "#00441B",#11
+  "#67001F",#dark red 12
+  "#B2182B", "#D6604D", "#F4A582", "#FDDBC7",
+  "#FFFFFF",#white 17
+  "#E0E0E0", "#BABABA", "#878787", "#4D4D4D",
+  "#1A1A1A",#almost black 22
+  "utils::write.csv"="deepskyblue")
+names(PRGn)[c(3,2,1,9,10,11,14,13,12,23)] <- names(read.expr.list)
+read.colors <- PRGn[names(PRGn)!=""]
 ```
 
-```{r}
-csv.dt <- nc::capture_first_vec(
-  Sys.glob(file.path(tempdir(), "10_real_rows_fwrite*")),
-  N.cols="[0-9]+", as.integer,
-  ".csv")[order(N.cols)]
-atime.list <- atime::atime(
-  N=csv.dt$N.cols,
-  setup={
-    f.csv <- file.path(tempdir(), sprintf("10_real_rows_fwrite_%d.csv", N))
-  },
-  seconds.limit = seconds.limit,
-  results=FALSE,
-  "utils::read.csv"=utils::read.csv(f.csv),
-  "data.table::fread"=data.table::fread(f.csv),
-  "readr::read_csv"=readr::read_csv(f.csv))
-aplot(atime.list, "Read CSV with 10 real rows", 1e7, "Number of columns")
-```
+Below we read real numbers with a constant number of columns, and a
+variable number of rows.
 
 ```{r}
-csv.dt <- nc::capture_first_vec(
-  Sys.glob(file.path(tempdir(), "10_chr_rows_fwrite*")),
-  N.cols="[0-9]+", as.integer,
-  ".csv")[order(N.cols)]
-atime.list <- atime::atime(
-  N=csv.dt$N.cols,
-  setup={
-    f.csv <- file.path(tempdir(), sprintf("10_chr_rows_fwrite_%d.csv", N))
-  },
-  seconds.limit = seconds.limit,
-  results=FALSE,
-  "utils::read.csv"=utils::read.csv(f.csv),
-  "data.table::fread"=data.table::fread(f.csv),
-  "readr::read_csv"=readr::read_csv(f.csv))
-aplot(atime.list, "Read CSV with 10 character rows", 1e7, "Number of columns")
+read.real.vary.rows <- atime_read("10_real_cols_fwrite_*.csv")
+aplot(read.real.vary.rows, "Read CSV with 10 real columns", 1e7, 1e1, "Number of rows", read.colors)
+```
+
+Below we read real numbers with a constant number of rows, and a
+variable number of columns.
+
+```{r}
+read.real.vary.cols <- atime_read("10_real_rows_fwrite_*.csv")
+aplot(read.real.vary.cols, "Read CSV with 10 real rows", 1e7, 1e1, "Number of columns", read.colors)
+```
+
+Below we read character data with a constant number of columns, and a
+variable number of rows.
+
+```{r}
+read.chr.vary.rows <- atime_read("10_chr_cols_fwrite_*.csv")
+aplot(read.chr.vary.rows, "Read CSV with 10 character columns", 1e7, 1e1, "Number of rows", read.colors)
+```
+
+Below we read character data with a constant number of rows, and a
+variable number of columns.
+
+```{r}
+read.chr.vary.cols <- atime_read("10_chr_rows_fwrite_*.csv")
+aplot(read.chr.vary.cols, "Read CSV with 10 character rows", 1e7, 1e1, "Number of columns", read.colors)
 ```
 
 From the comparisons above it can be seen that fread uses much less
@@ -274,6 +267,15 @@ The next problem is motivated by a common operation in machine
 learning code: computing the mean/SD over cross-validation folds.
 
 ```{r}
+atime::atime_grid(
+  list(THREADS=threads.vec),
+  "[.data.table"={
+    loss.dt[, .(
+      loss_length=.N,
+      loss_mean=mean(loss),
+      loss_sd=sd(loss)
+    ), by=.(set, epoch)]
+  })
 atime.list <- atime::atime(
   N=as.integer(10^seq(0, 7, by=0.5)),
   setup={
@@ -318,13 +320,6 @@ atime.list <- atime::atime(
       subset(res, select=-loss), 
       do.call(rbind, res$loss))
   },
-  "data.table::`[.data.table`"={
-    loss.dt[, .(
-      loss_length=.N,
-      loss_mean=mean(loss),
-      loss_sd=sd(loss)
-    ), by=.(set, epoch)]
-  }, 
   "data.table::dcast"={
     dcast(
       loss.dt,
