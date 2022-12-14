@@ -113,7 +113,7 @@ names(expr.colors)[c(5,3,1)] <- paste0(
 names(expr.colors)[c(7,9,11)] <- paste0(
   "readr::write_csv\nTHREADS=",threads.vec)
 some.colors <- expr.colors[names(expr.colors)!=""]
-aplot(atime.list, "Write CSV with 10 random normal real columns", 1e7, "Number of rows")
+aplot(atime.list, "Write CSV with 10 random normal real columns", 1e7, "Number of rows")+scale_color_manual(values=some.colors)+scale_fill_manual(values=some.colors)
 ```
 
 ```{r}
