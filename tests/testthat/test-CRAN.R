@@ -81,3 +81,17 @@ test_that("atime_grid two params, two exprs", {
     readr.prob=readr::read_csv(f.csv, num_threads=THREADS, lazy=LAZY))
   expect_equal(length(expr.list), 8)
 })
+
+test_that("atime_grid error for THREADS not used", {
+  expect_error({
+    atime::atime_grid(
+      list(THREADS=threads.vec),
+      "[.data.table"={
+        loss.dt[, .(
+          loss_length=.N,
+          loss_mean=mean(loss),
+          loss_sd=sd(loss)
+        ), by=.(set, epoch)]
+      })
+  }, "each param should be present in each expr, problems: THREADS not in [.data.table", fixed=TRUE)
+})

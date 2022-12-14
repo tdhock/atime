@@ -31,7 +31,7 @@ atime_grid <- function
       after.sub <- eval(substitute(
         substitute(EXPR, param.sub.list), 
         list(EXPR=before.sub)))
-      if(identical(before.sub, after.sub)){
+      if(before.sub == after.sub){
         problem.list[[paste(expr.name, param.name)]] <- paste(
           param.name, "not in", expr.name)
       }
