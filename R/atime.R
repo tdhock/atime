@@ -1,11 +1,7 @@
 atime_grid <- function
 (param.list=list(),
-  arg.name.fun=function(name.vec, value.vec){
-    paste0(name.vec,"=",value.vec)
-  },
-  expr.name.fun=function(expr.str, arg.vec){
-    paste0(expr.str," ",arg.vec)
-  }, 
+  name.value.sep="=",
+  expr.param.sep=" ",
   collapse=",",
   ...){
   if(!is.list(param.list)){
@@ -44,14 +40,16 @@ atime_grid <- function
       paste(problem.list, collapse=", "))
   }
   value.mat <- sapply(param.dt, paste)
+  name.vec <- colnames(value.mat)[col(value.mat)]
   name.value.mat <- matrix(
-    arg.name.fun(colnames(value.mat)[col(value.mat)], value.mat),
+    paste0(name.vec, name.value.sep, value.mat),
     nrow(value.mat), ncol(value.mat))
   name.value.vec <- apply(name.value.mat, 1, paste, collapse=collapse)
   out.list <- list()
   for(expr.name in names(elist)){
     for(row.i in 1:nrow(param.dt)){
-      out.name <- expr.name.fun(expr.name, name.value.vec[[row.i]])
+      param.name.value <- name.value.vec[[row.i]]
+      out.name <- paste0(expr.name, expr.param.sep, param.name.value)
       out.list[[out.name]] <- eval(substitute(
         substitute(EXPR, param.dt[row.i]), 
         list(EXPR=elist[[expr.name]])))
