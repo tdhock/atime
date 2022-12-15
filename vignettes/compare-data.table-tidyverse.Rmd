@@ -4,6 +4,7 @@
 -->
 
 ```{r setup, include = FALSE}
+time.begin <- Sys.time()
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
@@ -25,11 +26,12 @@ max.threads <- parallel::detectCores()
 threads.vec <- unique(as.integer(c(1, max.threads/2, max.threads)))
 is.toby <- system("whoami", intern=TRUE) %in% c("tdhock", "nau\\th798")
 ##seconds.limit <- if(is.toby)1 else 0.01
-seconds.limit <- 0.01
+seconds.limit <- 1
 aplot <- function(atime.list, my.title, xmax, max.seconds, xlab, color.vec=NULL){
+  out.rds <- paste0(gsub(" ", "_", my.title), ".rds")
+  saveRDS(atime.list, out.rds)
   best.list <- atime::references_best(atime.list)
-  both.dt <- best.list$meas
-  blank.dt <- data.table(x=both.dt$N[1], y=max.seconds, unit="seconds")
+  blank.dt <- data.table(x=best.list$meas$N[1], y=max.seconds, unit="seconds")
   if(require(ggplot2)){
     hline.df <- with(atime.list, data.frame(seconds.limit, unit="seconds"))
     gg <- ggplot()+
@@ -174,6 +176,65 @@ write.chr.vary.cols <- atime_write(
 aplot(write.chr.vary.cols, "Write CSV with 10 character rows", 1e9, 1e1, "Number of columns", write.colors)
 ```
 
+The figure above shows that `data.table::fwrite` clearly has a smaller
+slope (linear complexity in number of columns) than the other methods
+(quadratic complexity), as shown in the plot below, which includes
+best reference lines above and below each empirical measurement
+asymptote.
+
+```
+best.list <- atime::references_best(write.chr.vary.cols)
+one.thread <- function(DT)DT[grepl("utils|THREADS=1$", expr.name)]
+meas.dt <- one.thread(best.list$meas)
+ref.dt <- one.thread(best.list$ref)[each.sign.rank==1 & N >= 1e2]
+if(require(ggplot2)){
+  hline.df <- with(write.chr.vary.cols, data.frame(
+    seconds.limit, unit="seconds"))
+  gg <- ggplot()+
+    ggtitle("Write CSV with 10 character rows, asymtotic complexity")+
+    theme_bw()+
+    facet_grid(unit ~ ., scales="free")+
+    geom_hline(aes(
+      yintercept=seconds.limit),
+      color="grey",
+      data=hline.df)+
+    geom_line(aes(
+      N, reference, group=paste(expr.name, fun.name)),
+      linewidth=2,
+      data=ref.dt)+
+    geom_line(aes(
+      N, empirical, color=expr.name),
+      linewidth=1,
+      data=meas.dt)+
+    geom_ribbon(aes(
+      N, ymin=min, ymax=max, fill=expr.name),
+      data=meas.dt[unit=="seconds"],
+      alpha=0.5)+
+    scale_x_log10("N = Number of columns")+
+    scale_y_log10("median line, min/max band")+
+    scale_color_manual(values=write.colors)+
+    scale_fill_manual(values=write.colors)
+  if(require(directlabels)){
+    gg+
+      directlabels::geom_dl(aes(
+        N, reference,
+        label.group=paste(expr.name, fun.name),
+        label=fun.name),
+        method="left.polygons",
+        data=ref.dt)+
+      directlabels::geom_dl(aes(
+        N, empirical, color=expr.name, label=expr.name),
+        method="right.polygons",
+        data=meas.dt)+
+      theme(legend.position="none")+
+      coord_cartesian(xlim=c(NA,1e9))
+  }else{
+    gg
+  }
+}
+
+```
+
 The comparisons above show significant advantages for `data.table` for
 writing CSV data with a large number of columns:
 
@@ -189,17 +250,34 @@ benchmarks,
 read.expr.list <- c(
   if(requireNamespace("readr"))atime::atime_grid(
     list(LAZY=c(TRUE, FALSE), THREADS=threads.vec),
-    "readr::read_csv"=readr::read_csv(
-      f.csv, num_threads = THREADS, lazy = LAZY,
-      show_col_types=FALSE, progress=FALSE)),
+    "readr::read_csv"={
+      readr::read_csv(
+        f.csv, num_threads = THREADS, lazy = LAZY,
+        show_col_types=FALSE, progress=FALSE)
+    }),
   atime::atime_grid(
     list(THREADS=threads.vec),
     "data.table::fread"={
       data.table::setDTthreads(THREADS)
       data.table::fread(f.csv, showProgress=FALSE)
     }),
-  "utils::read.csv"=quote(utils::read.csv(f.csv)))
-atime_read <- function(glob){  
+  atime::atime_grid(
+    "utils::read.csv"={
+      utils::read.csv(f.csv)
+    }))
+read.compute.expr.list <- list()
+for(expr.name in names(read.expr.list)){
+  lang.list <- as.list(read.expr.list[[expr.name]])
+  LAST <- length(lang.list)
+  lang.list[[LAST]] <- as.call(c(
+    quote(`<-`),
+    quote(DF),
+    lang.list[[LAST]]))
+  read.compute.expr.list[[expr.name]] <- as.call(c(
+    lang.list,
+    quote(apply(DF, 1, paste, collapse=","))))
+}
+atime_read <- function(glob, compute=FALSE){  
   fmt <- sub("[*]", "%d", glob)
   csv.dt <- nc::capture_first_vec(
     Sys.glob(file.path(tempdir(), glob)),
@@ -211,7 +289,7 @@ atime_read <- function(glob){
       f.csv <- file.path(tempdir(), sprintf(fmt, N))
     },
     seconds.limit = seconds.limit,
-    expr.list=read.expr.list)
+    expr.list=if(compute)read.compute.expr.list else read.expr.list)
 }
 PRGn <- c(
   "#40004B", "#762A83", "#9970AB", "#C2A5CF", "#E7D4E8",#5
@@ -239,6 +317,17 @@ read.real.vary.rows <- atime_read("10_real_cols_fwrite_*.csv")
 aplot(read.real.vary.rows, "Read CSV with 10 real columns", 1e9, 1e1, "Number of rows", read.colors)
 ```
 
+It can be seen in the plot above that the green results, `read_csv`
+with `LAZY=TRUE` are fastest, which is normal because lazy reading
+does not actually read the data values into memory. A more fair
+comparison is below, which computes a text string for every row after
+reading the CSV,
+
+```{r}
+compute.real.vary.rows <- atime_read("10_real_cols_fwrite_*.csv", compute=TRUE)
+aplot(compute.real.vary.rows, "Read CSV with 10 real columns, then collapse each row", 1e9, 1e1, "Number of rows", read.colors)
+```
+
 Below we read real numbers with a constant number of rows, and a
 variable number of columns.
 
@@ -255,6 +344,16 @@ read.chr.vary.rows <- atime_read("10_chr_cols_fwrite_*.csv")
 aplot(read.chr.vary.rows, "Read CSV with 10 character columns", 1e9, 1e1, "Number of rows", read.colors)
 ```
 
+As with the previous result for real data, the green results above,
+`read_csv` with `LAZY=TRUE` are fastest, which is normal because lazy
+reading does not actually read the data values into memory. A more
+fair comparison is below, which computes a text string for every row
+after reading the CSV,
+
+```{r}
+compute.chr.vary.rows <- atime_read("10_chr_cols_fwrite_*.csv", compute=TRUE)
+aplot(compute.chr.vary.rows, "Read CSV with 10 character columns, then collapse each row", 1e9, 1e1, "Number of rows", read.colors)
+```
 Below we read character data with a constant number of rows, and a
 variable number of columns.
 
@@ -477,5 +576,11 @@ atime.list <- atime::atime(
       mean=mean(values),
       sd=sd(values)))
   })
-aplot(atime.list, "Join and summarize", 1e10, 1e1, "Rows in join table")
+aplot(atime.list, "Rolling join", 1e10, 1e1, "Rows in join table")
+```
+
+## Total time
+
+```{r}
+Sys.time() - time.begin
 ```
