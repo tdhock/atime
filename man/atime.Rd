@@ -5,7 +5,7 @@
   several different data sizes.}
 \usage{atime(
 N, setup, expr.list, times=10, seconds.limit=0.01, verbose=FALSE,
-results=TRUE, ...)}
+results=FALSE, ...)}
 \arguments{
   \item{N}{numeric vector of data sizes to vary.}
   \item{setup}{expression to evaluate for every data size, before timings.}

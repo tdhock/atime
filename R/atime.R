@@ -58,24 +58,7 @@ atime_grid <- function
   out.list
 }
 
-atime_exprs <- function(expr, env.list=NULL, ...){
-  formal.names <- names(formals())
-  mc.args <- as.list(match.call()[-1])
-  dots.list <- mc.args[!names(mc.args) %in% formal.names]
-  elist <- c(env.list, dots.list)
-  if(is.null(names(elist)) || any(names(elist)=="")){
-    stop("each element of env.list and ... must be named")
-  }
-  out.list <- list()
-  for(expr.name in names(elist)){
-    out.list[[expr.name]] <- substitute(
-      substitute(EXPR, elist[[expr.name]]),
-      list(EXPR=expr))
-  }
-  out.list
-}
-
-atime <- function(N, setup, expr.list=NULL, times=10, seconds.limit=0.01, verbose=FALSE, results=TRUE, ...){
+atime <- function(N, setup, expr.list=NULL, times=10, seconds.limit=0.01, verbose=FALSE, results=FALSE, ...){
   kilobytes <- mem_alloc <- NULL
   formal.names <- names(formals())
   mc.args <- as.list(match.call()[-1])
