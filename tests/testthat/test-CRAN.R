@@ -7,6 +7,7 @@ test_that("more.units error if not present", {
       subject <- paste(rep("a", N), collapse="")
       pattern <- paste(rep(c("a?", "a"), each=N), collapse="")
     },
+    result=TRUE,
     N=1:30)
   atime.list$measurements[, `:=`(
     length.num=sapply(result, function(L){
@@ -34,6 +35,7 @@ test_that("can extract numeric units from data table in list", {
   atime.list <- atime::atime(
     N=1:2,
     setup={},
+    result = TRUE,
     makeList=list(loss=data.table(value=5)))
   atime.list$measurements[, intervals := sapply(result, function(L)L$loss$value)]
   best.list <- atime::references_best(atime.list, more.units="intervals")
@@ -41,7 +43,7 @@ test_that("can extract numeric units from data table in list", {
   expect_equal(sum(is.na(emp)), 0)
 })
 
-test_that("results returned when some results are NULL and others not", {
+test_that("result returned when some are NULL and others not", {
   atime.list <- atime::atime(
     N=10^seq(-3, 0),
     setup={},
@@ -50,6 +52,7 @@ test_that("results returned when some results are NULL and others not", {
       Sys.sleep(N)
       list(msg="slow")
     },
+    result = TRUE,
     fast=NULL)
   expect_is(atime.list$mea$result, "list")
 })

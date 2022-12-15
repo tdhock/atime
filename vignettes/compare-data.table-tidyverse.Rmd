@@ -25,7 +25,7 @@ max.threads <- parallel::detectCores()
 threads.vec <- unique(as.integer(c(1, max.threads/2, max.threads)))
 is.toby <- system("whoami", intern=TRUE) %in% c("tdhock", "nau\\th798")
 ##seconds.limit <- if(is.toby)1 else 0.01
-seconds.limit <- 1
+seconds.limit <- 0.01
 aplot <- function(atime.list, my.title, xmax, max.seconds, xlab, color.vec=NULL){
   best.list <- atime::references_best(atime.list)
   both.dt <- best.list$meas
@@ -92,7 +92,6 @@ atime_write <- function(make.mat.fun, fmt){
       dt <- data.table(mat)
     },
     seconds.limit = seconds.limit,
-    results=FALSE,
     expr.list=atime::atime_grid(
       list(THREADS=threads.vec),
       "data.table::fwrite"={
@@ -211,7 +210,6 @@ atime_read <- function(glob){
       f.csv <- file.path(tempdir(), sprintf(fmt, N))
     },
     seconds.limit = seconds.limit,
-    results=FALSE,
     expr.list=read.expr.list)
 }
 PRGn <- c(
@@ -358,7 +356,6 @@ summary.atime.list <- atime::atime(
       epoch=1:N,
       key=c("set","epoch","fold"))
   },
-  results=FALSE,
   seconds.limit=seconds.limit,
   expr.list=summary.expr.list)
 aplot(summary.atime.list, "Length, Mean, SD over 10 folds for each epoch and set", 1e7, 1e1, "Number of epochs", summary.colors)

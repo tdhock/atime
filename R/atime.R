@@ -58,7 +58,7 @@ atime_grid <- function
   out.list
 }
 
-atime <- function(N, setup, expr.list=NULL, times=10, seconds.limit=0.01, verbose=FALSE, results=FALSE, ...){
+atime <- function(N, setup, expr.list=NULL, times=10, seconds.limit=0.01, verbose=FALSE, result=FALSE, ...){
   kilobytes <- mem_alloc <- NULL
   formal.names <- names(formals())
   mc.args <- as.list(match.call()[-1])
@@ -81,7 +81,7 @@ atime <- function(N, setup, expr.list=NULL, times=10, seconds.limit=0.01, verbos
       N.env$result.list <- list()
       for(expr.name in not.done.yet){
         expr <- elist[[expr.name]]
-        m.list[[expr.name]] <- if(results){
+        m.list[[expr.name]] <- if(result){
           substitute(
             result.list[NAME] <- list(EXPR),
             list(NAME=expr.name, EXPR=expr))
@@ -91,7 +91,7 @@ atime <- function(N, setup, expr.list=NULL, times=10, seconds.limit=0.01, verbos
       }
       m.call <- as.call(m.list)
       N.df <- eval(m.call, N.env)
-      if(results){
+      if(result){
         N.df$result <- N.env$result.list
       }
       N.stats <- data.table(N=N.value, expr.name=not.done.yet, N.df)

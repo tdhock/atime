@@ -37,17 +37,14 @@ following arguments:
   `data.table.3fa8b20435d33b3d4b5c26fd9b0ac14c10b98800:::[.data.table`
   for each of the different package versions.
 
-In the code below we also use
-
-* `results=FALSE` to save memory (in the case there is no need to
-  store the result of evaluating `expr` for each package version).
-* `pkg.edit.fun` to specify how the package must be edited so that it
-  can install and load using a version-specific package name
-  `PKG.SHA`. It is not necessary to specify `pkg.edit.fun` for typical
-  packages (no compiled code, or Rcpp), but `data.table` is an
-  interesting example use case for `pkg.edit.fun` since it specifies a
-  custom shared object file name in `Makevars`, and it has some custom
-  version checking code in `onLoad.R`.
+In the code below we also use `pkg.edit.fun` to specify how the
+package must be edited so that it can install and load using a
+version-specific package name `PKG.SHA`. It is not necessary to
+specify `pkg.edit.fun` for typical packages (no compiled code, or
+Rcpp), but `data.table` is an interesting example use case for
+`pkg.edit.fun` since it specifies a custom shared object file name in
+`Makevars`, and it has some custom version checking code in
+`onLoad.R`.
 
 The other arguments in the code below have names which identify the
 different versions of the code, and values which are commit SHA
@@ -106,7 +103,6 @@ run.atime <- function(TDIR){
       dt_mod <- copy(dt)
       data.table:::`[.data.table`(dt_mod, , N := .N, by = g)
     },
-    results = FALSE,
     verbose = TRUE,
     "news item tweak"="be2f72e6f5c90622fe72e1c315ca05769a9dc854",
     "simplify duplication in memrecycle"="e793f53466d99f86e70fc2611b708ae8c601a451",

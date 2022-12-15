@@ -29,6 +29,7 @@ atime.list <- atime::atime(
     set.seed(1)
     data.vec <- rnorm(N)
   },
+  result=TRUE,
   "cumstats::cummedian"={
     cumstats::cummedian(data.vec)
   },
