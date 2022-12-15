@@ -1,6 +1,7 @@
 Changes in version 2022.12.14
 
 - new function atime_grid.
+- atime argument results changed to result to be consistent with result column of output.
 
 Changes in version 2022.9.16
 
