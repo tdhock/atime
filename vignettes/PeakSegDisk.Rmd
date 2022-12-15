@@ -29,7 +29,7 @@ atime.list <- atime::atime(
     some.inc[, count := 1:.N]
   },
   seconds.limit=Inf,
-  results=TRUE,
+  result=TRUE,
   real={
     PeakSegDisk::PeakSegFPOP_df(some.cov, penalty)
   },
