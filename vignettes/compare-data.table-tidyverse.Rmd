@@ -5,6 +5,7 @@
 
 ```{r setup, include = FALSE}
 time.begin <- Sys.time()
+hostname <- system("hostname",intern=TRUE)
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
@@ -29,13 +30,14 @@ is.toby <- system("whoami", intern=TRUE) %in% c("tdhock", "nau\\th798")
 seconds.limit <- 1
 aplot <- function(atime.list, my.title, xmax, max.seconds, xlab, color.vec=NULL){
   out.rds <- paste0(gsub(" ", "_", my.title), ".rds")
+  atime.list$hostname <- hostname
   saveRDS(atime.list, out.rds)
   best.list <- atime::references_best(atime.list)
   blank.dt <- data.table(x=best.list$meas$N[1], y=max.seconds, unit="seconds")
   if(require(ggplot2)){
     hline.df <- with(atime.list, data.frame(seconds.limit, unit="seconds"))
     gg <- ggplot()+
-      ggtitle(my.title)+
+      ggtitle(paste(my.title,"on",hostname))+
       theme_bw()+
       geom_blank(aes(
         x, y),
