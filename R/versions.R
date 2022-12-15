@@ -63,7 +63,10 @@ atime_versions_install <- function(Package, pkg.path, new.Package.vec, sha.vec, 
             new.Package, first.lib))
         }
       }else{
-        git2r::checkout(repo, branch=sha, force=TRUE)
+        tryCatch(
+          git2r::checkout(repo, branch=sha, force=TRUE),
+          error=function(e)stop(
+            e, " when trying to checkout ", sha))
         ## before editing and installing, make sure directory has sha
         ## suffix, for windows checks.
         sha.path <- paste0(new.path,".",sha)
