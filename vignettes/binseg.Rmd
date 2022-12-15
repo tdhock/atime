@@ -137,7 +137,7 @@ try(if(require(ggplot2)){
       data=time.refs)+
     geom_line(aes(
       N, empirical),
-      size=1,
+      linewidth=1,
       data=seconds.dt)+
     scale_x_log10()+
     scale_y_log10("median line, min/max band")+
@@ -183,7 +183,7 @@ try(if(require(ggplot2)){
       data=my.best.time.refs)+
     geom_line(aes(
       N, empirical),
-      size=1,
+      linewidth=1,
       data=seconds.dt)+
     scale_x_log10()+
     scale_y_log10("median line, min/max band")+
