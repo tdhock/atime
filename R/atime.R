@@ -1,11 +1,7 @@
 atime_grid <- function
 (param.list=list(),
-  arg.name.fun=function(name.vec, value.vec){
-    paste0(name.vec,"=",value.vec)
-  },
-  expr.name.fun=function(expr.str, arg.vec){
-    paste0(expr.str," ",arg.vec)
-  }, 
+  name.value.sep="=",
+  expr.param.sep=" ",
   collapse=",",
   ...){
   if(!is.list(param.list)){
@@ -44,14 +40,16 @@ atime_grid <- function
       paste(problem.list, collapse=", "))
   }
   value.mat <- sapply(param.dt, paste)
+  name.vec <- colnames(value.mat)[col(value.mat)]
   name.value.mat <- matrix(
-    arg.name.fun(colnames(value.mat)[col(value.mat)], value.mat),
+    paste0(name.vec, name.value.sep, value.mat),
     nrow(value.mat), ncol(value.mat))
   name.value.vec <- apply(name.value.mat, 1, paste, collapse=collapse)
   out.list <- list()
   for(expr.name in names(elist)){
     for(row.i in 1:nrow(param.dt)){
-      out.name <- expr.name.fun(expr.name, name.value.vec[[row.i]])
+      param.name.value <- name.value.vec[[row.i]]
+      out.name <- paste0(expr.name, expr.param.sep, param.name.value)
       out.list[[out.name]] <- eval(substitute(
         substitute(EXPR, param.dt[row.i]), 
         list(EXPR=elist[[expr.name]])))
@@ -60,24 +58,7 @@ atime_grid <- function
   out.list
 }
 
-atime_exprs <- function(expr, env.list=NULL, ...){
-  formal.names <- names(formals())
-  mc.args <- as.list(match.call()[-1])
-  dots.list <- mc.args[!names(mc.args) %in% formal.names]
-  elist <- c(env.list, dots.list)
-  if(is.null(names(elist)) || any(names(elist)=="")){
-    stop("each element of env.list and ... must be named")
-  }
-  out.list <- list()
-  for(expr.name in names(elist)){
-    out.list[[expr.name]] <- substitute(
-      substitute(EXPR, elist[[expr.name]]),
-      list(EXPR=expr))
-  }
-  out.list
-}
-
-atime <- function(N, setup, expr.list=NULL, times=10, seconds.limit=0.01, verbose=FALSE, results=TRUE, ...){
+atime <- function(N, setup, expr.list=NULL, times=10, seconds.limit=0.01, verbose=FALSE, result=FALSE, ...){
   kilobytes <- mem_alloc <- NULL
   formal.names <- names(formals())
   mc.args <- as.list(match.call()[-1])
@@ -100,7 +81,7 @@ atime <- function(N, setup, expr.list=NULL, times=10, seconds.limit=0.01, verbos
       N.env$result.list <- list()
       for(expr.name in not.done.yet){
         expr <- elist[[expr.name]]
-        m.list[[expr.name]] <- if(results){
+        m.list[[expr.name]] <- if(result){
           substitute(
             result.list[NAME] <- list(EXPR),
             list(NAME=expr.name, EXPR=expr))
@@ -110,7 +91,7 @@ atime <- function(N, setup, expr.list=NULL, times=10, seconds.limit=0.01, verbos
       }
       m.call <- as.call(m.list)
       N.df <- eval(m.call, N.env)
-      if(results){
+      if(result){
         N.df$result <- N.env$result.list
       }
       N.stats <- data.table(N=N.value, expr.name=not.done.yet, N.df)

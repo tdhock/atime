@@ -7,6 +7,7 @@ test_that("more.units error if not present", {
       subject <- paste(rep("a", N), collapse="")
       pattern <- paste(rep(c("a?", "a"), each=N), collapse="")
     },
+    result=TRUE,
     N=1:30)
   atime.list$measurements[, `:=`(
     length.num=sapply(result, function(L){
@@ -34,6 +35,7 @@ test_that("can extract numeric units from data table in list", {
   atime.list <- atime::atime(
     N=1:2,
     setup={},
+    result = TRUE,
     makeList=list(loss=data.table(value=5)))
   atime.list$measurements[, intervals := sapply(result, function(L)L$loss$value)]
   best.list <- atime::references_best(atime.list, more.units="intervals")
@@ -41,7 +43,7 @@ test_that("can extract numeric units from data table in list", {
   expect_equal(sum(is.na(emp)), 0)
 })
 
-test_that("results returned when some results are NULL and others not", {
+test_that("result returned when some are NULL and others not", {
   atime.list <- atime::atime(
     N=10^seq(-3, 0),
     setup={},
@@ -50,6 +52,7 @@ test_that("results returned when some results are NULL and others not", {
       Sys.sleep(N)
       list(msg="slow")
     },
+    result = TRUE,
     fast=NULL)
   expect_is(atime.list$mea$result, "list")
 })
@@ -70,15 +73,15 @@ test_that("atime_grid error if param not in expr", {
       list(THREADS=1:2, LAZY=c(TRUE,FALSE)),
       fread.prob=fread(f.csv, threads=THREADS),
       fread=fread(f.csv, threads=THREADS, lazy=LAZY),
-      readr.prob=readr::read_csv(f.csv, lazy=LAZY))
-  }, "each param should be present in each expr, problems: LAZY not in fread.prob, THREADS not in readr.prob")
+      read_csv=read_csv(f.csv, lazy=LAZY))
+  }, "each param should be present in each expr, problems: LAZY not in fread.prob, THREADS not in read_csv")
 })
 
 test_that("atime_grid two params, two exprs", {
   expr.list <- atime::atime_grid(
     list(THREADS=1:2, LAZY=c(TRUE,FALSE)),
     fread=fread(f.csv, threads=THREADS, lazy=LAZY),
-    readr.prob=readr::read_csv(f.csv, num_threads=THREADS, lazy=LAZY))
+    read_csv=read_csv(f.csv, num_threads=THREADS, lazy=LAZY))
   expect_equal(length(expr.list), 8)
 })
 
