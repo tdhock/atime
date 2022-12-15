@@ -80,8 +80,19 @@ benchmarks,
 
 ```{r}
 atime_write <- function(make.mat.fun, fmt){
+  grid.args <- list(
+    list(THREADS=threads.vec),
+    "data.table::fwrite"=quote({
+      data.table::setDTthreads(THREADS)
+      data.table::fwrite(dt, name.list$fwrite, showProgress = FALSE)
+    }))
+  if(requireNamespace("readr"))grid.args[["readr::write_csv"]] <- quote({
+    readr::write_csv(
+      dt, name.list$write_csv, progress = FALSE, num_threads = THREADS)
+  })
+  expr.list <- do.call(atime::atime_grid, grid.args)
   atime::atime(
-    N=10^seq(1, 7),
+    N=10^seq(0, 7),
     setup={
       mat <- make.mat.fun(N)
       name.list <- list()
@@ -92,16 +103,7 @@ atime_write <- function(make.mat.fun, fmt){
       dt <- data.table(mat)
     },
     seconds.limit = seconds.limit,
-    expr.list=atime::atime_grid(
-      list(THREADS=threads.vec),
-      "data.table::fwrite"={
-        data.table::setDTthreads(THREADS)
-        data.table::fwrite(dt, name.list$fwrite, showProgress = FALSE)
-      }, 
-      "readr::write_csv"={
-        readr::write_csv(
-          dt, name.list$write_csv, progress = FALSE, num_threads = THREADS)
-      }),
+    expr.list=expr.list,
     "utils::write.csv"=utils::write.csv(dt, name.list$write.csv))
 }
 if(FALSE){
@@ -109,22 +111,19 @@ if(FALSE){
   dput(RColorBrewer::brewer.pal(Inf, "Set2"))
   dput(RColorBrewer::brewer.pal(Inf, "RdGy"))
 }
-PRGn <- c(
-  "#40004B", "#762A83", "#9970AB", "#C2A5CF", "#E7D4E8",
-  "#F7F7F7", 
-  "#D9F0D3", "#A6DBA0", "#5AAE61", "#1B7837", "#00441B")
-expr.colors <- c(
+write.colors <- c(
   "#67001F",#dark red
   "#B2182B", "#D6604D", "#F4A582", "#FDDBC7",
   "#FFFFFF",#white
   "#E0E0E0", "#BABABA", "#878787", "#4D4D4D",
   "#1A1A1A",#almost black
   "utils::write.csv"="deepskyblue")
-names(expr.colors)[c(3,2,1)] <- paste0(
+some <- function(...)c(...)[1:length(threads.vec)]
+names(write.colors)[some(3,2,1)] <- paste0(
   "data.table::fwrite THREADS=",threads.vec)
-names(expr.colors)[c(9,10,11)] <- paste0(
+names(write.colors)[some(9,10,11)] <- paste0(
   "readr::write_csv THREADS=",threads.vec)
-write.colors <- expr.colors[names(expr.colors)!=""]
+write.colors <- write.colors[names(write.colors)!=""]
 ```
 
 The code below is for real numbers with a constant number of columns,
@@ -156,7 +155,8 @@ columns, and a variable number of rows.
 
 ```{r}
 chr_mat <- function(N.rows, N.cols){
-  matrix("'quoted data'", N.rows, N.cols)
+  data.vec <- paste0("'quoted", c(" ", "_"), "data'")
+  matrix(data.vec, N.rows, N.cols)
 }
 write.chr.vary.rows <- atime_write(
   function(N.rows,N.cols=10)chr_mat(N.rows, N.cols),
@@ -186,11 +186,12 @@ First we define a function which we will use for all of the read
 benchmarks,
 
 ```{r}
-read.expr.list <- c(atime::atime_grid(
-  list(LAZY=c(TRUE, FALSE), THREADS=threads.vec),
-  "readr::read_csv"=readr::read_csv(
-    f.csv, num_threads = THREADS, lazy = LAZY,
-    show_col_types=FALSE, progress=FALSE)),
+read.expr.list <- c(
+  if(requireNamespace("readr"))atime::atime_grid(
+    list(LAZY=c(TRUE, FALSE), THREADS=threads.vec),
+    "readr::read_csv"=readr::read_csv(
+      f.csv, num_threads = THREADS, lazy = LAZY,
+      show_col_types=FALSE, progress=FALSE)),
   atime::atime_grid(
     list(THREADS=threads.vec),
     "data.table::fread"={
@@ -222,7 +223,11 @@ PRGn <- c(
   "#E0E0E0", "#BABABA", "#878787", "#4D4D4D",
   "#1A1A1A",#almost black 22
   "utils::write.csv"="deepskyblue")
-names(PRGn)[c(3,2,1,9,10,11,14,13,12,23)] <- names(read.expr.list)
+names(PRGn)[c(
+  some(3,2,1),
+  some(9,10,11),
+  some(14,13,12),
+  23)] <- names(read.expr.list)
 read.colors <- PRGn[names(PRGn)!=""]
 ```
 
@@ -314,17 +319,17 @@ summary.expr.list <- c(atime::atime_grid(
         set + epoch ~ .,
         list(length, mean, sd),
         value.var="loss")
-    }, 
-    "dplyr::summarise"={
-      loss.dt |> 
+    }),
+  if(requireNamespace("dplyr"))atime::atime_grid("dplyr::summarise"={
+    loss.dt |> 
       dplyr::group_by(set, epoch) |> 
       dplyr::summarise(
         loss_length=length(loss),
         loss_mean=mean(loss), 
         loss_sd=sd(loss))
-    }, 
-    "tidyr::pivot_wider"={
-      loss.dt |> 
+  }),
+  if(requireNamespace("tidyr"))atime::atime_grid("tidyr::pivot_wider"={
+    loss.dt |> 
       tidyr::pivot_wider(
         id_cols = c(set,epoch), 
         values_from=loss, 
@@ -333,12 +338,10 @@ summary.expr.list <- c(atime::atime_grid(
           loss_length=length(values),
           loss_mean=mean(values), 
           loss_sd=sd(values)))) |> 
-          tidyr::unnest_wider(loss)
-    }))
+      tidyr::unnest_wider(loss)
+  }))
 summary.colors <- c(
-  "#D6604D",
-  "#B2182B",
-  "#67001F",#dark red
+  some("#D6604D", "#B2182B", "#67001F"),#dark red
   "#66C2A5", "#FC8D62", "#8DA0CB", "#E78AC3", "#A6D854", "#FFD92F", 
   "#E5C494", "#B3B3B3")
 names(summary.colors)[1:length(summary.expr.list)] <- names(summary.expr.list)
@@ -372,6 +375,7 @@ DT <- CJ(letter=LETTERS, i)[, x := rnorm(.N)]
 setkey(DT, letter, i)
 DF <- data.frame(DT)
 rownames(DF) <- with(DF, paste0(letter, i))
+expr.list <- if(requireNamespace("dplyr"))atime::atime_grid("dplyr::inner_join"=with(dplyr::inner_join(DT, select.dt, by=c('letter','i')), x+y))
 atime.list <- atime::atime(
   N=10^seq(1, 7),
   setup={
@@ -386,7 +390,7 @@ atime.list <- atime::atime(
   "data.table::merge"=data.table::merge.data.table(DT,select.dt)[, x+y],
   "base::merge.data.frame"=with(base::merge.data.frame(DF, select.df, by=c('letter','i')), x+y),
   "[+paste0"=with(select.df, DF[paste0(letter,i),"x"]+y),
-  "dplyr::inner_join"=with(dplyr::inner_join(DT, select.dt, by=c('letter','i')), x+y))
+  expr.list=expr.list)
 aplot(atime.list, "Join and sum", 1e7, 1e1, "Size of output vector")
 ```
 

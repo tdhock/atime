@@ -23,6 +23,12 @@ Trees by Alexandre Drouin, Toby Hocking, Francois
 Laviolette](https://proceedings.neurips.cc/paper/2017/hash/2288f691b58edecadcc9a8691762b4fd-Abstract.html).
 
 ```{r}
+expr.list <- c(
+  if(requireNamespace("cumstats"))atime::atime_grid(
+    "cumstats::cummedian"=cumstats::cummedian(data.vec)),
+  if(requireNamespace("binsegRcpp"))atime::atime_grid(
+    "binsegRcpp::cum_median"=binsegRcpp::cum_median(data.vec)),
+  atime::atime_grid(cumsum=cumsum(data.vec)))
 atime.list <- atime::atime(
   N=2^seq(1, 20),
   setup={
@@ -30,12 +36,7 @@ atime.list <- atime::atime(
     data.vec <- rnorm(N)
   },
   result=TRUE,
-  "cumstats::cummedian"={
-    cumstats::cummedian(data.vec)
-  },
-  "binsegRcpp::cum_median"={
-    binsegRcpp::cum_median(data.vec)
-  },
+  expr.list=expr.list,
   times=5)
 plot(atime.list)
 ```
