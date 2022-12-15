@@ -45,6 +45,10 @@ atime_grid(
 }
 \examples{
 
+## Example 0: with no param.list, same as quote inside named list.
+atime::atime_grid(m=mean(data), s=sum(data))
+list(m=quote(mean(data)), s=quote(sum(data)))
+
 ## Example 1: polynomial vs exponential time regex.
 (expr.list <- atime::atime_grid(
   list(PERL=c(TRUE, FALSE)),
