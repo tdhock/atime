@@ -17,6 +17,17 @@ library(data.table)
 viz.data <- function(get.seg.means, data.per.seg=10, penalty=1){
   no.labels <- data.table(
     start=integer(), end=integer(), changes=integer())
+  expr.list <- c(
+    if(requireNamespace("changepoint"))atime::atime_grid(
+      "changepoint::cpt.mean"=changepoint::cpt.mean(
+        data.vec, method="PELT", penalty="Manual", pen.value=penalty)),
+    if(requireNamespace("binsegRcpp"))atime::atime_grid(
+      "binsegRcpp::binseg_normal"=binsegRcpp::binseg_normal(data.vec, N)),
+    if(requireNamespace("fpop"))atime::atime_grid(
+      "fpop::Fpop"=fpop::Fpop(data.vec, penalty)),
+    if(requireNamespace("LOPART"))atime::atime_grid(
+      "LOPART::LOPART"=LOPART::LOPART(data.vec, no.labels, penalty)),
+    atime::atime_grid(mean=mean(data.vec)))
   atime.list <- atime::atime(
     N=2^seq(1, 20),
     setup={
@@ -25,19 +36,7 @@ viz.data <- function(get.seg.means, data.per.seg=10, penalty=1){
       set.seed(1)
       data.vec <- rnorm(data.per.seg*N, mean.vec, 0.2)
     },
-    "changepoint::cpt.mean"={
-      changepoint::cpt.mean(
-        data.vec, method="PELT", penalty="Manual", pen.value=penalty)
-    },
-    "binsegRcpp::binseg_normal"={
-      binsegRcpp::binseg_normal(data.vec, N)
-    },
-    "fpop::Fpop"={
-      fpop::Fpop(data.vec, penalty)
-    },
-    "LOPART::LOPART"={
-      LOPART::LOPART(data.vec, no.labels, penalty)
-    },
+    expr.list=expr.list,
     times=5)
   best.list <- atime::references_best(atime.list)
   if(require(ggplot2)){
