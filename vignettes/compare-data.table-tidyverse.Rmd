@@ -139,7 +139,7 @@ random_real <- function(N.rows, N.cols){
 write.real.vary.rows <- atime_write(
   function(N.rows, N.cols=10)random_real(N.rows, N.cols),
   "10_real_cols_%s_%d.csv")
-aplot(write.real.vary.rows, "Write CSV with 10 random normal real columns", 1e7, 1e1, "Number of rows", write.colors)
+aplot(write.real.vary.rows, "Write CSV with 10 random normal real columns", 1e9, 1e1, "Number of rows", write.colors)
 ```
 
 The code below writes real numbers with a constant number of rows, and
@@ -149,7 +149,7 @@ a variable number of columns.
 write.real.vary.cols <- atime_write(
   function(N.cols, N.rows=10)random_real(N.rows, N.cols),
   "10_real_rows_%s_%d.csv")
-aplot(write.real.vary.cols, "Write CSV with 10 random normal real rows", 1e7, 1e1, "Number of columns", write.colors)
+aplot(write.real.vary.cols, "Write CSV with 10 random normal real rows", 1e9, 1e1, "Number of columns", write.colors)
 ```
 
 The code below is for character data with a constant number of
@@ -162,7 +162,7 @@ chr_mat <- function(N.rows, N.cols){
 write.chr.vary.rows <- atime_write(
   function(N.rows,N.cols=10)chr_mat(N.rows, N.cols),
   "10_chr_cols_%s_%d.csv")
-aplot(write.chr.vary.rows, "Write CSV with 10 character columns", 1e7, 1e1, "Number of rows", write.colors)
+aplot(write.chr.vary.rows, "Write CSV with 10 character columns", 1e9, 1e1, "Number of rows", write.colors)
 ```
 
 The code below is for character data with a constant number of
@@ -172,7 +172,7 @@ rows, and a variable number of columns.
 write.chr.vary.cols <- atime_write(
   function(N.cols, N.rows=10)chr_mat(N.rows, N.cols),
   "10_chr_rows_%s_%d.csv")
-aplot(write.chr.vary.cols, "Write CSV with 10 character rows", 1e7, 1e1, "Number of columns", write.colors)
+aplot(write.chr.vary.cols, "Write CSV with 10 character rows", 1e9, 1e1, "Number of columns", write.colors)
 ```
 
 The comparisons above show significant advantages for `data.table` for
@@ -233,7 +233,7 @@ variable number of rows.
 
 ```{r}
 read.real.vary.rows <- atime_read("10_real_cols_fwrite_*.csv")
-aplot(read.real.vary.rows, "Read CSV with 10 real columns", 1e7, 1e1, "Number of rows", read.colors)
+aplot(read.real.vary.rows, "Read CSV with 10 real columns", 1e9, 1e1, "Number of rows", read.colors)
 ```
 
 Below we read real numbers with a constant number of rows, and a
@@ -241,7 +241,7 @@ variable number of columns.
 
 ```{r}
 read.real.vary.cols <- atime_read("10_real_rows_fwrite_*.csv")
-aplot(read.real.vary.cols, "Read CSV with 10 real rows", 1e7, 1e1, "Number of columns", read.colors)
+aplot(read.real.vary.cols, "Read CSV with 10 real rows", 1e8, 1e1, "Number of columns", read.colors)
 ```
 
 Below we read character data with a constant number of columns, and a
@@ -249,7 +249,7 @@ variable number of rows.
 
 ```{r}
 read.chr.vary.rows <- atime_read("10_chr_cols_fwrite_*.csv")
-aplot(read.chr.vary.rows, "Read CSV with 10 character columns", 1e7, 1e1, "Number of rows", read.colors)
+aplot(read.chr.vary.rows, "Read CSV with 10 character columns", 1e9, 1e1, "Number of rows", read.colors)
 ```
 
 Below we read character data with a constant number of rows, and a
@@ -257,7 +257,7 @@ variable number of columns.
 
 ```{r}
 read.chr.vary.cols <- atime_read("10_chr_rows_fwrite_*.csv")
-aplot(read.chr.vary.cols, "Read CSV with 10 character rows", 1e7, 1e1, "Number of columns", read.colors)
+aplot(read.chr.vary.cols, "Read CSV with 10 character rows", 1e8, 1e1, "Number of columns", read.colors)
 ```
 
 From the comparisons above it can be seen that fread uses much less
@@ -450,7 +450,8 @@ atime.list <- atime::atime(
     set.seed(1)
     X <- runif(N)
     Y <- 10*X+rnorm(N)
-  }, 
+  },
+  seconds.limit=seconds.limit,
   "data.table::[roll=nearest"={
     irreg.dt <- data.table(X, Y, key="X")
     grid <- seq(offset, 1-offset, by=grid.space)
