@@ -32,5 +32,8 @@ Suggests:
     LOPART,
     cumstats,
     PeakSegDisk,
-    callr
+    callr,
+    readr,
+    dplyr,
+    tidyr
 VignetteBuilder: knitr
