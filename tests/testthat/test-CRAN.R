@@ -70,15 +70,15 @@ test_that("atime_grid error if param not in expr", {
       list(THREADS=1:2, LAZY=c(TRUE,FALSE)),
       fread.prob=fread(f.csv, threads=THREADS),
       fread=fread(f.csv, threads=THREADS, lazy=LAZY),
-      readr.prob=readr::read_csv(f.csv, lazy=LAZY))
-  }, "each param should be present in each expr, problems: LAZY not in fread.prob, THREADS not in readr.prob")
+      read_csv=read_csv(f.csv, lazy=LAZY))
+  }, "each param should be present in each expr, problems: LAZY not in fread.prob, THREADS not in read_csv")
 })
 
 test_that("atime_grid two params, two exprs", {
   expr.list <- atime::atime_grid(
     list(THREADS=1:2, LAZY=c(TRUE,FALSE)),
     fread=fread(f.csv, threads=THREADS, lazy=LAZY),
-    readr.prob=readr::read_csv(f.csv, num_threads=THREADS, lazy=LAZY))
+    read_csv=read_csv(f.csv, num_threads=THREADS, lazy=LAZY))
   expect_equal(length(expr.list), 8)
 })
 
