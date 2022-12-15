@@ -18,7 +18,7 @@ which we clone from github using the code below,
 ```{r}
 tdir <- tempfile()
 dir.create(tdir)
-git2r::clone("https://github.com/Rdatatable/data.table", tdir)
+git2r::clone("https://github.com/tdhock/data.table", tdir)
 ```
 
 After cloning the git repo, we give the repo path as the `pkg.path`
@@ -62,7 +62,6 @@ run.atime <- function(TDIR){
         atime::glob_find_replace(file.path(new.pkg.path, glob), FIND, REPLACE)
       }
       Package_regex <- gsub(".", "_?", old.Package, fixed=TRUE)
-      R_init_pkg <- paste0("R_init_", Package_regex)
       Package_ <- gsub(".", "_", old.Package, fixed=TRUE)
       new.Package_ <- paste0(Package_, "_", sha)
       pkg_find_replace(
@@ -83,8 +82,8 @@ run.atime <- function(TDIR){
         sprintf('packageVersion\\("%s"\\)', new.Package))
       pkg_find_replace(
         file.path("src", "init.c"),
-        R_init_pkg,
-        paste0("R_init_", new.Package_))
+        paste0("R_init_", Package_regex),
+        paste0("R_init_", gsub("[.]", "_", new.Package_)))
       pkg_find_replace(
         "NAMESPACE",
         sprintf('useDynLib\\("?%s"?', Package_regex),
@@ -104,10 +103,9 @@ run.atime <- function(TDIR){
       data.table:::`[.data.table`(dt_mod, , N := .N, by = g)
     },
     verbose = TRUE,
-    "news item tweak"="be2f72e6f5c90622fe72e1c315ca05769a9dc854",
-    "simplify duplication in memrecycle"="e793f53466d99f86e70fc2611b708ae8c601a451",
     "1.14.0 on CRAN. Bump to 1.14.1"="263b53e50241914a22f7ba6a139b52162c9d7927",
-    "1.14.3 dev master"="c4a2085e35689a108d67dacb2f8261e4964d7e12")
+    "1.14.3 dev master"="c4a2085e35689a108d67dacb2f8261e4964d7e12",
+    "1.14.4"="1.14.4")
 }
 atime.list <- if(requireNamespace("callr")){
   requireNamespace("atime")
@@ -157,13 +155,11 @@ if(require(ggplot2)){
 The figure above shows that there are significant differences between
 the timings of the commits. 
 
-* commits labeled news item tweak and 1.14.0 on CRAN are fast (relatively
+* version 1.14.0 on CRAN is fast (relatively
   small computation time),
-* commits labeled 1.14.3 dev master and simplify duplication in
-  memrecycle are slow (relatively large computation time).
-* since "simplify" occured immediately after "news," we can
-  conclude that there is something in that commit which is responsible
-  for the slowdown, https://github.com/Rdatatable/data.table/issues/5371
+* version 1.14.3 dev master is slow (relatively large computation time)
+* version 1.14.4 is fast again (bug fixed),
+* a similar analyis was used in https://github.com/Rdatatable/data.table/issues/5371 to fix the bug.
 
 Below we remove the installed packages,
 
