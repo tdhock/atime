@@ -10,7 +10,7 @@ knitr::opts_chunk$set(
   comment = "#>",
   eval = TRUE,
   fig.width=14,
-  fig.height=14
+  fig.height=10
 )
 ```
 
@@ -241,10 +241,8 @@ if(require(ggplot2)){
 ```
 
 The comparisons above show significant advantages for `data.table` for
-writing CSV data with a large number of columns:
-
-* asymptotically less memory 
-* constant factors less time
+writing CSV data with a large number of columns: asymptotically less
+time and memory (linear rather than quadratic in number of columns).
 
 ## Reading CSV
 
@@ -367,8 +365,17 @@ cache(read.chr.vary.cols, atime_read("10_chr_rows_fwrite_*.csv"))
 aplot(read.chr.vary.cols, "Read CSV with 10 character rows", 1e8, 1e1, "Number of columns", read.colors)
 ```
 
-From the comparisons above it can be seen that fread uses much less
-time and memory than the alternatives.
+From the comparisons above, it can be seen that for a small number of
+columns, and a large number of rows, all the methods are about the
+same (constant factor differences, using more than one thread also
+results in small constant factor speedups). However for a small number
+of rows and a large number of columns, `data.table::fread` is clearly
+the most efficient:
+
+* `data.table::fread` uses constant factors less time and memory than
+  `readr::read_csv`.
+* `utils::read.csv` uses asymptotically more time (super-linear in the
+  number of columns).
 
 ## Summarize by group
 
@@ -469,7 +476,8 @@ aplot(summary.atime.list, "Length, Mean, SD over 10 folds for each epoch and set
 ```
 
 The comparison above shows that using `[.data.table` is by far the
-fastest way to compute the Mean and SD over folds.
+most efficient method (by constant factors) to compute the Mean and SD
+over folds.
 
 ## Join and compute sum
 
