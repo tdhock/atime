@@ -51,11 +51,11 @@ aplot <- function(atime.list, my.title, xmax, max.seconds, xlab, color.vec=NULL)
         N, empirical, color=expr.name),
         data=best.list$meas)+
       geom_ribbon(aes(
-        N, ymin=min, ymax=max, fill=expr.name),
+        N, ymin=q25, ymax=q75, fill=expr.name),
         data=best.list$meas[unit=="seconds"],
         alpha=0.5)+
       scale_x_log10(xlab)+
-      scale_y_log10("median line, min/max band")
+      scale_y_log10("median line, quartiles band")
     if(!is.null(color.vec)){
       gg <- gg+
         scale_color_manual(values=color.vec)+
@@ -468,7 +468,7 @@ aplot(summary.atime.list, "Length, Mean, SD over 10 folds for each epoch and set
 The comparison above shows that using `[.data.table` is by far the
 fastest way to compute the Mean and SD over folds.
 
-## Join / merge
+## Join and compute sum
 
 ```{r}
 i <- 1:100
@@ -477,7 +477,7 @@ setkey(DT, letter, i)
 DF <- data.frame(DT)
 rownames(DF) <- with(DF, paste0(letter, i))
 expr.list <- if(requireNamespace("dplyr"))atime::atime_grid("dplyr::inner_join"=with(dplyr::inner_join(DT, select.dt, by=c('letter','i')), x+y))
-atime.list <- atime::atime(
+atime.join.sum <- atime::atime(
   N=10^seq(1, 7),
   setup={
     select.dt <- data.table(
@@ -492,7 +492,7 @@ atime.list <- atime::atime(
   "base::merge.data.frame"=with(base::merge.data.frame(DF, select.df, by=c('letter','i')), x+y),
   "[+paste0"=with(select.df, DF[paste0(letter,i),"x"]+y),
   expr.list=expr.list)
-aplot(atime.list, "Join and sum", 1e7, 1e1, "Size of output vector")
+aplot(atime.join.sum, "Join and sum", 1e7, 1e1, "Size of output vector")
 ```
 
 ## Join and summarize
@@ -503,7 +503,7 @@ DT <- CJ(letter=LETTERS, i)[, x := rnorm(.N)]
 setkey(DT, letter, i)
 DF <- data.frame(DT)
 rownames(DF) <- with(DF, paste0(letter, i))
-atime.list <- atime::atime(
+atime.join.summarize <- atime::atime(
   N=as.integer(10^seq(0, 7, by=0.5)),
   setup={
     select.dt <- data.table(
@@ -534,7 +534,7 @@ atime.list <- atime::atime(
       dplyr::group_by(letter, i) |> 
       dplyr::summarise(rows=length(y), diff=mean(y)-x[1])
   })
-aplot(atime.list, "Join and summarize", 1e10, 1e1, "Rows in join table")
+aplot(atime.join.summarize, "Join and summarize", 1e10, 1e1, "Rows in join table")
 ```
 
 ## Rolling join
@@ -546,7 +546,7 @@ regular grid over some irregularly spaced numbers.
 digits <- 1
 grid.space <- 10^(-digits)
 offset <- grid.space/2
-atime.list <- atime::atime(
+atime.roll <- atime::atime(
   N=10^seq(1:7),
   setup={
     set.seed(1)
@@ -578,7 +578,7 @@ atime.list <- atime::atime(
       mean=mean(values),
       sd=sd(values)))
   })
-aplot(atime.list, "Rolling join", 1e10, 1e1, "Rows in join table")
+aplot(atime.roll, "Rolling join", 1e10, 1e1, "Rows in join table")
 ```
 
 ## Total time
