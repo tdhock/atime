@@ -5,7 +5,6 @@
 
 ```{r setup, include = FALSE}
 time.begin <- Sys.time()
-hostname <- system("hostname",intern=TRUE)
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
@@ -22,16 +21,25 @@ memory) of common operations using `data.table` and tidyverse functions.
 
 ```{r}
 library(data.table)
+hostname <- system("hostname",intern=TRUE)
 as.integer(Sys.getenv("SLURM_JOB_CPUS_PER_NODE", "1"))
 max.threads <- parallel::detectCores()
 threads.vec <- unique(as.integer(c(1, max.threads/2, max.threads)))
-is.toby <- system("whoami", intern=TRUE) %in% c("tdhock", "nau\\th798")
-##seconds.limit <- if(is.toby)1 else 0.01
-seconds.limit <- 1
+seconds.limit <- 0.01
+cache <- function(symbol, code){
+  cache.symb <- substitute(symbol)
+  cache.rds <- paste0(cache.symb, ".RDS")
+  if(file.exists(cache.rds)){
+    value <- readRDS(cache.rds)
+  }else{
+    to.eval <- substitute(code)
+    value <- eval(to.eval)
+    value$hostname <- hostname
+    saveRDS(value, cache.rds)
+  }
+  assign(paste(cache.symb), value, parent.frame())
+}
 aplot <- function(atime.list, my.title, xmax, max.seconds, xlab, color.vec=NULL){
-  out.rds <- paste0(gsub(" ", "_", my.title), ".rds")
-  atime.list$hostname <- hostname
-  saveRDS(atime.list, out.rds)
   best.list <- atime::references_best(atime.list)
   blank.dt <- data.table(x=best.list$meas$N[1], y=max.seconds, unit="seconds")
   if(require(ggplot2)){
@@ -96,7 +104,7 @@ atime_write <- function(make.mat.fun, fmt){
   })
   expr.list <- do.call(atime::atime_grid, grid.args)
   atime::atime(
-    N=10^seq(0, 7),
+    N=as.integer(10^seq(0, 6, by=0.5)),
     setup={
       mat <- make.mat.fun(N)
       name.list <- list()
@@ -138,9 +146,9 @@ random_real <- function(N.rows, N.cols){
   set.seed(1)
   matrix(rnorm(N.rows*N.cols), N.rows, N.cols)
 }
-write.real.vary.rows <- atime_write(
+cache(write.real.vary.rows, atime_write(
   function(N.rows, N.cols=10)random_real(N.rows, N.cols),
-  "10_real_cols_%s_%d.csv")
+  "10_real_cols_%s_%d.csv"))
 aplot(write.real.vary.rows, "Write CSV with 10 random normal real columns", 1e9, 1e1, "Number of rows", write.colors)
 ```
 
@@ -148,9 +156,9 @@ The code below writes real numbers with a constant number of rows, and
 a variable number of columns.
 
 ```{r}
-write.real.vary.cols <- atime_write(
+cache(write.real.vary.cols, atime_write(
   function(N.cols, N.rows=10)random_real(N.rows, N.cols),
-  "10_real_rows_%s_%d.csv")
+  "10_real_rows_%s_%d.csv"))
 aplot(write.real.vary.cols, "Write CSV with 10 random normal real rows", 1e9, 1e1, "Number of columns", write.colors)
 ```
 
@@ -162,9 +170,9 @@ chr_mat <- function(N.rows, N.cols){
   data.vec <- paste0("'quoted", c(" ", "_"), "data'")
   matrix(data.vec, N.rows, N.cols)
 }
-write.chr.vary.rows <- atime_write(
+cache(write.chr.vary.rows, atime_write(
   function(N.rows,N.cols=10)chr_mat(N.rows, N.cols),
-  "10_chr_cols_%s_%d.csv")
+  "10_chr_cols_%s_%d.csv"))
 aplot(write.chr.vary.rows, "Write CSV with 10 character columns", 1e9, 1e1, "Number of rows", write.colors)
 ```
 
@@ -172,9 +180,9 @@ The code below is for character data with a constant number of
 rows, and a variable number of columns.
 
 ```{r}
-write.chr.vary.cols <- atime_write(
+cache(write.chr.vary.cols, atime_write(
   function(N.cols, N.rows=10)chr_mat(N.rows, N.cols),
-  "10_chr_rows_%s_%d.csv")
+  "10_chr_rows_%s_%d.csv"))
 aplot(write.chr.vary.cols, "Write CSV with 10 character rows", 1e9, 1e1, "Number of columns", write.colors)
 ```
 
@@ -184,18 +192,19 @@ slope (linear complexity in number of columns) than the other methods
 best reference lines above and below each empirical measurement
 asymptote.
 
-```
+```{r}
 best.list <- atime::references_best(write.chr.vary.cols)
 one.thread <- function(DT)DT[grepl("utils|THREADS=1$", expr.name)]
 meas.dt <- one.thread(best.list$meas)
-ref.dt <- one.thread(best.list$ref)[each.sign.rank==1 & N >= 1e2]
+ref.dt <- one.thread(best.list$ref)[
+  fun.name %in% c("N^2","N") & N >= 1e2]
 if(require(ggplot2)){
   hline.df <- with(write.chr.vary.cols, data.frame(
     seconds.limit, unit="seconds"))
   gg <- ggplot()+
     ggtitle("Write CSV with 10 character rows, asymtotic complexity")+
     theme_bw()+
-    facet_grid(unit ~ ., scales="free")+
+    facet_grid(unit ~ expr.name, scales="free")+
     geom_hline(aes(
       yintercept=seconds.limit),
       color="grey",
@@ -224,17 +233,11 @@ if(require(ggplot2)){
         label=fun.name),
         method="left.polygons",
         data=ref.dt)+
-      directlabels::geom_dl(aes(
-        N, empirical, color=expr.name, label=expr.name),
-        method="right.polygons",
-        data=meas.dt)+
-      theme(legend.position="none")+
-      coord_cartesian(xlim=c(NA,1e9))
+      theme(legend.position="none")
   }else{
     gg
   }
 }
-
 ```
 
 The comparisons above show significant advantages for `data.table` for
@@ -315,7 +318,7 @@ Below we read real numbers with a constant number of columns, and a
 variable number of rows.
 
 ```{r}
-read.real.vary.rows <- atime_read("10_real_cols_fwrite_*.csv")
+cache(read.real.vary.rows, atime_read("10_real_cols_fwrite_*.csv"))
 aplot(read.real.vary.rows, "Read CSV with 10 real columns", 1e9, 1e1, "Number of rows", read.colors)
 ```
 
@@ -326,7 +329,7 @@ comparison is below, which computes a text string for every row after
 reading the CSV,
 
 ```{r}
-compute.real.vary.rows <- atime_read("10_real_cols_fwrite_*.csv", compute=TRUE)
+cache(compute.real.vary.rows, atime_read("10_real_cols_fwrite_*.csv", compute=TRUE))
 aplot(compute.real.vary.rows, "Read CSV with 10 real columns, then collapse each row", 1e9, 1e1, "Number of rows", read.colors)
 ```
 
@@ -334,7 +337,7 @@ Below we read real numbers with a constant number of rows, and a
 variable number of columns.
 
 ```{r}
-read.real.vary.cols <- atime_read("10_real_rows_fwrite_*.csv")
+cache(read.real.vary.cols, atime_read("10_real_rows_fwrite_*.csv"))
 aplot(read.real.vary.cols, "Read CSV with 10 real rows", 1e8, 1e1, "Number of columns", read.colors)
 ```
 
@@ -342,7 +345,7 @@ Below we read character data with a constant number of columns, and a
 variable number of rows.
 
 ```{r}
-read.chr.vary.rows <- atime_read("10_chr_cols_fwrite_*.csv")
+cache(read.chr.vary.rows, atime_read("10_chr_cols_fwrite_*.csv"))
 aplot(read.chr.vary.rows, "Read CSV with 10 character columns", 1e9, 1e1, "Number of rows", read.colors)
 ```
 
@@ -353,14 +356,14 @@ fair comparison is below, which computes a text string for every row
 after reading the CSV,
 
 ```{r}
-compute.chr.vary.rows <- atime_read("10_chr_cols_fwrite_*.csv", compute=TRUE)
+cache(compute.chr.vary.rows, atime_read("10_chr_cols_fwrite_*.csv", compute=TRUE))
 aplot(compute.chr.vary.rows, "Read CSV with 10 character columns, then collapse each row", 1e9, 1e1, "Number of rows", read.colors)
 ```
 Below we read character data with a constant number of rows, and a
 variable number of columns.
 
 ```{r}
-read.chr.vary.cols <- atime_read("10_chr_rows_fwrite_*.csv")
+cache(read.chr.vary.cols, atime_read("10_chr_rows_fwrite_*.csv"))
 aplot(read.chr.vary.cols, "Read CSV with 10 character rows", 1e8, 1e1, "Number of columns", read.colors)
 ```
 
@@ -448,7 +451,7 @@ summary.colors <- c(
 names(summary.colors)[1:length(summary.expr.list)] <- names(summary.expr.list)
 summary.colors <- summary.colors[names(summary.colors)!=""]
 options(dplyr.summarise.inform=FALSE)
-summary.atime.list <- atime::atime(
+cache(summary.atime.list, atime::atime(
   N=as.integer(10^seq(0, 7, by=0.5)),
   setup={
     n.folds <- 10
@@ -461,7 +464,7 @@ summary.atime.list <- atime::atime(
       key=c("set","epoch","fold"))
   },
   seconds.limit=seconds.limit,
-  expr.list=summary.expr.list)
+  expr.list=summary.expr.list))
 aplot(summary.atime.list, "Length, Mean, SD over 10 folds for each epoch and set", 1e7, 1e1, "Number of epochs", summary.colors)
 ```
 
