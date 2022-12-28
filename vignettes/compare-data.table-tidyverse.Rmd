@@ -26,6 +26,7 @@ as.integer(Sys.getenv("SLURM_JOB_CPUS_PER_NODE", "1"))
 max.threads <- parallel::detectCores()
 threads.vec <- unique(as.integer(c(1, max.threads/2, max.threads)))
 seconds.limit <- 1
+cache.list <- list()
 cache <- function(symbol, code){
   cache.symb <- substitute(symbol)
   cache.rds <- paste0(cache.symb, ".RDS")
@@ -37,6 +38,7 @@ cache <- function(symbol, code){
     value$hostname <- hostname
     saveRDS(value, cache.rds)
   }
+  cache.list[[paste(cache.symb)]] <<- value
   assign(paste(cache.symb), value, parent.frame())
 }
 aplot <- function(atime.list, my.title, xmax, max.seconds, xlab, color.vec=NULL){
@@ -498,12 +500,13 @@ cache(atime.join.sum, atime::atime(
     setkey(select.dt, letter, i)
     select.df <- data.frame(select.dt)
   },
+  seconds.limit=seconds.limit,
   "data.table::`[.data.table`"=DT[select.dt, x+y],
   "data.table::merge"=data.table::merge.data.table(DT,select.dt)[, x+y],
   "base::merge.data.frame"=with(base::merge.data.frame(DF, select.df, by=c('letter','i')), x+y),
   "[+paste0"=with(select.df, DF[paste0(letter,i),"x"]+y),
   expr.list=expr.list))
-aplot(atime.join.sum, "Join and sum", 1e7, 1e1, "Size of output vector")
+aplot(atime.join.sum, "Join and sum", 1e9, 1e1, "Size of output vector")
 ```
 
 ## Join and summarize
@@ -596,4 +599,8 @@ aplot(atime.roll, "Rolling join", 1e10, 1e1, "Rows in join table")
 
 ```{r}
 Sys.time() - time.begin
+seconds.vec <- sapply(cache.list, function(L){
+  do.call(sum, L$meas$time)
+})
+sum(seconds.vec)+time.begin-time.begin
 ```
