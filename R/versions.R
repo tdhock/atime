@@ -62,52 +62,56 @@ atime_versions_install <- function(Package, pkg.path, new.Package.vec, sha.vec, 
             "skipping %s because it already exists in %s",
             new.Package, first.lib))
         }
-      }else{
-        tryCatch(
-          git2r::checkout(repo, branch=sha, force=TRUE),
-          error=function(e)stop(
-            e, " when trying to checkout ", sha))
-        ## before editing and installing, make sure directory has sha
-        ## suffix, for windows checks.
-        sha.path <- paste0(new.path,".",sha)
-        file.rename(new.path, sha.path)
-        unlink(file.path(sha.path, "src", "*.o"))
-        pkg.edit.fun(
-          old.Package=Package, 
-          new.Package=new.Package,
-          sha=sha, 
-          new.pkg.path=sha.path)
-        install.packages(
-          sha.path, repos=NULL, type="source", verbose=verbose)
-        if(verbose){
-          cat("\nPackage info after editing and installation:\n")
-          grep_glob <- function(glob, pattern){
-            some.files <- Sys.glob(file.path(sha.path, glob))
-            out <- list()
-            for(f in some.files){
-              line.vec <- readLines(f)
-              match.vec <- grep(pattern, line.vec, value=TRUE)
-              if(length(match.vec)){
-                out[[f]] <- match.vec
+      }else{#new.Package not in lib
+        if(sha==""){
+          install.packages(Package, verbose=verbose)
+        }else{#sha not empty
+          tryCatch(
+            git2r::checkout(repo, branch=sha, force=TRUE),
+            error=function(e)stop(
+              e, " when trying to checkout ", sha))
+          ## before editing and installing, make sure directory has sha
+          ## suffix, for windows checks.
+          sha.path <- paste0(new.path,".",sha)
+          file.rename(new.path, sha.path)
+          unlink(file.path(sha.path, "src", "*.o"))
+          pkg.edit.fun(
+            old.Package=Package, 
+            new.Package=new.Package,
+            sha=sha, 
+            new.pkg.path=sha.path)
+          install.packages(
+            sha.path, repos=NULL, type="source", verbose=verbose)
+          if(verbose){
+            cat("\nPackage info after editing and installation:\n")
+            grep_glob <- function(glob, pattern){
+              some.files <- Sys.glob(file.path(sha.path, glob))
+              out <- list()
+              for(f in some.files){
+                line.vec <- readLines(f)
+                match.vec <- grep(pattern, line.vec, value=TRUE)
+                if(length(match.vec)){
+                  out[[f]] <- match.vec
+                }
               }
-            }
-            out
-          }
-          out <- c(
-            grep_glob("DESCRIPTION", "^Package"),
-            grep_glob("NAMESPACE", "^useDynLib"),
-            grep_glob(file.path("src", "*.c"), "R_init_"),
-            grep_glob(file.path("src", "*.cpp"), "R_init_"))
-          src.files <- dir(file.path(sha.path, "src"))
-          out[["src/*.so|dll"]] <- grep("(so|dll)$", src.files, value=TRUE)
-          print(out)
-          cat("\n")
-        }
-        file.rename(sha.path, new.path)
-      }
-    }
-  }
-}  
+              out
+            }#grep_glob
+            out <- c(
+              grep_glob("DESCRIPTION", "^Package"),
+              grep_glob("NAMESPACE", "^useDynLib"),
+              grep_glob(file.path("src", "*.c"), "R_init_"),
+              grep_glob(file.path("src", "*.cpp"), "R_init_"))
+            src.files <- dir(file.path(sha.path, "src"))
+            out[["src/*.so|dll"]] <- grep("(so|dll)$", src.files, value=TRUE)
+            print(out)
+            cat("\n")
+          }#if(verbose)
+          file.rename(sha.path, new.path)
+        }#if(sha) empty else
+      }#if(new package not in lib)
+    }#for(new.i
+  }#any to install
+}
 
 atime_versions <- function(pkg.path, N, setup, expr, sha.vec=NULL, times=10, seconds.limit=0.01, verbose=FALSE, pkg.edit.fun=pkg.edit.default, results=TRUE, ...){
   ver.args <- list(
@@ -126,7 +130,10 @@ atime_versions_exprs <- function(pkg.path, expr, sha.vec=NULL, verbose=FALSE, pk
   pkg.DESC <- file.path(pkg.path, "DESCRIPTION")
   DESC.mat <- read.dcf(pkg.DESC)
   Package <- DESC.mat[,"Package"]
-  new.Package.vec <- sprintf("%s.%s", Package, SHA.vec)
+  new.Package.vec <- paste0(
+    Package, 
+    ifelse(SHA.vec=="", "", "."), 
+    SHA.vec)
   atime_versions_install(
     Package, pkg.path, new.Package.vec, SHA.vec, verbose, pkg.edit.fun)
   a.args <- list()
@@ -142,4 +149,97 @@ atime_versions_exprs <- function(pkg.path, expr, sha.vec=NULL, verbose=FALSE, pk
     a.args[[commit.name]] <- str2lang(paste(new.lines, collapse="\n"))
   }
   a.args
+}
+
+atime_pkg <- function(pkg.path="."){
+  ## For an example package see
+  ## https://github.com/tdhock/binsegRcpp/blob/another-branch/inst/atime/tests.R
+  pkg.DESC <- file.path(pkg.path, "DESCRIPTION")
+  DESC.mat <- read.dcf(pkg.DESC)
+  Package <- DESC.mat[,"Package"]
+  ap <- available.packages()
+  repo <- git2r::repository(pkg.path)
+  HEAD.commit <- git2r::revparse_single(repo, "HEAD")
+  sha.vec <- c()
+  HEAD.name <- paste0("HEAD=",git2r::repository_head()$name)
+  sha.vec[[HEAD.name]] <- git2r::sha(HEAD.commit)
+  CRAN.name <- paste0("CRAN=",ap[Package,"Version"])
+  if(Package %in% rownames(ap)){
+    sha.vec[[CRAN.name]] <- ""
+  }
+  base.ref <- Sys.getenv("GITHUB_BASE_REF", "master")
+  base.commit <- tryCatch({
+    git2r::revparse_single(repo, base.ref)
+  }, error=function(e){
+    NULL
+  })
+  add_if_new <- function(name, commit.obj){
+    sha <- git2r::sha(commit.obj)
+    if(!sha %in% sha.vec){
+      sha.vec[[name]] <<- sha
+    }
+  }
+  base.name <- paste0("base=",base.ref)
+  ## TODO take from tests.R file.
+  expand.prop <- 0.3
+  color.vec <- structure(
+    c("red","black","deepskyblue","violet"), 
+    names=c(HEAD.name, base.name, "merge-base", CRAN.name))
+  if(git2r::is_commit(base.commit)){
+    add_if_new(base.name, base.commit)
+    mb.commit <- git2r::merge_base(HEAD.commit, base.commit)
+    add_if_new("merge-base", mb.commit)
+  }
+  tests.R <- file.path(pkg.path, "inst", "atime", "tests.R")
+  test.env <- new.env()
+  tests.parsed <- parse(tests.R)
+  eval(tests.parsed, test.env)
+  pkg.results <- list()
+  for(test.name in names(test.env$test.list)){
+    test.clist <- as.list(test.env$test.list[[test.name]])
+    test.clist[[1]] <- quote(atime_versions)
+    test.clist[["pkg.path"]] <- pkg.path
+    test.clist[["sha.vec"]] <- sha.vec
+    test.call <- as.call(test.clist)
+    pkg.results[[test.name]] <- atime.list <- eval(test.call)
+    best.list <- atime::references_best(atime.list)
+    hline.df <- with(atime.list, data.frame(seconds.limit, unit="seconds"))
+    log10.range <- range(log10(atime.list$meas$N))
+    expand <- diff(log10.range)*expand.prop
+    xmax <- 10^(log10.range[2]+expand)
+    gg <- ggplot2::ggplot()+
+      ggplot2::ggtitle(test.name)+
+      ggplot2::theme_bw()+
+      ggplot2::facet_grid(unit ~ ., scales="free")+
+      ggplot2::geom_hline(ggplot2::aes(
+        yintercept=seconds.limit),
+        color="grey",
+        data=hline.df)+
+      ggplot2::scale_color_manual(values=color.vec)+
+      ggplot2::scale_fill_manual(values=color.vec)+
+      ggplot2::geom_line(ggplot2::aes(
+        N, empirical, color=expr.name),
+        data=best.list$meas)+
+      ggplot2::geom_ribbon(ggplot2::aes(
+        N, ymin=q25, ymax=q75, fill=expr.name),
+        data=best.list$meas[unit=="seconds"],
+        alpha=0.5)+
+      ggplot2::scale_x_log10()+
+      ggplot2::scale_y_log10("median line, quartiles band")+
+      directlabels::geom_dl(aes(
+        N, empirical, color=expr.name, label=expr.name),
+        method="right.polygons",
+        data=best.list$meas)+
+      ggplot2::theme(legend.position="none")+
+      ggplot2::coord_cartesian(xlim=c(NA,xmax))
+    out.png <- file.path(
+      dirname(tests.R), 
+      paste0(gsub(" ", "_", test.name), ".png"))
+    png(out.png, width=7, height=7, units="in", res=100)
+    print(gg)
+    dev.off()
+  }
+  tests.RDS <- sub("R$", "RDS", tests.R)
+  saveRDS(pkg.results, tests.RDS)
+  pkg.results
 }
