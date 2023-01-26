@@ -161,7 +161,7 @@ atime_pkg <- function(pkg.path="."){
   repo <- git2r::repository(pkg.path)
   HEAD.commit <- git2r::revparse_single(repo, "HEAD")
   sha.vec <- c()
-  HEAD.name <- paste0("HEAD=",git2r::repository_head()$name)
+  HEAD.name <- paste0("HEAD=",git2r::repository_head(repo)$name)
   sha.vec[[HEAD.name]] <- git2r::sha(HEAD.commit)
   CRAN.name <- paste0("CRAN=",ap[Package,"Version"])
   if(Package %in% rownames(ap)){
@@ -212,7 +212,7 @@ atime_pkg <- function(pkg.path="."){
     ), by=.(expr.name)]
     p.value <- sec.dt[data.table(N=min(max.dt$max.N)), {
       best.vec <- log10(as.numeric(time[[which.min(median)]]))
-      head.vec <- log10(as.numeric(time[[HEAD.name]]))
+      head.vec <- log10(as.numeric(time[[which(expr.name==HEAD.name)]]))
       t.test(head.vec, best.vec, alternative = "greater")$p.value
     }, on="N"]
     hline.df <- with(atime.list, data.frame(seconds.limit, unit="seconds"))
@@ -224,7 +224,7 @@ atime_pkg <- function(pkg.path="."){
     xmax <- 10^(log10.range[2]+expand)
     one.blank <- data.table(test.name, best.list$meas[1])
     one.blank[, N := xmax]
-    blank.dt.list[[test.name]] <- 
+    blank.dt.list[[test.name]] <- one.blank
     gg <- ggplot2::ggplot()+
       ggplot2::ggtitle(test.name)+
       ggplot2::theme_bw()+
