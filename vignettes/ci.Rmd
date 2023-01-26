@@ -1,0 +1,34 @@
+<!--
+%\VignetteEngine{knitr::knitr}
+%\VignetteIndexEntry{Continuous integration testing}
+-->
+
+# Binary segmentation examples
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+In this vignette, we show how to use atime for continuous integration
+testing. We begin by cloning a github repository of an R package which
+already has atime CI code.
+
+```{r}
+tdir <- tempfile()
+dir.create(tdir)
+git2r::clone("https://github.com/tdhock/binsegRcpp", tdir)
+repo <- git2r::repository(tdir)
+git2r::checkout(repo, branch="another-branch")
+```
+
+Then we can use 
+
+```{r}
+result.list <- atime::atime_pkg(tdir)
+library(data.table)
+
+
+```
