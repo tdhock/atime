@@ -195,6 +195,9 @@ atime_pkg <- function(pkg.path="."){
   tests.parsed <- parse(tests.R)
   eval(tests.parsed, test.env)
   pkg.results <- list()
+  blank.dt.list <- list()
+  bench.dt.list <- list()
+  limit.dt.list <- list()
   for(test.name in names(test.env$test.list)){
     test.clist <- as.list(test.env$test.list[[test.name]])
     test.clist[[1]] <- quote(atime_versions)
@@ -203,10 +206,25 @@ atime_pkg <- function(pkg.path="."){
     test.call <- as.call(test.clist)
     pkg.results[[test.name]] <- atime.list <- eval(test.call)
     best.list <- atime::references_best(atime.list)
+    sec.dt <- best.list$meas[unit=="seconds"]
+    max.dt <- sec.dt[, .(
+      N.values=.N, max.N=max(N)
+    ), by=.(expr.name)]
+    p.value <- sec.dt[data.table(N=min(max.dt$max.N)), {
+      best.vec <- log10(as.numeric(time[[which.min(median)]]))
+      head.vec <- log10(as.numeric(time[[HEAD.name]]))
+      t.test(head.vec, best.vec, alternative = "greater")$p.value
+    }, on="N"]
     hline.df <- with(atime.list, data.frame(seconds.limit, unit="seconds"))
+    limit.dt.list[[test.name]] <- data.table(test.name, hline.df)
+    bench.dt.list[[test.name]] <- data.table(
+      test.name, p.value, best.list$meas)
     log10.range <- range(log10(atime.list$meas$N))
     expand <- diff(log10.range)*expand.prop
     xmax <- 10^(log10.range[2]+expand)
+    one.blank <- data.table(test.name, best.list$meas[1])
+    one.blank[, N := xmax]
+    blank.dt.list[[test.name]] <- 
     gg <- ggplot2::ggplot()+
       ggplot2::ggtitle(test.name)+
       ggplot2::theme_bw()+
@@ -239,7 +257,46 @@ atime_pkg <- function(pkg.path="."){
     print(gg)
     dev.off()
   }
-  tests.RDS <- sub("R$", "RDS", tests.R)
-  saveRDS(pkg.results, tests.RDS)
+  blank.dt <- rbindlist(blank.dt.list)
+  bench.dt <- rbindlist(bench.dt.list)
+  limit.dt <- rbindlist(limit.dt.list)
+  setkey(bench.dt, p.value)
+  bench.dt[, p.str := sprintf("%.2e", p.value)]
+  bench.dt[, P.value := factor(p.str, unique(p.str))]
+  tests.RData <- sub("R$", "RData", tests.R)
+  save(pkg.results, bench.dt, limit.dt, color.vec, blank.dt, tests.RData)
+  gg <- ggplot2::ggplot()+
+    ggplot2::theme_bw()+
+    ggplot2::geom_hline(ggplot2::aes(
+      yintercept=seconds.limit),
+      color="grey",
+      data=limit.dt)+
+    ggplot2::scale_color_manual(values=color.vec)+
+    ggplot2::scale_fill_manual(values=color.vec)+
+    ggplot2::facet_grid(
+      unit ~ P.value + test.name, scales="free", labeller="label_both")+
+    ggplot2::geom_line(ggplot2::aes(
+      N, empirical, color=expr.name),
+      data=bench.dt)+
+    ggplot2::geom_blank(ggplot2::aes(
+      N, empirical),
+      data=blank.dt)+
+    ggplot2::geom_ribbon(ggplot2::aes(
+      N, ymin=q25, ymax=q75, fill=expr.name),
+      data=bench.dt[unit=="seconds"],
+      alpha=0.5)+
+    ggplot2::scale_x_log10()+
+    ggplot2::scale_y_log10("median line, quartiles band")+
+    directlabels::geom_dl(ggplot2::aes(
+      N, empirical, color=expr.name, label=expr.name),
+      method="right.polygons",
+      data=bench.dt)+
+    ggplot2::theme(legend.position="none")
+  out.png <- file.path(
+    dirname(tests.R), "tests_all_facet.png"))
+  N.tests <- length(test.env$test.list)
+  png(out.png, width=7*N.tests, height=7, units="in", res=100)
+  print(gg)
+  dev.off()
   pkg.results
 }
