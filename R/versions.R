@@ -226,7 +226,7 @@ atime_pkg <- function(pkg.path="."){
         alpha=0.5)+
       ggplot2::scale_x_log10()+
       ggplot2::scale_y_log10("median line, quartiles band")+
-      directlabels::geom_dl(aes(
+      directlabels::geom_dl(ggplot2::aes(
         N, empirical, color=expr.name, label=expr.name),
         method="right.polygons",
         data=best.list$meas)+
