@@ -293,7 +293,7 @@ atime_pkg <- function(pkg.path="."){
       data=bench.dt)+
     ggplot2::theme(legend.position="none")
   out.png <- file.path(
-    dirname(tests.R), "tests_all_facet.png"))
+    dirname(tests.R), "tests_all_facet.png")
   N.tests <- length(test.env$test.list)
   png(out.png, width=7*N.tests, height=7, units="in", res=100)
   print(gg)
