@@ -297,7 +297,6 @@ atime_pkg <- function(pkg.path="."){
       method="right.polygons",
       data=bench.dt)+
     ggplot2::theme(legend.position="none")
-  print(gg)
   out.png <- file.path(
     dirname(tests.R), "tests_all_facet.png")
   N.tests <- length(test.env$test.list)
