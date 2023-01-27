@@ -201,12 +201,11 @@ atime_pkg <- function(pkg.path="."){
   bench.dt.list <- list()
   limit.dt.list <- list()
   for(test.name in names(test.env$test.list)){
-    test.clist <- as.list(test.env$test.list[[test.name]])
-    test.clist[[1]] <- quote(atime_versions)
-    test.clist[["pkg.path"]] <- pkg.path
-    test.clist[["sha.vec"]] <- sha.vec
-    test.call <- as.call(test.clist)
-    pkg.results[[test.name]] <- atime.list <- eval(test.call)
+    pkg.sha.args <- list(pkg.path=pkg.path, sha.vec=sha.vec)
+    user.args <- test.env$test.list[[test.name]]
+    atv.args <- c(pkg.sha.args, user.args)
+    atime.list <- do.call(atime_versions, atv.args)
+    pkg.results[[test.name]] <- atime.list
     best.list <- atime::references_best(atime.list)
     sec.dt <- best.list$meas[unit=="seconds"]
     max.dt <- sec.dt[, .(
