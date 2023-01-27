@@ -24,11 +24,12 @@ repo <- git2r::repository(tdir)
 git2r::checkout(repo, branch="another-branch")
 ```
 
-Then we can use 
+```{r}
+cat(readLines(file.path(tdir, "inst", "atime", "tests.R")),sep="\n")
+```
+
+Then we can run the atime CI code in that package via
 
 ```{r}
 result.list <- atime::atime_pkg(tdir)
-library(data.table)
-
-
 ```

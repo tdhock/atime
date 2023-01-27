@@ -173,19 +173,21 @@ atime_pkg <- function(pkg.path="."){
   }, error=function(e){
     NULL
   })
-  add_if_new <- function(name, commit.obj){
-    sha <- git2r::sha(commit.obj)
-    if(!sha %in% sha.vec){
-      sha.vec[[name]] <<- sha
-    }
-  }
   base.name <- paste0("base=",base.ref)
   ## TODO take from tests.R file.
-  expand.prop <- 0.3
+  width.in <- 4
+  height.in <- 8
+  expand.prop <- 0.5
   color.vec <- structure(
     c("red","black","deepskyblue","violet"), 
     names=c(HEAD.name, base.name, "merge-base", CRAN.name))
   if(git2r::is_commit(base.commit)){
+    add_if_new <- function(name, commit.obj){
+      sha <- git2r::sha(commit.obj)
+      if(!sha %in% sha.vec){
+        sha.vec[[name]] <<- sha
+      }
+    }
     add_if_new(base.name, base.commit)
     mb.commit <- git2r::merge_base(HEAD.commit, base.commit)
     add_if_new("merge-base", mb.commit)
@@ -252,19 +254,22 @@ atime_pkg <- function(pkg.path="."){
       ggplot2::coord_cartesian(xlim=c(NA,xmax))
     out.png <- file.path(
       dirname(tests.R), 
-      paste0(gsub(" ", "_", test.name), ".png"))
-    png(out.png, width=7, height=7, units="in", res=100)
+      paste0(gsub("[ /]", "_", test.name), ".png"))
+    png(out.png, width=width.in, height=height.in, units="in", res=100)
     print(gg)
     dev.off()
   }
-  blank.dt <- rbindlist(blank.dt.list)
   bench.dt <- rbindlist(bench.dt.list)
-  limit.dt <- rbindlist(limit.dt.list)
   setkey(bench.dt, p.value)
   bench.dt[, p.str := sprintf("%.2e", p.value)]
   bench.dt[, P.value := factor(p.str, unique(p.str))]
+  meta.dt <- unique(bench.dt[, .(test.name, P.value)])
+  limit.dt <- rbindlist(limit.dt.list)[meta.dt, on="test.name"]
+  blank.dt <- rbindlist(blank.dt.list)[meta.dt, on="test.name"]
   tests.RData <- sub("R$", "RData", tests.R)
-  save(pkg.results, bench.dt, limit.dt, color.vec, blank.dt, tests.RData)
+  save(
+    pkg.results, bench.dt, limit.dt, color.vec, blank.dt, 
+    file=tests.RData)
   gg <- ggplot2::ggplot()+
     ggplot2::theme_bw()+
     ggplot2::geom_hline(ggplot2::aes(
@@ -292,10 +297,11 @@ atime_pkg <- function(pkg.path="."){
       method="right.polygons",
       data=bench.dt)+
     ggplot2::theme(legend.position="none")
+  print(gg)
   out.png <- file.path(
     dirname(tests.R), "tests_all_facet.png")
   N.tests <- length(test.env$test.list)
-  png(out.png, width=7*N.tests, height=7, units="in", res=100)
+  png(out.png, width=width.in*N.tests, height=height.in, units="in", res=100)
   print(gg)
   dev.off()
   pkg.results
