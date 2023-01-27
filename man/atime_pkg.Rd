@@ -8,10 +8,11 @@
 \arguments{
   \item{pkg.path}{path to package source directory.}
 }
-\details{There should be a file named package/inst/atime/tests.R which
-  defines \code{test.list}, a named list of test expressions. Each
-  element of this list should have named elements \code{N},
-  \code{setup}, \code{expr}, to be passed (un-evaluated) as code
+\details{There should be a file named pkg.path/inst/atime/tests.R which
+  defines \code{test.list}, a list with names corresponding to different
+  tests. Each
+  element should be a list with named elements \code{N},
+  \code{setup}, \code{expr}, to be passed as named
   arguments to \code{atime_versions}.}
 \value{Named list, names come from names of \code{test.list}, and values
   come from results of \code{atime_versions}. Side effect is that
