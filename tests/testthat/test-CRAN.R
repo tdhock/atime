@@ -168,4 +168,5 @@ test_that("no error for results=FALSE", {
     results=FALSE,
     seconds.limit=0.001)
   expect_is(alist, "atime")
+  expect_equal(sort(alist$measurements$expr.name), c("null","null","results","results","wait"))
 })
