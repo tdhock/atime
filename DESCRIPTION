@@ -35,5 +35,6 @@ Suggests:
     callr,
     readr,
     dplyr,
-    tidyr
+    tidyr,
+    nc
 VignetteBuilder: knitr
