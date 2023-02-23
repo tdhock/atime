@@ -207,6 +207,7 @@ atime_pkg <- function(pkg.path="."){
     atime.list <- do.call(atime_versions, atv.args)
     pkg.results[[test.name]] <- atime.list
     best.list <- atime::references_best(atime.list)
+    ref.dt <- best.list$ref[each.sign.rank==1]
     sec.dt <- best.list$meas[unit=="seconds"]
     max.dt <- sec.dt[, .(
       N.values=.N, max.N=max(N)
@@ -229,11 +230,15 @@ atime_pkg <- function(pkg.path="."){
     gg <- ggplot2::ggplot()+
       ggplot2::ggtitle(test.name)+
       ggplot2::theme_bw()+
-      ggplot2::facet_grid(unit ~ ., scales="free")+
+      ggplot2::facet_grid(unit ~ expr.name, scales="free")+
       ggplot2::geom_hline(ggplot2::aes(
         yintercept=seconds.limit),
         color="grey",
         data=hline.df)+
+      ggplot2::geom_line(ggplot2::aes(
+        N, reference, group=paste(expr.name, fun.name)),
+        color="grey50",
+        data=ref.dt)+
       ggplot2::scale_color_manual(values=color.vec)+
       ggplot2::scale_fill_manual(values=color.vec)+
       ggplot2::geom_line(ggplot2::aes(
@@ -246,6 +251,11 @@ atime_pkg <- function(pkg.path="."){
       ggplot2::scale_x_log10()+
       ggplot2::scale_y_log10("median line, quartiles band")+
       directlabels::geom_dl(ggplot2::aes(
+        N, reference, label.group=paste(expr.name, fun.name), label=fun.name),
+        data=ref.dt,
+        color="grey",
+        method="bottom.polygons")+
+      directlabels::geom_dl(ggplot2::aes(
         N, empirical, color=expr.name, label=expr.name),
         method="right.polygons",
         data=best.list$meas)+
@@ -253,8 +263,8 @@ atime_pkg <- function(pkg.path="."){
       ggplot2::coord_cartesian(xlim=c(NA,xmax))
     out.png <- file.path(
       dirname(tests.R), 
-      paste0(gsub("[ /]", "_", test.name), ".png"))
-    png(out.png, width=width.in, height=height.in, units="in", res=100)
+      paste0(gsub("[: /]", "_", test.name), ".png"))
+    png(out.png, width=width.in*nrow(max.dt), height=height.in, units="in", res=100)
     print(gg)
     dev.off()
   }
