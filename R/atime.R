@@ -80,17 +80,17 @@ atime <- function(N, setup, expr.list=NULL, times=10, seconds.limit=0.01, verbos
       N.env <- new.env(parent=parent.frame())
       N.env$N <- N.value
       eval(mc.args$setup, N.env)
-      m.list <- list(bench::mark, iterations=times,check=FALSE)
+      m.list <- list(quote(bench::mark), iterations=times,check=FALSE)
       N.env$result.list <- list()
       for(expr.name in not.done.yet){
         expr <- elist[[expr.name]]
-        m.list[[expr.name]] <- if(result){
+        m.list[expr.name] <- list(if(result){
           substitute(
             result.list[NAME] <- list(EXPR),
             list(NAME=expr.name, EXPR=expr))
         }else{
           expr
-        }
+        })
       }
       m.call <- as.call(m.list)
       N.df <- eval(m.call, N.env)
