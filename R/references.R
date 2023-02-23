@@ -81,8 +81,8 @@ references_best <- function(L, unit.col.vec=NULL, more.units=NULL, fun.list=NULL
         second,
         on=.(expr.name, fun.name, fun.latex)])
       best <- second[overall.rank==1, .(expr.name, fun.name, fun.latex)]
-      metric.dt.list[[unit]] <- data.table(unit, DT[
-        best, on=.(expr.name)
+      metric.dt.list[[unit]] <- data.table(unit, best[
+        DT, on=.(expr.name)
       ][, `:=`(
         expr.class=paste0(expr.name,"\n",fun.name),
         expr.latex=sprintf("%s\n$O(%s)$", expr.name, fun.latex),
