@@ -107,7 +107,7 @@ C regex library is used:
 ```{r}
 expr.list <- atime::atime_grid(
   list(ENGINE=c(
-    if(requireNamespace("re2"))"RE2",
+    ##if(requireNamespace("re2"))"RE2",#uncomment when new nc on CRAN.
     "PCRE",
     if(requireNamespace("stringi"))"ICU")),
   nc=nc::capture_first_vec(subject, pattern, engine=ENGINE))

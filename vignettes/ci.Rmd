@@ -35,6 +35,7 @@ cat(test.lines, sep="\n")
 We can run the atime CI code in that package via:
 
 ```{r}
+options(repos="http://cloud.r-project.org")
 result.list <- atime::atime_pkg(tdir)
 tests.png <- file.path(inst.atime, "tests_all_facet.png")
 knitr::include_graphics(tests.png)
