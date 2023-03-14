@@ -112,3 +112,61 @@ test_that("atime_grid ok when THREADS used", {
     })
   expect_equal(length(expr.list), 3)
 })
+
+test_that("error for expr.list not list", {
+  expr.list <- atime::atime_grid(
+    list(ENGINE=c(
+      if(requireNamespace("re2"))"RE2",
+      "PCRE",
+      if(requireNamespace("stringi"))"ICU")),
+    nc=nc::capture_first_vec(subject, pattern, engine=ENGINE))
+  dolist <- function(elist){
+    atime::atime(
+      N=1:25,
+      setup={
+        rep.collapse <- function(chr)paste(rep(chr, N), collapse="")
+        subject <- rep.collapse("a")
+        pattern <- list(maybe=rep.collapse("a?"), rep.collapse("a"))
+      },
+      expr.list=elist)
+  }
+  atime.list <- dolist(expr.list)
+  expect_is(atime.list, "atime")
+  expect_error({
+    dolist(structure(2, class=c("foo","bar")))
+  }, "expr.list should be a list of expressions to run for various N, but has classes foo, bar")
+})
+
+test_that("references_best does not delete", {
+  alist <- atime::atime(
+    N=1:2,
+    setup={},
+    slow=Sys.sleep(0.01),
+    fast=Sys.sleep(0.0001),
+    seconds.limit=0.001)
+  expect_equal(nrow(alist$measurements[expr.name=="slow"]), 1)
+  blist <- atime::references_best(alist)
+  expect_equal(nrow(blist$measurements[expr.name=="slow"]), 1)
+})
+
+test_that("null is faster than wait", {
+  alist <- atime::atime(
+    N=1:2,
+    setup={},
+    wait=Sys.sleep(0.01),
+    null=NULL,
+    seconds.limit=0.001)
+  expect_equal(nrow(alist$measurements[expr.name=="null"]), 2)
+})
+
+test_that("no error for results=FALSE", {
+  alist <- atime::atime(
+    N=1:2,
+    setup={},
+    wait=Sys.sleep(0.01),
+    null=NULL,
+    results=FALSE,
+    seconds.limit=0.001)
+  expect_is(alist, "atime")
+  expect_equal(sort(alist$measurements$expr.name), c("null","null","results","results","wait"))
+})

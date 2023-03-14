@@ -63,6 +63,9 @@ atime <- function(N, setup, expr.list=NULL, times=10, seconds.limit=0.01, verbos
   formal.names <- names(formals())
   mc.args <- as.list(match.call()[-1])
   dots.list <- mc.args[!names(mc.args) %in% formal.names]
+  if(!missing(expr.list) && !is.list(expr.list)){
+    stop(domain=NA, gettextf("expr.list should be a list of expressions to run for various N, but has classes %s", paste(class(expr.list), collapse=", ")))
+  }
   elist <- c(expr.list, dots.list)
   name.tab <- table(names(elist))
   bad.names <- names(name.tab)[name.tab>1]
@@ -77,17 +80,17 @@ atime <- function(N, setup, expr.list=NULL, times=10, seconds.limit=0.01, verbos
       N.env <- new.env(parent=parent.frame())
       N.env$N <- N.value
       eval(mc.args$setup, N.env)
-      m.list <- list(bench::mark, iterations=times,check=FALSE)
+      m.list <- list(quote(bench::mark), iterations=times,check=FALSE)
       N.env$result.list <- list()
       for(expr.name in not.done.yet){
         expr <- elist[[expr.name]]
-        m.list[[expr.name]] <- if(result){
+        m.list[expr.name] <- list(if(result){
           substitute(
             result.list[NAME] <- list(EXPR),
             list(NAME=expr.name, EXPR=expr))
         }else{
           expr
-        }
+        })
       }
       m.call <- as.call(m.list)
       N.df <- eval(m.call, N.env)

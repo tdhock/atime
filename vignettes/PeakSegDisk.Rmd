@@ -46,7 +46,7 @@ asymptotic references:
 
 ```{r}
 atime.list$measurements[, intervals := sapply(
-  result, function(L)L$loss$mean.intervals)]
+  result, function(L)if(is.numeric(L))NA else L$loss$mean.intervals)]
 best.list <- atime::references_best(atime.list, more.units="intervals")
 plot(best.list)
 ```
