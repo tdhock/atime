@@ -29,7 +29,9 @@ seconds.limit <- 1
 cache.list <- list()
 cache <- function(symbol, code){
   cache.symb <- substitute(symbol)
-  cache.rds <- paste0(cache.symb, ".RDS")
+  cache.dir <- "~/R/atime-cache"
+  dir.create(cache.dir, showWarnings=FALSE)
+  cache.rds <- file.path(cache.dir, paste0(cache.symb, ".RDS"))
   if(file.exists(cache.rds)){
     value <- readRDS(cache.rds)
   }else{
