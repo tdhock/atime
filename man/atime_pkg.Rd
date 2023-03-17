@@ -4,7 +4,7 @@
 \description{Computation time and memory for several R expressions of
   several different data sizes, for up to four different package
   versions (base, HEAD, CRAN, merge-base).}
-\usage{atime(pkg.path)}
+\usage{atime_pkg(pkg.path)}
 \arguments{
   \item{pkg.path}{path to package source directory.}
 }

@@ -154,10 +154,14 @@ atime_versions_exprs <- function(pkg.path, expr, sha.vec=NULL, verbose=FALSE, pk
 atime_pkg <- function(pkg.path="."){
   ## For an example package see
   ## https://github.com/tdhock/binsegRcpp/blob/another-branch/inst/atime/tests.R
+  each.sign.rank <- unit <- . <- N <- expr.name <- reference <- fun.name <- 
+    empirical <- q25 <- q75 <- p.str <- p.value <- P.value <- 
+      seconds.limit <- NULL
+  ## above to avoid CRAN check NOTE.
   pkg.DESC <- file.path(pkg.path, "DESCRIPTION")
   DESC.mat <- read.dcf(pkg.DESC)
   Package <- DESC.mat[,"Package"]
-  ap <- available.packages()
+  ap <- utils::available.packages()
   repo <- git2r::repository(pkg.path)
   HEAD.commit <- git2r::revparse_single(repo, "HEAD")
   sha.vec <- c()
@@ -215,7 +219,7 @@ atime_pkg <- function(pkg.path="."){
     p.value <- sec.dt[data.table(N=min(max.dt$max.N)), {
       best.vec <- log10(as.numeric(time[[which.min(median)]]))
       head.vec <- log10(as.numeric(time[[which(expr.name==HEAD.name)]]))
-      t.test(head.vec, best.vec, alternative = "greater")$p.value
+      stats::t.test(head.vec, best.vec, alternative = "greater")$p.value
     }, on="N"]
     hline.df <- with(atime.list, data.frame(seconds.limit, unit="seconds"))
     limit.dt.list[[test.name]] <- data.table(test.name, hline.df)
@@ -264,9 +268,9 @@ atime_pkg <- function(pkg.path="."){
     out.png <- file.path(
       dirname(tests.R), 
       paste0(gsub("[: /]", "_", test.name), ".png"))
-    png(out.png, width=width.in*nrow(max.dt), height=height.in, units="in", res=100)
+    grDevices::png(out.png, width=width.in*nrow(max.dt), height=height.in, units="in", res=100)
     print(gg)
-    dev.off()
+    grDevices::dev.off()
   }
   bench.dt <- rbindlist(bench.dt.list)
   setkey(bench.dt, p.value)
@@ -309,8 +313,8 @@ atime_pkg <- function(pkg.path="."){
   out.png <- file.path(
     dirname(tests.R), "tests_all_facet.png")
   N.tests <- length(test.env$test.list)
-  png(out.png, width=width.in*N.tests, height=height.in, units="in", res=100)
+  grDevices::png(out.png, width=width.in*N.tests, height=height.in, units="in", res=100)
   print(gg)
-  dev.off()
+  grDevices::dev.off()
   pkg.results
 }
