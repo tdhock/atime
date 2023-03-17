@@ -6,4 +6,4 @@ README*
 build.sh
 ^\.github$
 ^codecov\.yml$
-vignettes/*.RDS
+oldcache

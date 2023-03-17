@@ -12,7 +12,7 @@ cp -r $PKG $RELEASE
 
 echo Editing $RELEASE for CRAN submission
 grep -v Remotes $PKG/DESCRIPTION > $RELEASE/DESCRIPTION
-rm $RELEASE/tests/testthat/*
+rm -f $RELEASE/tests/testthat/* $RELEASE/vignettes/*.RDS
 cp $PKG/tests/testthat/test-CRAN*.R $RELEASE/tests/testthat
 
 echo Building $RELEASE
