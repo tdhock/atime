@@ -82,7 +82,7 @@ Note that in your code you don't have to create a helper function like
 vignette code, in order to run the different versions of the code
 using `callr::r`, in a separate R process. This allows us to avoid
 CRAN warnings about unexpected files found in the package check
-directory, by safely delete/remove the installed packages, after
+directory, by safely deleting/removing the installed packages, after
 having run the example code. For a more typical usage see
 `example(atime_versions, package="atime")`.
 
