@@ -205,7 +205,7 @@ if(require(ggplot2)){
   hline.df <- with(write.chr.vary.cols, data.frame(
     seconds.limit, unit="seconds"))
   gg <- ggplot()+
-    ggtitle("Write CSV with 10 character rows, asymtotic complexity")+
+    ggtitle("Write CSV with 10 character rows, asymptotic complexity")+
     theme_bw()+
     facet_grid(unit ~ expr.name, scales="free")+
     geom_hline(aes(
