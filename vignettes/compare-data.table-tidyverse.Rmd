@@ -605,3 +605,9 @@ seconds.vec <- sapply(cache.list, function(L){
 })
 sum(seconds.vec)+time.begin-time.begin
 ```
+
+## session info
+
+```{r}
+sessionInfo()
+```
