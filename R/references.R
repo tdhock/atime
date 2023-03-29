@@ -44,7 +44,11 @@ references_best <- function(L, unit.col.vec=NULL, more.units=NULL, fun.list=NULL
   if(!is.null(more.units)){
     unit.col.vec <- c(unit.col.vec, more.units)
   }
-  to.rep <- names(unit.col.vec) == ""
+  to.rep <- if(is.null(names(unit.col.vec))){
+    rep(TRUE, length(unit.col.vec))
+  }else{
+    names(unit.col.vec) == ""
+  }
   names(unit.col.vec)[to.rep] <- unit.col.vec[to.rep]
   ref.dt.list <- list()
   metric.dt.list <- list()
