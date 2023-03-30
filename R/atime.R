@@ -39,7 +39,7 @@ atime_grid <- function
       "each param should be present in each expr, problems: ",
       paste(problem.list, collapse=", "))
   }
-  value.mat <- sapply(param.dt, paste)
+  value.mat <- do.call(cbind, lapply(param.dt, paste))
   name.vec <- colnames(value.mat)[col(value.mat)]
   name.value.mat <- matrix(
     paste0(name.vec, name.value.sep, value.mat),
