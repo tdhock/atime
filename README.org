@@ -19,9 +19,8 @@ arguments:
   timings.
 - =times= is the number of times each expression is timed (so we can
   take the median and ignore outliers).
-- =seconds.limit= is the max number of seconds. If any expression
-  takes more time, then results for larger N values will not be
-  computed.
+- =seconds.limit= is the max number of seconds. If an expression takes
+  more time, then it will not be timed for larger N values.
 - there should also be at least one other named argument (an
   expression to time for every size N, name is the label which will
   appear on plots). 
