@@ -156,7 +156,7 @@ aplot(write.real.vary.rows, "Write CSV with 10 random normal real columns", 1e9,
 
 ```{r}
 best.list <- atime::references_best(write.real.vary.rows)
-one.thread <- function(DT)DT[grepl("utils|THREADS=1$", expr.name)]
+one.thread <- function(DT)DT[grepl("utils|scan|THREADS=1$", expr.name)]
 meas.dt <- one.thread(best.list$meas)
 ref.dt <- one.thread(best.list$ref)[
   fun.name %in% c("N^2","N") & N >= 1e2]
@@ -164,7 +164,7 @@ if(require(ggplot2)){
   hline.df <- with(write.real.vary.rows, data.frame(
     seconds.limit, unit="seconds"))
   gg <- ggplot()+
-    ggtitle("Write CSV with 10 character rows, asymptotic complexity")+
+    ggtitle("Write CSV with 10 random normal real columns, asymptotic complexity")+
     theme_bw()+
     facet_grid(unit ~ expr.name, scales="free")+
     geom_hline(aes(
@@ -202,7 +202,6 @@ if(require(ggplot2)){
 }
 ```
 
-
 The code below writes real numbers with a constant number of rows, and
 a variable number of columns.
 
@@ -227,9 +226,14 @@ cache(write.chr.vary.rows, atime_write(
 aplot(write.chr.vary.rows, "Write CSV with 10 character columns", 1e9, 1e1, "Number of rows", write.colors)
 ```
 
+The figure above is useful for comparing different functions, and
+shows that all have the same asymptotic time complexity
+class. However, we observe a difference in memory usage: linear for
+`write.csv` and constant for others. Below, we draw reference lines,
+so we can see the complexity class.
+
 ```{r}
 best.list <- atime::references_best(write.chr.vary.rows)
-one.thread <- function(DT)DT[grepl("utils|THREADS=1$", expr.name)]
 meas.dt <- one.thread(best.list$meas)
 ref.dt <- one.thread(best.list$ref)[
   fun.name %in% c("N^2","N") & N >= 1e2]
@@ -237,7 +241,7 @@ if(require(ggplot2)){
   hline.df <- with(write.chr.vary.rows, data.frame(
     seconds.limit, unit="seconds"))
   gg <- ggplot()+
-    ggtitle("Write CSV with 10 character rows, asymptotic complexity")+
+    ggtitle("Write CSV with 10 character columns, asymptotic complexity")+
     theme_bw()+
     facet_grid(unit ~ expr.name, scales="free")+
     geom_hline(aes(
@@ -272,14 +276,14 @@ if(require(ggplot2)){
   }else{
     gg
   }
-  png("figure-write-chr-vary-rows-complexity.png", 9, 6, units="in", res=100)
+  ##png("figure-write-chr-vary-rows-complexity.png", 9, 6, units="in", res=100)
   print(dl)
-  dev.off()
+  ##dev.off()
 }
 ```
 
-
-
+The figure above shows that all functions are linear time, and
+`write.csv` is linear memory.
 The code below is for character data with a constant number of
 rows, and a variable number of columns.
 
@@ -298,7 +302,6 @@ asymptote.
 
 ```{r}
 best.list <- atime::references_best(write.chr.vary.cols)
-one.thread <- function(DT)DT[grepl("utils|THREADS=1$", expr.name)]
 meas.dt <- one.thread(best.list$meas)
 ref.dt <- one.thread(best.list$ref)[
   fun.name %in% c("N^2","N") & N >= 1e2]
@@ -372,31 +375,53 @@ read.expr.list <- c(
     "utils::read.csv"={
       utils::read.csv(f.csv)
     }))
-read.compute.expr.list <- list()
-for(expr.name in names(read.expr.list)){
-  lang.list <- as.list(read.expr.list[[expr.name]])
-  LAST <- length(lang.list)
-  lang.list[[LAST]] <- as.call(c(
-    quote(`<-`),
-    quote(DF),
-    lang.list[[LAST]]))
-  read.compute.expr.list[[expr.name]] <- as.call(c(
-    lang.list,
-    quote(apply(DF, 1, paste, collapse=","))))
-}
-atime_read <- function(glob, compute=FALSE){  
+atime_read <- function(glob, compute=FALSE, colClasses, N.col){  
   fmt <- sub("[*]", "%d", glob)
   csv.dt <- nc::capture_first_vec(
     Sys.glob(file.path(tempdir(), glob)),
     N="[0-9]+", as.integer,
     ".csv")[order(N)]
+  read.more.list <- c(
+    read.expr.list,
+    if(!missing(colClasses))list(
+      "read.csv(colClasses)"=substitute(
+        utils::read.csv(f.csv, colClasses = CLASS),
+        list(CLASS=colClasses)),
+      "list2DF(scan)"=substitute({
+        what <- `names<-`(
+          rep(list(FUN()), NCOL),
+          paste0("V",seq_len(NCOL))
+        )
+        list2DF(scan(f.csv, what=what, sep=",", skip=1, multi.line=FALSE))
+      }, list(
+        FUN=as.symbol(colClasses),
+        NCOL=if(missing(N.col))quote(N) else N.col)
+      )))
+  expr.list <- if(compute){
+    read.compute.expr.list <- list()
+    for(expr.name in names(read.more.list)){
+      lang.list <- as.list(read.more.list[[expr.name]])
+      LAST <- length(lang.list)
+      lang.list[[LAST]] <- as.call(c(
+        quote(`<-`),
+        quote(DF),
+        lang.list[[LAST]]))
+      read.compute.expr.list[[expr.name]] <- as.call(c(
+        lang.list,
+        quote(apply(DF, 1, paste, collapse=","))))
+    }
+    read.compute.expr.list
+  }else{
+    read.more.list
+  }
+  print(expr.list)
   atime::atime(
     N=csv.dt$N,
     setup={
       f.csv <- file.path(tempdir(), sprintf(fmt, N))
     },
     seconds.limit = seconds.limit,
-    expr.list=if(compute)read.compute.expr.list else read.expr.list)
+    expr.list=expr.list)
 }
 PRGn <- c(
   "#40004B", "#762A83", "#9970AB", "#C2A5CF", "#E7D4E8",#5
@@ -407,20 +432,22 @@ PRGn <- c(
   "#FFFFFF",#white 17
   "#E0E0E0", "#BABABA", "#878787", "#4D4D4D",
   "#1A1A1A",#almost black 22
-  "utils::write.csv"="deepskyblue")
+  "#00FFFF",#"deepskyblue",
+  "#00CCCC",
+  "#009999")
 names(PRGn)[c(
   some(3,2,1),
   some(9,10,11),
   some(14,13,12),
-  23)] <- names(read.expr.list)
-read.colors <- PRGn[names(PRGn)!=""]
+  23,24,25)] <- c(names(read.expr.list),"read.csv(colClasses)","list2DF(scan)")
+read.colors <- PRGn[names(PRGn)!=""&!is.na(names(PRGn))]
 ```
 
 Below we read real numbers with a constant number of columns, and a
 variable number of rows.
 
 ```{r}
-cache(read.real.vary.rows, atime_read("10_real_cols_fwrite_*.csv"))
+cache(read.real.vary.rows, atime_read("10_real_cols_fwrite_*.csv", compute=FALSE, colClasses="numeric",N.col=10))
 aplot(read.real.vary.rows, "Read CSV with 10 real columns", 1e9, 1e1, "Number of rows", read.colors)
 ```
 
@@ -439,21 +466,25 @@ Below we read real numbers with a constant number of rows, and a
 variable number of columns.
 
 ```{r}
-cache(read.real.vary.cols, atime_read("10_real_rows_fwrite_*.csv"))
+cache(read.real.vary.cols, atime_read("10_real_rows_fwrite_*.csv", compute=FALSE, colClasses="numeric"))
 aplot(read.real.vary.cols, "Read CSV with 10 real rows", 1e8, 1e1, "Number of columns", read.colors)
 ```
 
+The plot above shows that all functions have the same asymptotic
+memory usage, but `read.csv` has a larger asymptotic time complexity
+class than the others. The plot below shows that the time complexity
+class of `read.csv` is in fact quadratic, whereas the others are linear.
+
 ```{r}
 best.list <- atime::references_best(read.real.vary.cols)
-one.thread <- function(DT)DT[grepl("utils|THREADS=1$", expr.name)]
 meas.dt <- one.thread(best.list$meas)
 ref.dt <- one.thread(best.list$ref)[
-  fun.name %in% c("N^2","N") & N >= 1e2]
+  fun.name %in% c("N^2","N log N", "N") & N >= 1e2]
 if(require(ggplot2)){
   hline.df <- with(read.real.vary.cols, data.frame(
     seconds.limit, unit="seconds"))
   gg <- ggplot()+
-    ggtitle("Write CSV with 10 character rows, asymptotic complexity")+
+    ggtitle("Read CSV with 10 real rows, asymptotic complexity")+
     theme_bw()+
     facet_grid(unit ~ expr.name, scales="free")+
     geom_hline(aes(
@@ -488,9 +519,9 @@ if(require(ggplot2)){
   }else{
     gg
   }
-  png("figure-read-real-vary-cols-complexity.png", 12, 6, units="in", res=100)
+  ##png("figure-read-real-vary-cols-complexity.png", 12, 6, units="in", res=100)
   print(dl)
-  dev.off()
+  ##dev.off()
 }
 ```
 
@@ -499,7 +530,7 @@ Below we read character data with a constant number of columns, and a
 variable number of rows.
 
 ```{r}
-cache(read.chr.vary.rows, atime_read("10_chr_cols_fwrite_*.csv"))
+cache(read.chr.vary.rows, atime_read("10_chr_cols_fwrite_*.csv", compute=FALSE, colClasses="character",N.col=10))
 aplot(read.chr.vary.rows, "Read CSV with 10 character columns", 1e9, 1e1, "Number of rows", read.colors)
 ```
 
@@ -517,7 +548,7 @@ Below we read character data with a constant number of rows, and a
 variable number of columns.
 
 ```{r}
-cache(read.chr.vary.cols, atime_read("10_chr_rows_fwrite_*.csv"))
+cache(read.chr.vary.cols, atime_read("10_chr_rows_fwrite_*.csv", compute=FALSE, colClasses="character"))
 aplot(read.chr.vary.cols, "Read CSV with 10 character rows", 1e8, 1e1, "Number of columns", read.colors)
 ```
 
