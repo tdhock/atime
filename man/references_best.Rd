@@ -20,6 +20,8 @@
 
 \examples{
 
+## Example 1: regex functions.
+(subject.size.vec <- unique(as.integer(10^seq(0,3,l=100))))
 atime.list <- atime::atime(
   PCRE=regexpr(pattern, subject, perl=TRUE),
   TRE=regexpr(pattern, subject, perl=FALSE),
@@ -27,10 +29,13 @@ atime.list <- atime::atime(
     subject <- paste(rep("a", N), collapse="")
     pattern <- paste(rep(c("a?", "a"), each=N), collapse="")
   },
-  N=1:30)
-best.list <- atime::references_best(atime.list)
+  N=subject.size.vec)
+(best.list <- atime::references_best(atime.list))
+
+## plot method shows each expr in a separate panel.
 plot(best.list)
 
+## alternative showing each expr in the same panel.
 if(require("ggplot2")){
   hline.df <- with(atime.list, data.frame(seconds.limit, unit="seconds"))
   ref.dt <- best.list$ref[overall.rank==1]
@@ -66,10 +71,37 @@ if(require("ggplot2")){
         data=ref.dt,
         color="grey",
         method="bottom.polygons")+
-      coord_cartesian(xlim=c(1,40))
+      coord_cartesian(xlim=c(min(subject.size.vec), max(subject.size.vec)*2))
   }else{
     gg
   }
 }
+
+
+## Example 2: write CSV with N rows.
+write.N.rows <- atime::atime(
+  N=as.integer(10^seq(0, 6, by=0.5)),
+  setup={
+    mat <- matrix("a", N, 2)
+    df <- data.frame(mat)
+    out.csv <- tempfile()
+  },
+  "utils::write.csv"=utils::write.csv(df, out.csv),
+  "data.table::fwrite"=data.table::fwrite(df, out.csv))
+write.N.rows.best <- atime::references_best(write.N.rows)
+plot(write.N.rows.best)
+
+## Example 3: write CSV with N columns.
+write.N.cols <- atime::atime(
+  N=as.integer(10^seq(0, 7, by=0.5)),
+  setup={
+    mat <- matrix("a", 2, N)
+    df <- data.frame(mat)
+    out.csv <- tempfile()
+  },
+  "utils::write.csv"=utils::write.csv(df, out.csv),
+  "data.table::fwrite"=data.table::fwrite(df, out.csv))
+write.N.cols.best <- atime::references_best(write.N.cols)
+plot(write.N.cols.best)
 
 }

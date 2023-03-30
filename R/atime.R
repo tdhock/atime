@@ -130,21 +130,22 @@ log_scale_max <- function(N, prop.expand=0.3){
 
 plot.atime <- function(x, ...){
   expr.name <- N <- kilobytes <- NULL
+  meas <- x[["measurements"]]
   if(requireNamespace("ggplot2")){
     gg <- ggplot2::ggplot()+
       ggplot2::geom_ribbon(ggplot2::aes(
         N, ymin=min, ymax=max, fill=expr.name),
-        data=data.table(atime.list$meas, unit="seconds"),
+        data=data.table(meas, unit="seconds"),
         alpha=0.5)+
       ggplot2::geom_line(ggplot2::aes(
         N, median, color=expr.name),
-        data=data.table(atime.list$meas, unit="seconds"))+
+        data=data.table(meas, unit="seconds"))+
       ggplot2::geom_line(ggplot2::aes(
         N, kilobytes, color=expr.name),
-        data=data.table(atime.list$meas, unit="kilobytes"))+
+        data=data.table(meas, unit="kilobytes"))+
       ggplot2::facet_grid(unit ~ ., scales="free")+
       ggplot2::scale_x_log10(
-        limits=c(NA, log_scale_max(atime.list$meas$N)))+
+        limits=c(NA, log_scale_max(meas$N)))+
       ggplot2::scale_y_log10("median line, min/max band")
     if(requireNamespace("directlabels")){
       directlabels::direct.label(gg, "right.polygons")
@@ -153,7 +154,7 @@ plot.atime <- function(x, ...){
     }
   }else{
     lattice::xyplot(
-      log10(median) ~ log10(N), x$measurements, 
+      log10(median) ~ log10(N), meas, 
       groups=expr.name, type="l", 
       ylab="log10(median seconds)",
       auto.key=list(space="right", points=FALSE, lines=TRUE))
@@ -167,9 +168,10 @@ print.atime <- function(x, ...){
   expr.vec <- summary.dt[, paste0(
     expr.name, "(N=", N_min, " to ", N_max, ")")]
   cat(
+    "atime list with ",
     nrow(x$measurements),
-    " measurements for ", 
-    paste(expr.vec, collapse=", "),
+    " measurements for\n", 
+    paste(expr.vec, collapse="\n"),
     "\n",
     sep="")
 }

@@ -35,7 +35,7 @@ references <- function
 references_best <- function(L, unit.col.vec=NULL, more.units=NULL, fun.list=NULL){
   N <- expr.name <- . <- fun.name <- dist <- empirical <- reference <-
     fun.latex <- overall.rank <- NULL
-  DT <- L[["measurements"]]
+  ## Above for R CMD check.
   if(is.null(unit.col.vec)){
     unit.col.vec <- c(
       "kilobytes",
@@ -44,20 +44,21 @@ references_best <- function(L, unit.col.vec=NULL, more.units=NULL, fun.list=NULL
   if(!is.null(more.units)){
     unit.col.vec <- c(unit.col.vec, more.units)
   }
-  to.rep <- if(is.null(names(unit.col.vec))){
-    rep(TRUE, length(unit.col.vec))
-  }else{
-    names(unit.col.vec) == ""
-  }
-  names(unit.col.vec)[to.rep] <- unit.col.vec[to.rep]
-  ref.dt.list <- list()
-  metric.dt.list <- list()
+  DT <- L[["measurements"]]
   not.found <- unit.col.vec[!unit.col.vec %in% names(DT)]
   if(length(not.found)){
     stop(
       "some units were not found (fix by creating columns in measurements): ",
       paste(not.found, collapse=", "))
   }
+  to.rep <- if(is.null(names(unit.col.vec))){
+    rep(TRUE, length(unit.col.vec))
+  }else{
+    names(unit.col.vec) == "" | is.na(names(unit.col.vec))
+  }
+  names(unit.col.vec)[to.rep] <- unit.col.vec[to.rep]
+  ref.dt.list <- list()
+  metric.dt.list <- list()
   for(unit in names(unit.col.vec)){
     col.name <- unit.col.vec[[unit]]
     values <- DT[[col.name]]
@@ -95,6 +96,7 @@ references_best <- function(L, unit.col.vec=NULL, more.units=NULL, fun.list=NULL
     }
   }
   structure(list(
+    seconds.limit=L[["seconds.limit"]],
     references=do.call(rbind, ref.dt.list),
     measurements=do.call(rbind, metric.dt.list)),
     class="references_best")
@@ -102,9 +104,11 @@ references_best <- function(L, unit.col.vec=NULL, more.units=NULL, fun.list=NULL
 
 plot.references_best <- function(x, ...){
   expr.name <- N <- reference <- fun.name <- empirical <- NULL
+  ## Above for R CMD check.
+  meas <- x[["measurements"]]
   if(requireNamespace("ggplot2")){
-    hline.df <- with(atime.list, data.frame(seconds.limit, unit="seconds"))
-    ref.dt <- best.list$ref[each.sign.rank==1]
+    hline.df <- with(x, data.frame(seconds.limit, unit="seconds"))
+    ref.dt <- x[["references"]][each.sign.rank==1]
     ref.color <- "violet"
     emp.color <- "black"
     gg <- ggplot2::ggplot()+
@@ -116,14 +120,14 @@ plot.references_best <- function(x, ...){
         data=hline.df)+
       ggplot2::geom_ribbon(ggplot2::aes(
         N, ymin=min, ymax=max),
-        data=best.list$meas[unit=="seconds"],
+        data=meas[unit=="seconds"],
         fill=emp.color,
         alpha=0.5)+
       ggplot2::geom_line(ggplot2::aes(
         N, empirical),
         size=2,
         color=emp.color,
-        data=best.list$meas)+
+        data=meas)+
       ggplot2::geom_line(ggplot2::aes(
         N, reference, group=fun.name),
         color=ref.color,
@@ -143,7 +147,7 @@ plot.references_best <- function(x, ...){
     }
   }else{
     lattice::xyplot(
-      log10(empirical) ~ log10(N) | unit, x$measurements, 
+      log10(empirical) ~ log10(N) | unit, meas, 
       groups=expr.name, type="l", 
       ylab="log10(median)",
       scales=list(relation="free"),
@@ -160,8 +164,7 @@ print.references_best <- function(x, ...){
   ), by=expr.name]
   summary.vec <- summary.dt[, sprintf("%s (%s)", expr.name, summary)]
   cat(with(x, sprintf(
-    "%s measurements with %s references, best fit complexity: %s\n",
+    "references_best list with %s measurements, best fit complexity:\n%s\n",
     nrow(x[["measurements"]]),
-    nrow(x[["references"]]),
-    paste(summary.vec, collapse=", "))))
+    paste(summary.vec, collapse="\n"))))
 }
