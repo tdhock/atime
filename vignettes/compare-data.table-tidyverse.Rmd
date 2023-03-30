@@ -22,8 +22,7 @@ memory) of common operations using `data.table` and tidyverse functions.
 ```{r}
 library(data.table)
 hostname <- system("hostname",intern=TRUE)
-as.integer(Sys.getenv("SLURM_JOB_CPUS_PER_NODE", "1"))
-max.threads <- parallel::detectCores()
+(max.threads <- as.integer(Sys.getenv("SLURM_JOB_CPUS_PER_NODE", "1")))
 threads.vec <- unique(as.integer(c(1, max.threads/2, max.threads)))
 seconds.limit <- 1
 cache.list <- list()
@@ -155,6 +154,55 @@ cache(write.real.vary.rows, atime_write(
 aplot(write.real.vary.rows, "Write CSV with 10 random normal real columns", 1e9, 1e1, "Number of rows", write.colors)
 ```
 
+```{r}
+best.list <- atime::references_best(write.real.vary.rows)
+one.thread <- function(DT)DT[grepl("utils|THREADS=1$", expr.name)]
+meas.dt <- one.thread(best.list$meas)
+ref.dt <- one.thread(best.list$ref)[
+  fun.name %in% c("N^2","N") & N >= 1e2]
+if(require(ggplot2)){
+  hline.df <- with(write.real.vary.rows, data.frame(
+    seconds.limit, unit="seconds"))
+  gg <- ggplot()+
+    ggtitle("Write CSV with 10 character rows, asymptotic complexity")+
+    theme_bw()+
+    facet_grid(unit ~ expr.name, scales="free")+
+    geom_hline(aes(
+      yintercept=seconds.limit),
+      color="grey",
+      data=hline.df)+
+    geom_line(aes(
+      N, reference, group=paste(expr.name, fun.name)),
+      linewidth=2,
+      data=ref.dt)+
+    geom_line(aes(
+      N, empirical, color=expr.name),
+      linewidth=1,
+      data=meas.dt)+
+    geom_ribbon(aes(
+      N, ymin=q25, ymax=q75, fill=expr.name),
+      data=meas.dt[unit=="seconds"],
+      alpha=0.5)+
+    scale_x_log10("N = Number of columns")+
+    scale_y_log10("median line, quartiles band")+
+    scale_color_manual(values=write.colors)+
+    scale_fill_manual(values=write.colors)
+  if(require(directlabels)){
+    gg+
+      directlabels::geom_dl(aes(
+        N, reference,
+        label.group=paste(expr.name, fun.name),
+        label=fun.name),
+        method="left.polygons",
+        data=ref.dt)+
+      theme(legend.position="none")
+  }else{
+    gg
+  }
+}
+```
+
+
 The code below writes real numbers with a constant number of rows, and
 a variable number of columns.
 
@@ -178,6 +226,59 @@ cache(write.chr.vary.rows, atime_write(
   "10_chr_cols_%s_%d.csv"))
 aplot(write.chr.vary.rows, "Write CSV with 10 character columns", 1e9, 1e1, "Number of rows", write.colors)
 ```
+
+```{r}
+best.list <- atime::references_best(write.chr.vary.rows)
+one.thread <- function(DT)DT[grepl("utils|THREADS=1$", expr.name)]
+meas.dt <- one.thread(best.list$meas)
+ref.dt <- one.thread(best.list$ref)[
+  fun.name %in% c("N^2","N") & N >= 1e2]
+if(require(ggplot2)){
+  hline.df <- with(write.chr.vary.rows, data.frame(
+    seconds.limit, unit="seconds"))
+  gg <- ggplot()+
+    ggtitle("Write CSV with 10 character rows, asymptotic complexity")+
+    theme_bw()+
+    facet_grid(unit ~ expr.name, scales="free")+
+    geom_hline(aes(
+      yintercept=seconds.limit),
+      color="grey",
+      data=hline.df)+
+    geom_line(aes(
+      N, reference, group=paste(expr.name, fun.name)),
+      linewidth=2,
+      data=ref.dt)+
+    geom_line(aes(
+      N, empirical, color=expr.name),
+      linewidth=1,
+      data=meas.dt)+
+    geom_ribbon(aes(
+      N, ymin=q25, ymax=q75, fill=expr.name),
+      data=meas.dt[unit=="seconds"],
+      alpha=0.5)+
+    scale_x_log10("N = Number of columns")+
+    scale_y_log10("median line, quartiles band")+
+    scale_color_manual(values=write.colors)+
+    scale_fill_manual(values=write.colors)
+  dl <- if(require(directlabels)){
+    gg+
+      directlabels::geom_dl(aes(
+        N, reference,
+        label.group=paste(expr.name, fun.name),
+        label=fun.name),
+        method="left.polygons",
+        data=ref.dt)+
+      theme(legend.position="none")
+  }else{
+    gg
+  }
+  png("figure-write-chr-vary-rows-complexity.png", 9, 6, units="in", res=100)
+  print(dl)
+  dev.off()
+}
+```
+
+
 
 The code below is for character data with a constant number of
 rows, and a variable number of columns.
@@ -341,6 +442,58 @@ variable number of columns.
 cache(read.real.vary.cols, atime_read("10_real_rows_fwrite_*.csv"))
 aplot(read.real.vary.cols, "Read CSV with 10 real rows", 1e8, 1e1, "Number of columns", read.colors)
 ```
+
+```{r}
+best.list <- atime::references_best(read.real.vary.cols)
+one.thread <- function(DT)DT[grepl("utils|THREADS=1$", expr.name)]
+meas.dt <- one.thread(best.list$meas)
+ref.dt <- one.thread(best.list$ref)[
+  fun.name %in% c("N^2","N") & N >= 1e2]
+if(require(ggplot2)){
+  hline.df <- with(read.real.vary.cols, data.frame(
+    seconds.limit, unit="seconds"))
+  gg <- ggplot()+
+    ggtitle("Write CSV with 10 character rows, asymptotic complexity")+
+    theme_bw()+
+    facet_grid(unit ~ expr.name, scales="free")+
+    geom_hline(aes(
+      yintercept=seconds.limit),
+      color="grey",
+      data=hline.df)+
+    geom_line(aes(
+      N, reference, group=paste(expr.name, fun.name)),
+      linewidth=2,
+      data=ref.dt)+
+    geom_line(aes(
+      N, empirical, color=expr.name),
+      linewidth=1,
+      data=meas.dt)+
+    geom_ribbon(aes(
+      N, ymin=q25, ymax=q75, fill=expr.name),
+      data=meas.dt[unit=="seconds"],
+      alpha=0.5)+
+    scale_x_log10("N = Number of columns")+
+    scale_y_log10("median line, quartiles band")+
+    scale_color_manual(values=read.colors)+
+    scale_fill_manual(values=read.colors)
+  dl <- if(require(directlabels)){
+    gg+
+      directlabels::geom_dl(aes(
+        N, reference,
+        label.group=paste(expr.name, fun.name),
+        label=fun.name),
+        method="left.polygons",
+        data=ref.dt)+
+      theme(legend.position="none")
+  }else{
+    gg
+  }
+  png("figure-read-real-vary-cols-complexity.png", 12, 6, units="in", res=100)
+  print(dl)
+  dev.off()
+}
+```
+
 
 Below we read character data with a constant number of columns, and a
 variable number of rows.
