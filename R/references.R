@@ -101,13 +101,54 @@ references_best <- function(L, unit.col.vec=NULL, more.units=NULL, fun.list=NULL
 }
 
 plot.references_best <- function(x, ...){
-  expr.name <- NULL
-  lattice::xyplot(
-    log10(empirical) ~ log10(N) | unit, x$measurements, 
-    groups=expr.name, type="l", 
-    ylab="log10(median)",
-    scales=list(relation="free"),
-    auto.key=list(space="right", points=FALSE, lines=TRUE))
+  expr.name <- N <- reference <- fun.name <- empirical <- NULL
+  if(requireNamespace("ggplot2")){
+    hline.df <- with(atime.list, data.frame(seconds.limit, unit="seconds"))
+    ref.dt <- best.list$ref[each.sign.rank==1]
+    ref.color <- "violet"
+    emp.color <- "black"
+    gg <- ggplot2::ggplot()+
+      ggplot2::facet_grid(unit ~ expr.name, scales="free")+
+      ggplot2::theme_bw()+
+      ggplot2::geom_hline(ggplot2::aes(
+        yintercept=seconds.limit),
+        color="grey",
+        data=hline.df)+
+      ggplot2::geom_ribbon(ggplot2::aes(
+        N, ymin=min, ymax=max),
+        data=best.list$meas[unit=="seconds"],
+        fill=emp.color,
+        alpha=0.5)+
+      ggplot2::geom_line(ggplot2::aes(
+        N, empirical),
+        size=2,
+        color=emp.color,
+        data=best.list$meas)+
+      ggplot2::geom_line(ggplot2::aes(
+        N, reference, group=fun.name),
+        color=ref.color,
+        size=1,
+        data=ref.dt)+
+      ggplot2::scale_y_log10("")+
+      ggplot2::scale_x_log10()
+    if(requireNamespace("directlabels")){
+      gg+
+        directlabels::geom_dl(ggplot2::aes(
+          N, reference, label=fun.name),
+          data=ref.dt,
+          color=ref.color,
+          method="bottom.polygons")
+    }else{
+      gg
+    }
+  }else{
+    lattice::xyplot(
+      log10(empirical) ~ log10(N) | unit, x$measurements, 
+      groups=expr.name, type="l", 
+      ylab="log10(median)",
+      scales=list(relation="free"),
+      auto.key=list(space="right", points=FALSE, lines=TRUE))
+  }
 }
 
 print.references_best <- function(x, ...){

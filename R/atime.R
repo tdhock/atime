@@ -124,13 +124,40 @@ atime <- function(N, setup, expr.list=NULL, times=10, seconds.limit=0.01, verbos
     class="atime")
 }
 
+log_scale_max <- function(N, prop.expand=0.3){
+  max(N)*(max(N)/min(N))^prop.expand
+}
+
 plot.atime <- function(x, ...){
-  expr.name <- NULL
-  lattice::xyplot(
-    log10(median) ~ log10(N), x$measurements, 
-    groups=expr.name, type="l", 
-    ylab="log10(median seconds)",
-    auto.key=list(space="right", points=FALSE, lines=TRUE))
+  expr.name <- N <- kilobytes <- NULL
+  if(requireNamespace("ggplot2")){
+    gg <- ggplot2::ggplot()+
+      ggplot2::geom_ribbon(ggplot2::aes(
+        N, ymin=min, ymax=max, fill=expr.name),
+        data=data.table(atime.list$meas, unit="seconds"),
+        alpha=0.5)+
+      ggplot2::geom_line(ggplot2::aes(
+        N, median, color=expr.name),
+        data=data.table(atime.list$meas, unit="seconds"))+
+      ggplot2::geom_line(ggplot2::aes(
+        N, kilobytes, color=expr.name),
+        data=data.table(atime.list$meas, unit="kilobytes"))+
+      ggplot2::facet_grid(unit ~ ., scales="free")+
+      ggplot2::scale_x_log10(
+        limits=c(NA, log_scale_max(atime.list$meas$N)))+
+      ggplot2::scale_y_log10("median line, min/max band")
+    if(requireNamespace("directlabels")){
+      directlabels::direct.label(gg, "right.polygons")
+    }else{
+      gg
+    }
+  }else{
+    lattice::xyplot(
+      log10(median) ~ log10(N), x$measurements, 
+      groups=expr.name, type="l", 
+      ylab="log10(median seconds)",
+      auto.key=list(space="right", points=FALSE, lines=TRUE))
+  }
 }
 
 print.atime <- function(x, ...){

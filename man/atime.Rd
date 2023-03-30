@@ -37,6 +37,7 @@ atime.list <- atime::atime(
     pattern <- paste(rep(c("a?", "a"), each=N), collapse="")
   },
   N=1:30)
+plot(atime.list)
 
 if(require("ggplot2")){
   measurements <- atime.list[["measurements"]]
