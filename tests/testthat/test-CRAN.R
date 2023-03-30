@@ -137,6 +137,13 @@ test_that("error for expr.list not list", {
   }, "expr.list should be a list of expressions to run for various N, but has classes foo, bar")
 })
 
+test_that("only one value in grid is OK", {
+  expr.list <- atime::atime_grid(
+    list(ENGINE="PCRE"),
+    nc=nc::capture_first_vec(subject, pattern, engine=ENGINE))
+  expect_identical(names(expr.list), "nc ENGINE=PCRE")
+})
+
 test_that("references_best does not delete", {
   alist <- atime::atime(
     N=1:2,

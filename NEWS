@@ -1,3 +1,7 @@
+Changes in version 2023.3.30
+
+- atime_grid(list(VAR="one value")) no longer errors.
+
 Changes in version 2023.1.24
 
 - new function atime_pkg with vignette ci.Rmd.
