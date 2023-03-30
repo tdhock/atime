@@ -12,11 +12,16 @@ atime: Asymptotic Timing
 
 ** Usage
 
-The main function is =atime= for which you should specify at least
-these named arguments:
+The main function is =atime= for which you can specify these
+arguments:
 - =N= is numeric vector of data sizes to vary.
 - =setup= is an expression to evaluate for every data size, before
   timings.
+- =times= is the number of times each expression is timed (so we can
+  take the median and ignore outliers).
+- =seconds.limit= is the max number of seconds. If any expression
+  takes more time, then results for larger N values will not be
+  computed.
 - there should also be at least one other named argument (an
   expression to time for every size N, name is the label which will
   appear on plots). 
@@ -32,8 +37,8 @@ these named arguments:
       subject <- paste(rep("a", N), collapse="")
       pattern <- paste(rep(c("a?", "a"), each=N), collapse="")
     },
-    seconds.limit=0.1,#max seconds per expression.
     times=10,#number of timings to compute for each expression.
+    seconds.limit=0.1,#max seconds per expression.
     ## Different expressions which will be evaluated for each size N:
     PCRE.match=regexpr(pattern, subject, perl=TRUE),
     TRE.match=regexpr(pattern, subject, perl=FALSE),
