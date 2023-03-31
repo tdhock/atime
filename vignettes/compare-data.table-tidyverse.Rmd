@@ -394,7 +394,7 @@ rows, and a variable number of columns.
 cache(write.POSIXct.vary.cols, atime_write(
   function(N.cols, N.rows=10)POSIXct_dt(N.rows, N.cols),
   "10_POSIXct_rows_%s_%d.csv"))
-aplot(write.POSIXct.vary.cols, "Write CSV with 10 factor rows", 1e9, 1e1, "Number of columns", write.colors)
+aplot(write.POSIXct.vary.cols, "Write CSV with 10 POSIXct rows", 1e9, 1e1, "Number of columns", write.colors)
 ```
 
 TODO.  In the plot below, we include best reference lines above and
