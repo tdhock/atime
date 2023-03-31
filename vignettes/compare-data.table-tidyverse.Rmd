@@ -321,20 +321,20 @@ The comparisons above show significant advantages for `data.table` for
 writing CSV data with a large number of columns: asymptotically less
 time and memory (linear rather than quadratic in number of columns).
 
-### Write CSV with factor data
+### Write CSV from data.table with factor columns
 
 The code below is for factor data with a constant number of
 columns, and a variable number of rows.
 
 ```{r}
-fac_list <- function(N.rows, N.cols){
+fac_dt <- function(N.rows, N.cols){
   data.vec <- factor(paste0("'quoted", c(" ", "_"), "data'"))
   as.data.table(lapply(1:N.cols, function(col.i)rep(data.vec,l=N.rows)))
 }
 cache(write.fac.vary.rows, atime_write(
-  function(N.rows,N.cols=10)fac_list(N.rows, N.cols),
+  function(N.rows,N.cols=10)fac_dt(N.rows, N.cols),
   "10_fac_cols_%s_%d.csv"))
-aplot(write.fac.vary.rows, "Write CSV with 10 factor columns", 1e9, 1e1, "Number of rows", write.colors)
+aplot(write.fac.vary.rows, "Write CSV from data.table with 10 factor columns", 1e9, 1e1, "Number of rows", write.colors)
 ```
 
 TODO. Below, we draw reference lines, so we can see the complexity
@@ -350,7 +350,7 @@ rows, and a variable number of columns.
 
 ```{r}
 cache(write.fac.vary.cols, atime_write(
-  function(N.cols, N.rows=10)fac_list(N.rows, N.cols),
+  function(N.cols, N.rows=10)fac_dt(N.rows, N.cols),
   "10_fac_rows_%s_%d.csv"))
 aplot(write.fac.vary.cols, "Write CSV with 10 factor rows", 1e9, 1e1, "Number of columns", write.colors)
 ```
@@ -360,6 +360,48 @@ below each empirical measurement asymptote.
 
 ```{r}
 facetPlot(write.fac.vary.cols)
+```
+
+TODO
+
+### Write CSV from data.table with POSIXct columns
+
+The code below is for factor data with a constant number of
+columns, and a variable number of rows.
+
+```{r}
+POSIXct_dt <- function(N.rows, N.cols){
+  as.data.table(lapply(1:N.cols, function(col.i)rep(Sys.time(),l=N.rows)))
+}
+cache(write.POSIXct.vary.rows, atime_write(
+  function(N.rows,N.cols=10)POSIXct_dt(N.rows, N.cols),
+  "10_fac_cols_%s_%d.csv"))
+aplot(write.POSIXct.vary.rows, "Write CSV from data.table with 10 POSIXct columns", 1e9, 1e1, "Number of rows", write.colors)
+```
+
+TODO. Below, we draw reference lines, so we can see the complexity
+class.
+
+```{r}
+facetPlot(write.POSIXct.vary.rows)
+```
+
+TODO
+The code below is for factor data with a constant number of
+rows, and a variable number of columns.
+
+```{r}
+cache(write.POSIXct.vary.cols, atime_write(
+  function(N.cols, N.rows=10)POSIXct_dt(N.rows, N.cols),
+  "10_POSIXct_rows_%s_%d.csv"))
+aplot(write.POSIXct.vary.cols, "Write CSV with 10 factor rows", 1e9, 1e1, "Number of columns", write.colors)
+```
+
+TODO.  In the plot below, we include best reference lines above and
+below each empirical measurement asymptote.
+
+```{r}
+facetPlot(write.POSIXct.vary.cols)
 ```
 
 TODO
