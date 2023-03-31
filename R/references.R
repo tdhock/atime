@@ -22,12 +22,12 @@ references <- function
       reference=10^(log10.vec-max(log10.vec)+log10(last.empirical))
     )
     above <- one.fun[lower.limit < reference]
-    if(1 < nrow(above) || length(unique(empirical))==1){
+    last.two <- one.fun[(.N-1):.N]
+    if(1 < nrow(above) || length(unique(one.fun$reference))==1){
       above
     }else{
-      two.points <- one.fun[(.N-1):.N]
-      lower.N <- two.points[, approx(reference, N, lower.limit)$y]
-      lower.emp <- two.points[, approx(N, empirical, lower.N)$y]
+      lower.N <- last.two[, approx(reference, N, lower.limit)$y]
+      lower.emp <- last.two[, approx(N, empirical, lower.N)$y]
       rbind(data.table(
         N=as.integer(lower.N), 
         empirical=lower.emp, 

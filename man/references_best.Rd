@@ -20,88 +20,39 @@
 
 \examples{
 
-## Example 1: regex functions.
-(subject.size.vec <- unique(as.integer(10^seq(0,3,l=100))))
-atime.list <- atime::atime(
-  PCRE=regexpr(pattern, subject, perl=TRUE),
-  TRE=regexpr(pattern, subject, perl=FALSE),
+## Example 1: polynomial and exponential time string functions.
+string.result <- atime::atime(
+  N=unique(as.integer(10^seq(0,3.5,l=100))),
   setup={
     subject <- paste(rep("a", N), collapse="")
     pattern <- paste(rep(c("a?", "a"), each=N), collapse="")
   },
-  N=subject.size.vec)
-(best.list <- atime::references_best(atime.list))
-
+  PCRE.match=regexpr(pattern, subject, perl=TRUE),
+  TRE.match=regexpr(pattern, subject, perl=FALSE),
+  constant.replacement=gsub("a","constant size replacement",subject),
+  linear.replacement=gsub("a",subject,subject))
+(string.best <- atime::references_best(string.result))
 ## plot method shows each expr in a separate panel.
-plot(best.list)
+plot(string.best)
 
-## alternative showing each expr in the same panel.
-if(require("ggplot2")){
-  hline.df <- with(atime.list, data.frame(seconds.limit, unit="seconds"))
-  ref.dt <- best.list$ref[overall.rank==1]
-  gg <- ggplot()+
-    theme_bw()+
-    facet_grid(unit ~ ., scales="free")+
-    geom_line(aes(
-      N, reference, group=paste(expr.name, fun.name)),
-      color="grey",
-      data=ref.dt)+
-    geom_hline(aes(
-      yintercept=seconds.limit),
-      color="grey",
-      data=hline.df)+
-    geom_ribbon(aes(
-      N, ymin=min, ymax=max, fill=expr.name),
-      data=best.list$meas[unit=="seconds"],
-      alpha=0.5)+
-    geom_line(aes(
-      N, empirical, color=expr.name),
-      data=best.list$meas)+
-    scale_y_log10("")+
-    scale_x_log10()
-  if(require("directlabels")){
-    gg+
-      theme(legend.position="none")+
-      directlabels::geom_dl(aes(
-        N, empirical, color=expr.name, label=expr.name),
-        data=best.list$meas,
-        method="last.polygons")+
-      directlabels::geom_dl(aes(
-        N, reference, label=fun.name),
-        data=ref.dt,
-        color="grey",
-        method="bottom.polygons")+
-      coord_cartesian(xlim=c(min(subject.size.vec), max(subject.size.vec)*2))
-  }else{
-    gg
-  }
-}
-
-
-## Example 2: write CSV with N rows.
-write.N.rows <- atime::atime(
-  N=as.integer(10^seq(0, 6, by=0.5)),
+## Example 2: split data table vs frame, constant factor difference.
+library(data.table)
+split.result <- atime::atime(
+  N=as.integer(10^seq(1, 7)),
   setup={
-    mat <- matrix("a", N, 2)
-    df <- data.frame(mat)
-    out.csv <- tempfile()
+    set.seed(1)
+    DT <- data.table(
+      x1 = rep(c("c","d"), l=N),
+      x2 = rep(c("x","y"), l=N),
+      x3 = rep(c("a","b"), l=N),
+      y = rnorm(N)
+    )[sample(.N)]
+    DF <- as.data.frame(DT)
   },
-  "utils::write.csv"=utils::write.csv(df, out.csv),
-  "data.table::fwrite"=data.table::fwrite(df, out.csv))
-write.N.rows.best <- atime::references_best(write.N.rows)
-plot(write.N.rows.best)
-
-## Example 3: write CSV with N columns.
-write.N.cols <- atime::atime(
-  N=as.integer(10^seq(0, 7, by=0.5)),
-  setup={
-    mat <- matrix("a", 2, N)
-    df <- data.frame(mat)
-    out.csv <- tempfile()
-  },
-  "utils::write.csv"=utils::write.csv(df, out.csv),
-  "data.table::fwrite"=data.table::fwrite(df, out.csv))
-write.N.cols.best <- atime::references_best(write.N.cols)
-plot(write.N.cols.best)
+  frame=split(DF[names(DF) != "x1"], DF["x1"], drop = TRUE),
+  table=split(DT, by = "x1", keep.by = FALSE, drop = TRUE)
+)
+split.best <- atime::references_best(split.result)
+plot(split.best)
 
 }
