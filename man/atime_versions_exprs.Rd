@@ -60,8 +60,7 @@ if(FALSE){
       changepoint=changepoint::cpt.mean(
         data.vec, penalty="Manual", pen.value=0, method="BinSeg",
         Q=max.segs-1))
-    refs.best <- atime::references_best(atime.list)
-    plot(refs.best)
+    plot(atime.list)
   }
 
   atime::atime_versions_remove("binsegRcpp")
