@@ -94,32 +94,30 @@ First we define some code which will be used in all of the writing
 benchmarks,
 
 ```{r}
-atime_write <- function(make.mat.fun, fmt, input.type="data.table"){
+atime_write <- function(make.input.fun, fmt){
   grid.args <- list(
     list(THREADS=threads.vec),
     "data.table::fwrite"=quote({
       data.table::setDTthreads(THREADS)
       data.table::fwrite(input, name.list$fwrite, showProgress = FALSE)
     }))
-  if(requireNamespace("readr") && input.type=="data.table")
+  small.input <- make.input.fun(2,2)
+  if(requireNamespace("readr") && is.data.frame(small.input)){
+    ##readr can't handle matrix input.
     grid.args[["readr::write_csv"]] <- quote({
       readr::write_csv(
         input, name.list$write_csv, progress = FALSE, num_threads = THREADS)
     })
+  }
   expr.list <- do.call(atime::atime_grid, grid.args)
   atime::atime(
     N=as.integer(10^seq(0, 6, by=0.5)),
     setup={
-      mat <- make.mat.fun(N)
+      input <- make.input.fun(N)
       name.list <- list()
       for(fun in c("fwrite", "write_csv", "write.csv")){
         name.list[[fun]] <- file.path(
           tempdir(), sprintf(fmt, fun, N))
-      }
-      input <- if(input.type=="data.table"){
-        data.table(mat)
-      }else{
-        mat
       }
     },
     seconds.limit = seconds.limit,
@@ -233,9 +231,9 @@ aplot(write.real.vary.cols, "Write CSV with 10 random normal real rows", 1e9, 1e
 The plot above shows that `data.table::fread` uses asymptotically less
 time and memory than the others.
 
-### Write CSV from character data.table
+### Write CSV from character matrix
 
-The code below is for a character data.table with a constant number of
+The code below is for a character data matrix with a constant number of
 columns, and a variable number of rows.
 
 ```{r}
@@ -243,8 +241,46 @@ chr_mat <- function(N.rows, N.cols){
   data.vec <- paste0("'quoted", c(" ", "_"), "data'")
   matrix(data.vec, N.rows, N.cols)
 }
-cache(write.chr.vary.rows, atime_write(
+cache(write.chrmat.vary.rows, atime_write(
   function(N.rows,N.cols=10)chr_mat(N.rows, N.cols),
+  "10_chrmat_cols_%s_%d.csv"))
+aplot(write.chrmat.vary.rows, "Write CSV from matrix with 10 character columns", 1e9, 1e1, "Number of rows", write.colors)
+```
+
+TODO
+
+```{r}
+facetPlot(write.chrmat.vary.rows)
+```
+
+TODO
+
+```{r}
+cache(write.chrmat.vary.cols, atime_write(
+  function(N.cols, N.rows=10)chr_mat(N.rows, N.cols),
+  "10_chrmat_rows_%s_%d.csv"))
+aplot(write.chrmat.vary.cols, "Write CSV from matrix with 10 character rows", 1e9, 1e1, "Number of columns", write.colors)
+```
+
+TODO
+
+```{r}
+facetPlot(write.chrmat.vary.cols)
+```
+
+TODO
+
+### Write CSV from character data.table
+
+The code below is for a character data.table with a constant number of
+columns, and a variable number of rows.
+
+```{r}
+chr_dt <- function(N.rows, N.cols){
+  data.table(chr_mat(N.rows, N.cols))
+}
+cache(write.chr.vary.rows, atime_write(
+  function(N.rows,N.cols=10)chr_dt(N.rows, N.cols),
   "10_chr_cols_%s_%d.csv"))
 aplot(write.chr.vary.rows, "Write CSV from data.table with 10 character columns", 1e9, 1e1, "Number of rows", write.colors)
 ```
@@ -266,7 +302,7 @@ rows, and a variable number of columns.
 
 ```{r}
 cache(write.chr.vary.cols, atime_write(
-  function(N.cols, N.rows=10)chr_mat(N.rows, N.cols),
+  function(N.cols, N.rows=10)chr_dt(N.rows, N.cols),
   "10_chr_rows_%s_%d.csv"))
 aplot(write.chr.vary.cols, "Write CSV from data.table with 10 character rows", 1e9, 1e1, "Number of columns", write.colors)
 ```
@@ -285,53 +321,18 @@ The comparisons above show significant advantages for `data.table` for
 writing CSV data with a large number of columns: asymptotically less
 time and memory (linear rather than quadratic in number of columns).
 
-### Write CSV from character matrix
-
-The code below is for a character data matrix with a constant number of
-columns, and a variable number of rows.
-
-```{r}
-cache(write.chrmat.vary.rows, atime_write(
-  function(N.rows,N.cols=10)chr_mat(N.rows, N.cols),
-  "10_chrmat_cols_%s_%d.csv", input.type="matrix"))
-aplot(write.chrmat.vary.rows, "Write CSV from matrix with 10 character columns", 1e9, 1e1, "Number of rows", write.colors)
-```
-
-TODO
-
-```{r}
-facetPlot(write.chrmat.vary.rows)
-```
-
-TODO
-
-```{r}
-cache(write.chrmat.vary.cols, atime_write(
-  function(N.cols, N.rows=10)chr_mat(N.rows, N.cols),
-  "10_chrmat_rows_%s_%d.csv", input.type="matrix"))
-aplot(write.chrmat.vary.cols, "Write CSV from matrix with 10 character rows", 1e9, 1e1, "Number of columns", write.colors)
-```
-
-TODO
-
-```{r}
-facetPlot(write.chrmat.vary.cols)
-```
-
-TODO
-
 ### Write CSV with factor data
 
 The code below is for factor data with a constant number of
 columns, and a variable number of rows.
 
 ```{r}
-fac_mat <- function(N.rows, N.cols){
+fac_list <- function(N.rows, N.cols){
   data.vec <- factor(paste0("'quoted", c(" ", "_"), "data'"))
-  matrix(data.vec, N.rows, N.cols)
+  as.data.table(lapply(1:N.cols, function(col.i)rep(data.vec,l=N.rows)))
 }
 cache(write.fac.vary.rows, atime_write(
-  function(N.rows,N.cols=10)fac_mat(N.rows, N.cols),
+  function(N.rows,N.cols=10)fac_list(N.rows, N.cols),
   "10_fac_cols_%s_%d.csv"))
 aplot(write.fac.vary.rows, "Write CSV with 10 factor columns", 1e9, 1e1, "Number of rows", write.colors)
 ```
@@ -349,7 +350,7 @@ rows, and a variable number of columns.
 
 ```{r}
 cache(write.fac.vary.cols, atime_write(
-  function(N.cols, N.rows=10)fac_mat(N.rows, N.cols),
+  function(N.cols, N.rows=10)fac_list(N.rows, N.cols),
   "10_fac_rows_%s_%d.csv"))
 aplot(write.fac.vary.cols, "Write CSV with 10 factor rows", 1e9, 1e1, "Number of columns", write.colors)
 ```
