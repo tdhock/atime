@@ -55,42 +55,12 @@ list(m=quote(mean(data)), s=quote(sum(data)))
   expr.param.sep="\n",
   regexpr=regexpr(pattern, subject, perl=PERL)))
 atime.list <- atime::atime(
-  N=1:30,
+  N=unique(as.integer(10^seq(0,3.5,l=20))),
   setup={
     subject <- paste(rep("a", N), collapse="")
     pattern <- paste(rep(c("a?", "a"), each=N), collapse="")
   },
   expr.list=expr.list)
-if(require(ggplot2)){
-  best.list <- atime::references_best(atime.list)
-  hline.df <- with(atime.list, data.frame(seconds.limit, unit="seconds"))
-  gg <- ggplot()+
-    theme_bw()+
-    facet_grid(unit ~ ., scales="free")+
-    geom_hline(aes(
-      yintercept=seconds.limit),
-      color="grey",
-      data=hline.df)+
-    geom_line(aes(
-      N, empirical, color=expr.name),
-      data=best.list$meas)+
-    geom_ribbon(aes(
-      N, ymin=min, ymax=max, fill=expr.name),
-      data=best.list$meas[unit=="seconds"],
-      alpha=0.5)+
-    scale_x_log10()+
-    scale_y_log10("median line, min/max band")
-  if(require(directlabels)){
-    gg+
-      directlabels::geom_dl(aes(
-        N, empirical, color=expr.name, label=expr.name),
-        method="right.polygons",
-        data=best.list$meas)+
-      theme(legend.position="none")+
-      coord_cartesian(xlim=c(NA,50))
-  }else{
-    gg
-  }
-}
+plot(atime.list)
 
 }
