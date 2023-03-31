@@ -1,16 +1,14 @@
 references_funs <- list(
   "1"=function(N)1,
   "\\log N"=function(N)log10(log(N)),
-  "\\sqrt N"=function(N)log10(sqrt(N)),
   N=function(N)log10(N),
   "N \\log N"=function(N)log10(N) + log10(log(N)),
   "N^2"=function(N)2*log10(N),
-  "N^2 \\log N"=function(N)2*log10(N) + log10(log(N)),
   "N^3"=function(N)3*log10(N),
   "2^N"=function(N)N*log10(2))
 
 references <- function
-(N, empirical, lower.limit=min(empirical),
+(N, empirical, lower.limit,
   fun.list=NULL
 ){
   fun.latex <- reference <- . <- NULL
@@ -24,10 +22,17 @@ references <- function
       reference=10^(log10.vec-max(log10.vec)+log10(last.empirical))
     )
     above <- one.fun[lower.limit < reference]
-    if(1 < nrow(above)){
+    last.two <- one.fun[(.N-1):.N]
+    if(1 < nrow(above) || length(unique(one.fun$reference))==1){
       above
     }else{
-      one.fun[(.N-1):.N]
+      lower.N <- last.two[, stats::approx(reference, N, lower.limit)$y]
+      lower.emp <- last.two[, stats::approx(N, empirical, lower.N)$y]
+      rbind(data.table(
+        N=as.integer(lower.N), 
+        empirical=lower.emp, 
+        reference=lower.limit), 
+        above)
     }
   }, by=.(fun.latex, fun.name=gsub("\\", "", fun.latex, fixed=TRUE))]
 }
@@ -67,7 +72,10 @@ references_best <- function(L, unit.col.vec=NULL, more.units=NULL, fun.list=NULL
     }
     only.positive <- values[0 < values]
     if(length(only.positive)){
-      lower.limit <- min(only.positive)
+      prop.above <- 0.1
+      m <- min(only.positive)
+      M <- max(only.positive)
+      lower.limit <- m*(M/m)^prop.above
       all.refs <- DT[
       , references(N, .SD[[col.name]], lower.limit, fun.list)
       , by=expr.name]
@@ -103,7 +111,8 @@ references_best <- function(L, unit.col.vec=NULL, more.units=NULL, fun.list=NULL
 }
 
 plot.references_best <- function(x, ...){
-  expr.name <- N <- reference <- fun.name <- empirical <- NULL
+  expr.name <- N <- reference <- fun.name <- empirical <- 
+    each.sign.rank <- seconds.limit <- unit <- NULL
   ## Above for R CMD check.
   meas <- x[["measurements"]]
   if(requireNamespace("ggplot2")){
@@ -157,9 +166,9 @@ plot.references_best <- function(x, ...){
 
 print.references_best <- function(x, ...){
   expr.name <- . <- fun.name <- unit <- NULL
-  summary.dt <- x$measurements[, .(
+  summary.dt <- x$measurements[!is.na(fun.name), .(
     summary=sprintf("%s %s", fun.name[1], unit[1])
-  ), by=.(expr.name, fun.name)][, .(
+  ), by=.(expr.name, unit)][, .(
     summary=paste(summary, collapse=", ")
   ), by=expr.name]
   summary.vec <- summary.dt[, sprintf("%s (%s)", expr.name, summary)]

@@ -1,9 +1,9 @@
 <!--
 %\VignetteEngine{knitr::knitr}
-%\VignetteIndexEntry{Optimal segmentation examples}
+%\VignetteIndexEntry{Custom Plots}
 -->
 
-# Optimal segmentation examples
+# Custom Plots
 
 ```{r setup, include = FALSE}
 knitr::opts_chunk$set(
@@ -11,6 +11,12 @@ knitr::opts_chunk$set(
   comment = "#>"
 )
 ```
+
+The goal of this vignette is to demonstrate how to create custom
+ggplots (instead of always using the `plot` method). In particular, we
+would like to display the best fit asymptotic complexity class in the
+direct label, along side the expression name. We use optimal
+segmentation algorithms as an example.
 
 ```{r}
 library(data.table)
