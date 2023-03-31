@@ -11,3 +11,4 @@ vignettes/*.html
 vignettes/compare-data.table-tidyverse.Rmd
 vignettes/data.table.Rmd
 vignettes/ci.Rmd
+vignettes/git.Rmd
