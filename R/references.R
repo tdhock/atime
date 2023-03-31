@@ -26,8 +26,8 @@ references <- function
     if(1 < nrow(above) || length(unique(one.fun$reference))==1){
       above
     }else{
-      lower.N <- last.two[, approx(reference, N, lower.limit)$y]
-      lower.emp <- last.two[, approx(N, empirical, lower.N)$y]
+      lower.N <- last.two[, stats::approx(reference, N, lower.limit)$y]
+      lower.emp <- last.two[, stats::approx(N, empirical, lower.N)$y]
       rbind(data.table(
         N=as.integer(lower.N), 
         empirical=lower.emp, 
@@ -39,7 +39,8 @@ references <- function
 
 references_best <- function(L, unit.col.vec=NULL, more.units=NULL, fun.list=NULL){
   N <- expr.name <- . <- fun.name <- dist <- empirical <- reference <-
-    fun.latex <- overall.rank <- NULL
+    fun.latex <- overall.rank <- each.sign.rank <- seconds.limit <- 
+      unit <- NULL
   ## Above for R CMD check.
   if(is.null(unit.col.vec)){
     unit.col.vec <- c(
