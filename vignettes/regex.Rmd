@@ -13,87 +13,44 @@ knitr::opts_chunk$set(
 ```
 
 ```{r}
-max.N <- 20
+(subject.size.vec <- unique(as.integer(10^seq(0,3.5,l=100))))
 (backtrackers <- c(
   if(requireNamespace("stringi"))atime::atime_grid(
     ICU=stringi::stri_match(subject, regex=pattern)),
   atime::atime_grid(
     PCRE=regexpr(pattern, subject, perl=TRUE),
     TRE=regexpr(pattern, subject, perl=FALSE))))
-atime.list <- atime::atime(
-  N=1:max.N,
+backtrackers.result <- atime::atime(
+  N=subject.size.vec,
   setup={
     subject <- paste(rep("a", N), collapse="")
     pattern <- paste(rep(c("(a)?", "\\1"), each=N), collapse="")
   },
   expr.list=backtrackers)
-plot(atime.list)
-
-if(require(ggplot2)){
-  gg <- ggplot()+
-    geom_ribbon(aes(
-      N, ymin=min, ymax=max, fill=expr.name),
-      data=atime.list$meas,
-      alpha=0.5)+
-    geom_line(aes(
-      N, median, color=expr.name),
-      data=atime.list$meas)+
-    scale_x_log10()+
-    scale_y_log10("seconds (median line, min/max band)")
-  if(require("directlabels")){
-    direct.label(gg, "top.polygons")
-  }else{
-    gg
-  }
-}
+backtrackers.best <- atime::references_best(backtrackers.result)
+plot(backtrackers.best)
 ```
 
-The plots above show that ICU/PCRE/TRE are all exponential in N
+The plot above shows that ICU/PCRE/TRE are all exponential in N
 (subject/pattern size) when the pattern contains backreferences.
 
 ```{r}
-expr.list <- c(
+all.exprs <- c(
   if(requireNamespace("re2"))atime::atime_grid(
     RE2=re2::re2_match(subject, pattern)),
   backtrackers)
-atime.list <- atime::atime(
-  N=1:25,
+all.result <- atime::atime(
+  N=subject.size.vec,
   setup={
     subject <- paste(rep("a", N), collapse="")
     pattern <- paste(rep(c("a?", "a"), each=N), collapse="")
   },
-  expr.list=expr.list,
-  times=3)
-plot(atime.list)
-
-best.list <- atime::references_best(atime.list)
-if(require(ggplot2)){
-  gg <- ggplot()+
-    geom_ribbon(aes(
-      N, ymin=min, ymax=max, fill=expr.name),
-      data=best.list$meas[unit=="seconds"],
-      alpha=0.5)+
-    geom_line(aes(
-      N, empirical, color=expr.name),
-      data=best.list$meas)+
-    facet_grid(unit ~ ., scales="free")+
-    theme(legend.position="none")+
-    scale_x_log10()+
-    scale_y_log10("median line, min/max band")
-  if(require("directlabels")){
-    gg+
-      geom_dl(aes(
-        N, empirical, color=expr.name, label=expr.class),
-        method="right.polygons",
-        data=best.list$meas)+
-      coord_cartesian(xlim=c(1,30))
-  }else{
-    gg
-  }
-}
+  expr.list=all.exprs)
+all.best <- atime::references_best(all.result)
+plot(all.best)
 ```
 
-The plots above show that ICU/PCRE are exponential time whereas
+The plot above shows that ICU/PCRE are exponential time whereas
 RE2/TRE are polynomial time. Exercise for the reader: modify the above
 code to use the `seconds.limit` argument so that you can see what
 happens to ICU/PCRE for larger N (hint: you should see a difference at
@@ -105,19 +62,22 @@ In the `nc` package there is an `engine` argument which controls which
 C regex library is used:
 
 ```{r}
-expr.list <- atime::atime_grid(
+nc.exprs <- atime::atime_grid(
   list(ENGINE=c(
     ##if(requireNamespace("re2"))"RE2",#uncomment when new nc on CRAN.
     "PCRE",
     if(requireNamespace("stringi"))"ICU")),
   nc=nc::capture_first_vec(subject, pattern, engine=ENGINE))
-atime.list <- atime::atime(
-  N=1:25,
+nc.result <- atime::atime(
+  N=subject.size.vec,
   setup={
     rep.collapse <- function(chr)paste(rep(chr, N), collapse="")
     subject <- rep.collapse("a")
     pattern <- list(maybe=rep.collapse("a?"), rep.collapse("a"))
   },
-  expr.list=expr.list)
-plot(atime.list)
+  expr.list=nc.exprs)
+nc.best <- atime::references_best(nc.result)
+plot(nc.best)
 ```
+
+The result/plot above is consistent with the previous result.
