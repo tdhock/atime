@@ -44,6 +44,7 @@ arguments:
     constant.replacement=gsub("a","constant size replacement",subject),
     linear.replacement=gsub("a",subject,subject))
   atime.list
+  plot(atime.list)
   ## Compute and plot asymptotic reference lines:
   (best.list <- atime::references_best(atime.list))
   plot(best.list)
@@ -67,9 +68,9 @@ complexity, always provide sizes on a log scale as above.
 
 #+begin_src R
 > atime.list
-atime list with 233 measurements for
-PCRE.match(N=1 to 22)
-TRE.match(N=1 to 380)
+atime list with 228 measurements for
+PCRE.match(N=1 to 20)
+TRE.match(N=1 to 275)
 constant.replacement(N=1 to 3162)
 linear.replacement(N=1 to 3162)
 #+end_src
@@ -77,36 +78,49 @@ linear.replacement(N=1 to 3162)
 The output above shows the min and max N values that were run for each
 of the expressions. In this case =constant.replacement= and
 =linear.replacement= were run all the way up to the max size (3162),
-but =TRE.match= only went up to 22, and =PCRE.match= only went up to
-380, because no larger N values are considered after the median time
+but =TRE.match= only went up to 20, and =PCRE.match= only went up to
+275, because no larger N values are considered after the median time
 for a given N has has exceeded =seconds.limit= which is 0.1
 above. This behavior ensures that total time taken by =atime= will be
 about seconds.limit * times * number of expressions (times is the
-number of times each expression is evaluated at each data size).
+number of times each expression is evaluated at each data size). The
+output of the plot method for this =atime= result list is shown below,
+
+#+begin_src R
+> plot(atime.list)
+#+end_src
+
+[[file:README-figure-compare.png]]
+
+The plot above facilitates comparing the time and memory of the
+different expressions, and makes it easy to see the ranking of
+different algorithms, but it does not show the asymptotic complexity
+class. To estimate the asymptotic complexity class, use the code
+below:
 
 #+begin_src R
 > (best.list <- atime::references_best(atime.list))
-references_best list with 233 measurements, best fit complexity:
+references_best list with 456 measurements, best fit complexity:
+constant.replacement (N kilobytes, N seconds)
+linear.replacement (N^2 kilobytes, N^2 seconds)
 PCRE.match (2^N seconds)
 TRE.match (N^3 seconds)
-constant.replacement (N seconds)
-linear.replacement (N^2 seconds)
 #+end_src
 
 The output above shows the best fit asymptotic time complexity for
 each expression. To visualize the results you can do:
 
 #+BEGIN_SRC R
-plot(atime.list)
+plot(best.list)
 #+END_SRC
 
 [[file:README-figure.png]]
 
 The plot above shows the timings of each expression as a function of
-data size N (black), as well as asymptotic reference lines
-(violet). If you have chosen N and seconds.limit appropriately for
-your problem (as we have in this case) then you should be able to
-observe the following:
+data size N (black), as well as the two closest asymptotic reference
+lines (violet, one smaller, one larger). If you have chosen N and
+seconds.limit appropriately for your problem (as we have in this case)
+then you should be able to observe the following:
 - on the left you can see timings for small N, where overhead
   dominates the timings, and the curve is approximately constant.
 - on the right you can see the asymptotic trend.

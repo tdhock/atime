@@ -124,28 +124,28 @@ atime <- function(N, setup, expr.list=NULL, times=10, seconds.limit=0.01, verbos
     class="atime")
 }
 
-log_scale_max <- function(N, prop.expand=0.3){
-  max(N)*(max(N)/min(N))^prop.expand
-}
-
 plot.atime <- function(x, ...){
   expr.name <- N <- kilobytes <- NULL
   meas <- x[["measurements"]]
   if(requireNamespace("ggplot2")){
+    tall <- meas[, data.table(N, expr.name, rbind(
+      data.table(unit="seconds", median),
+      data.table(unit="kilobytes", median=kilobytes)))]
     gg <- ggplot2::ggplot()+
+      ggplot2::theme_bw()+
       ggplot2::geom_ribbon(ggplot2::aes(
         N, ymin=min, ymax=max, fill=expr.name),
         data=data.table(meas, unit="seconds"),
         alpha=0.5)+
       ggplot2::geom_line(ggplot2::aes(
         N, median, color=expr.name),
-        data=data.table(meas, unit="seconds"))+
-      ggplot2::geom_line(ggplot2::aes(
-        N, kilobytes, color=expr.name),
-        data=data.table(meas, unit="kilobytes"))+
+        data=tall)+
       ggplot2::facet_grid(unit ~ ., scales="free")+
       ggplot2::scale_x_log10(
-        limits=c(NA, log_scale_max(meas$N)))+
+        breaks=meas[, 10^seq(
+          ceiling(min(log10(N))),
+          floor(max(log10(N))))],
+        limits=c(NA, meas[, max(N)*(max(N)/min(N))^0.5]))+
       ggplot2::scale_y_log10("median line, min/max band")
     if(requireNamespace("directlabels")){
       directlabels::direct.label(gg, "right.polygons")
