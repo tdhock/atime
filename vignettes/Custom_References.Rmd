@@ -1,9 +1,9 @@
 <!--
 %\VignetteEngine{knitr::knitr}
-%\VignetteIndexEntry{Binary segmentation examples}
+%\VignetteIndexEntry{Custom References}
 -->
 
-# Binary segmentation examples
+# Custom References
 
 ```{r setup, include = FALSE}
 knitr::opts_chunk$set(
@@ -12,8 +12,10 @@ knitr::opts_chunk$set(
 )
 ```
 
-In this vignette we explore the differences in asymptotic time
-complexity between different implementations of binary segmentation.
+The goal of this vignette is to show how to use custom asymptotic
+references. As an example, we explore the differences in asymptotic
+time complexity between different implementations of binary
+segmentation.
 
 ## Asymptotic time/memory measurement of different R expressions
 

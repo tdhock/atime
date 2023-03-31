@@ -1,9 +1,9 @@
 <!--
 %\VignetteEngine{knitr::knitr}
-%\VignetteIndexEntry{Optimal segmentation examples}
+%\VignetteIndexEntry{Custom Plots}
 -->
 
-# Customizing plots
+# Custom Plots
 
 ```{r setup, include = FALSE}
 knitr::opts_chunk$set(

@@ -39,8 +39,7 @@ references <- function
 
 references_best <- function(L, unit.col.vec=NULL, more.units=NULL, fun.list=NULL){
   N <- expr.name <- . <- fun.name <- dist <- empirical <- reference <-
-    fun.latex <- overall.rank <- each.sign.rank <- seconds.limit <- 
-      unit <- NULL
+    fun.latex <- overall.rank <- NULL
   ## Above for R CMD check.
   if(is.null(unit.col.vec)){
     unit.col.vec <- c(
@@ -112,7 +111,8 @@ references_best <- function(L, unit.col.vec=NULL, more.units=NULL, fun.list=NULL
 }
 
 plot.references_best <- function(x, ...){
-  expr.name <- N <- reference <- fun.name <- empirical <- NULL
+  expr.name <- N <- reference <- fun.name <- empirical <- 
+    each.sign.rank <- seconds.limit <- unit <- NULL
   ## Above for R CMD check.
   meas <- x[["measurements"]]
   if(requireNamespace("ggplot2")){
