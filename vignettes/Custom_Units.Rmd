@@ -10,6 +10,14 @@ knitr::opts_chunk$set(
 )
 ```
 
+# Custom units
+
+The goal of this vignette is to explain how to estimate asymptotic
+complexity for custom units (other than the defaults, seconds and
+kilobytes).
+
+## Dynamic programming algorithms for change-point detection
+
 The time complexity of the Dynamic Programming algorithm implemented
 in the PeakSegDisk package depends on the number of intervals
 (candidate changepoints stored). Here we compute the mean number of
@@ -56,65 +64,7 @@ says to use the intervals column as an additional unit. The plot above
 shows plots of all three units as a function of data size. It is clear
 that there is a substantial difference in the number of intervals
 stored by the algorithm, between real and synthetic increasing
-data. Next we plot the same data using a different method.
-
-```{r}
-if(require(ggplot2)){
-  gg <- ggplot()+
-    theme_bw()+
-    facet_grid(unit ~ ., scales="free")+
-    geom_line(aes(
-      N, empirical, color=expr.name),
-      data=best.list$meas)+
-    geom_ribbon(aes(
-      N, ymin=min, ymax=max, fill=expr.name),
-      data=best.list$meas[unit=="seconds"],
-      alpha=0.5)+
-    scale_x_log10()+
-    scale_y_log10("median line, min/max band")
-  (gg.show <- if(require(directlabels)){
-    gg+
-      directlabels::geom_dl(aes(
-        N, empirical, color=expr.name, label=expr.name),
-        method="right.polygons",
-        data=best.list$meas)+
-      theme(legend.position="none")+
-      coord_cartesian(xlim=c(5,3000))
-  }else{
-    gg
-  })
-}
-```
-
-Note in the plot above that there are error bands for the seconds
-panel, and direct labels instead of a legend. The code below augments
-this plot by adding two asymptotic references for each empirical curve
-(next closest under and over).
-
-```{r}
-best.ref <- best.list$ref[each.sign.rank==1]
-if(require(ggplot2)){
-  gg.ref <- gg.show+
-    geom_line(aes(
-      N, reference, group=paste(fun.name, expr.name)),
-      color="grey",
-      data=best.ref)
-  if(require(directlabels)){
-    gg.ref+
-      directlabels::geom_dl(aes(
-        N, reference,
-        label.group=paste(fun.name, expr.name),
-        label=fun.name),
-        data=best.ref,
-        color="grey",
-        method="left.polygons")
-  }else{
-    gg.ref
-  }
-}
-```
-
-From the plot above it is clear that 
+data. From the plot above it is clear that 
 
 * the number of intervals grows slowly (log) for real data, and much
   faster (linear) for synthetic increasing data,
