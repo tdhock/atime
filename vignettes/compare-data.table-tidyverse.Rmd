@@ -28,7 +28,8 @@ seconds.limit <- 1
 cache.list <- list()
 cache <- function(symbol, code){
   cache.symb <- substitute(symbol)
-  cache.dir <- "~/R/atime-cache"
+  suffix <- ifelse(grepl("devel",R.version.string),"patched","release")
+  cache.dir <- paste0("~/R/atime-cache-",suffix)
   cache.rds <- file.path(cache.dir, paste0(cache.symb, ".RDS"))
   if(file.exists(cache.rds)){
     value <- readRDS(cache.rds)
@@ -47,7 +48,7 @@ aplot <- function(atime.list, my.title, xmax, max.seconds, xlab, color.vec=NULL)
   if(require(ggplot2)){
     hline.df <- with(atime.list, data.frame(seconds.limit, unit="seconds"))
     gg <- ggplot()+
-      ggtitle(paste(my.title,"on",hostname))+
+      ggtitle(tit <<- paste(my.title,"on",hostname))+
       theme_bw()+
       geom_blank(aes(
         x, y),
@@ -93,32 +94,82 @@ First we define some code which will be used in all of the writing
 benchmarks,
 
 ```{r}
-atime_write <- function(make.mat.fun, fmt){
+atime_write <- function(make.input.fun, fmt){
   grid.args <- list(
     list(THREADS=threads.vec),
     "data.table::fwrite"=quote({
       data.table::setDTthreads(THREADS)
-      data.table::fwrite(dt, name.list$fwrite, showProgress = FALSE)
+      data.table::fwrite(input, name.list$fwrite, showProgress = FALSE)
     }))
-  if(requireNamespace("readr"))grid.args[["readr::write_csv"]] <- quote({
-    readr::write_csv(
-      dt, name.list$write_csv, progress = FALSE, num_threads = THREADS)
-  })
+  small.input <- make.input.fun(2,2)
+  if(requireNamespace("readr") && is.data.frame(small.input)){
+    ##readr can't handle matrix input.
+    grid.args[["readr::write_csv"]] <- quote({
+      readr::write_csv(
+        input, name.list$write_csv, progress = FALSE, num_threads = THREADS)
+    })
+  }
   expr.list <- do.call(atime::atime_grid, grid.args)
   atime::atime(
     N=as.integer(10^seq(0, 6, by=0.5)),
     setup={
-      mat <- make.mat.fun(N)
+      input <- make.input.fun(N)
       name.list <- list()
       for(fun in c("fwrite", "write_csv", "write.csv")){
         name.list[[fun]] <- file.path(
           tempdir(), sprintf(fmt, fun, N))
       }
-      dt <- data.table(mat)
     },
     seconds.limit = seconds.limit,
     expr.list=expr.list,
-    "utils::write.csv"=utils::write.csv(dt, name.list$write.csv))
+    "utils::write.csv"=utils::write.csv(input, name.list$write.csv))
+}
+one.thread <- function(DT)DT[grepl("utils|scan|THREADS=1$", expr.name)]
+facetPlot <- function(atime.list, fun.name.vec=c("N^2","N"), N.min=1e2){
+  best.list <- atime::references_best(atime.list)
+  meas.dt <- one.thread(best.list$meas)
+  ref.dt <- one.thread(best.list$ref)[
+    fun.name %in% fun.name.vec & N >= N.min]
+  if(require(ggplot2)){
+    hline.df <- with(write.real.vary.rows, data.frame(
+      seconds.limit, unit="seconds"))
+    gg <- ggplot()+
+      ggtitle(paste0(tit,", asymptotic complexity"))+
+      theme_bw()+
+      facet_grid(unit ~ expr.name, scales="free")+
+      geom_hline(aes(
+        yintercept=seconds.limit),
+        color="grey",
+        data=hline.df)+
+      geom_line(aes(
+        N, reference, group=paste(expr.name, fun.name)),
+        linewidth=2,
+        data=ref.dt)+
+      geom_line(aes(
+        N, empirical, color=expr.name),
+        linewidth=1,
+        data=meas.dt)+
+      geom_ribbon(aes(
+        N, ymin=q25, ymax=q75, fill=expr.name),
+        data=meas.dt[unit=="seconds"],
+        alpha=0.5)+
+      scale_x_log10("N = Number of columns")+
+      scale_y_log10("median line, quartiles band")+
+      scale_color_manual(values=write.colors)+
+      scale_fill_manual(values=write.colors)
+    if(require(directlabels)){
+      gg+
+        directlabels::geom_dl(aes(
+          N, reference,
+          label.group=paste(expr.name, fun.name),
+          label=fun.name),
+          method="left.polygons",
+          data=ref.dt)+
+        theme(legend.position="none")
+    }else{
+      gg
+    }
+  }
 }
 if(FALSE){
   RColorBrewer::display.brewer.all()
@@ -140,6 +191,8 @@ names(write.colors)[some(9,10,11)] <- paste0(
 write.colors <- write.colors[names(write.colors)!=""]
 ```
 
+### Writing CSV with real numbers
+
 The code below is for real numbers with a constant number of columns,
 and a variable number of rows.
 
@@ -154,53 +207,16 @@ cache(write.real.vary.rows, atime_write(
 aplot(write.real.vary.rows, "Write CSV with 10 random normal real columns", 1e9, 1e1, "Number of rows", write.colors)
 ```
 
+The plot above shows that all methods are the same, except
+`utils::write.csv` memory is increasing with data size, and others are
+contant.
+
 ```{r}
-best.list <- atime::references_best(write.real.vary.rows)
-one.thread <- function(DT)DT[grepl("utils|scan|THREADS=1$", expr.name)]
-meas.dt <- one.thread(best.list$meas)
-ref.dt <- one.thread(best.list$ref)[
-  fun.name %in% c("N^2","N") & N >= 1e2]
-if(require(ggplot2)){
-  hline.df <- with(write.real.vary.rows, data.frame(
-    seconds.limit, unit="seconds"))
-  gg <- ggplot()+
-    ggtitle("Write CSV with 10 random normal real columns, asymptotic complexity")+
-    theme_bw()+
-    facet_grid(unit ~ expr.name, scales="free")+
-    geom_hline(aes(
-      yintercept=seconds.limit),
-      color="grey",
-      data=hline.df)+
-    geom_line(aes(
-      N, reference, group=paste(expr.name, fun.name)),
-      linewidth=2,
-      data=ref.dt)+
-    geom_line(aes(
-      N, empirical, color=expr.name),
-      linewidth=1,
-      data=meas.dt)+
-    geom_ribbon(aes(
-      N, ymin=q25, ymax=q75, fill=expr.name),
-      data=meas.dt[unit=="seconds"],
-      alpha=0.5)+
-    scale_x_log10("N = Number of columns")+
-    scale_y_log10("median line, quartiles band")+
-    scale_color_manual(values=write.colors)+
-    scale_fill_manual(values=write.colors)
-  if(require(directlabels)){
-    gg+
-      directlabels::geom_dl(aes(
-        N, reference,
-        label.group=paste(expr.name, fun.name),
-        label=fun.name),
-        method="left.polygons",
-        data=ref.dt)+
-      theme(legend.position="none")
-  }else{
-    gg
-  }
-}
+facetPlot(write.real.vary.rows)
 ```
+
+The plot above shows that the memory usage of `utils::write.csv` is
+linear.
 
 The code below writes real numbers with a constant number of rows, and
 a variable number of columns.
@@ -212,7 +228,12 @@ cache(write.real.vary.cols, atime_write(
 aplot(write.real.vary.cols, "Write CSV with 10 random normal real rows", 1e9, 1e1, "Number of columns", write.colors)
 ```
 
-The code below is for character data with a constant number of
+The plot above shows that `data.table::fread` uses asymptotically less
+time and memory than the others.
+
+### Write CSV from character matrix
+
+The code below is for a character data matrix with a constant number of
 columns, and a variable number of rows.
 
 ```{r}
@@ -220,10 +241,48 @@ chr_mat <- function(N.rows, N.cols){
   data.vec <- paste0("'quoted", c(" ", "_"), "data'")
   matrix(data.vec, N.rows, N.cols)
 }
-cache(write.chr.vary.rows, atime_write(
+cache(write.chrmat.vary.rows, atime_write(
   function(N.rows,N.cols=10)chr_mat(N.rows, N.cols),
+  "10_chrmat_cols_%s_%d.csv"))
+aplot(write.chrmat.vary.rows, "Write CSV from matrix with 10 character columns", 1e9, 1e1, "Number of rows", write.colors)
+```
+
+TODO
+
+```{r}
+facetPlot(write.chrmat.vary.rows)
+```
+
+TODO
+
+```{r}
+cache(write.chrmat.vary.cols, atime_write(
+  function(N.cols, N.rows=10)chr_mat(N.rows, N.cols),
+  "10_chrmat_rows_%s_%d.csv"))
+aplot(write.chrmat.vary.cols, "Write CSV from matrix with 10 character rows", 1e9, 1e1, "Number of columns", write.colors)
+```
+
+TODO
+
+```{r}
+facetPlot(write.chrmat.vary.cols)
+```
+
+TODO
+
+### Write CSV from character data.table
+
+The code below is for a character data.table with a constant number of
+columns, and a variable number of rows.
+
+```{r}
+chr_dt <- function(N.rows, N.cols){
+  data.table(chr_mat(N.rows, N.cols))
+}
+cache(write.chr.vary.rows, atime_write(
+  function(N.rows,N.cols=10)chr_dt(N.rows, N.cols),
   "10_chr_cols_%s_%d.csv"))
-aplot(write.chr.vary.rows, "Write CSV with 10 character columns", 1e9, 1e1, "Number of rows", write.colors)
+aplot(write.chr.vary.rows, "Write CSV from data.table with 10 character columns", 1e9, 1e1, "Number of rows", write.colors)
 ```
 
 The figure above is useful for comparing different functions, and
@@ -233,65 +292,19 @@ class. However, we observe a difference in memory usage: linear for
 so we can see the complexity class.
 
 ```{r}
-best.list <- atime::references_best(write.chr.vary.rows)
-meas.dt <- one.thread(best.list$meas)
-ref.dt <- one.thread(best.list$ref)[
-  fun.name %in% c("N^2","N") & N >= 1e2]
-if(require(ggplot2)){
-  hline.df <- with(write.chr.vary.rows, data.frame(
-    seconds.limit, unit="seconds"))
-  gg <- ggplot()+
-    ggtitle("Write CSV with 10 character columns, asymptotic complexity")+
-    theme_bw()+
-    facet_grid(unit ~ expr.name, scales="free")+
-    geom_hline(aes(
-      yintercept=seconds.limit),
-      color="grey",
-      data=hline.df)+
-    geom_line(aes(
-      N, reference, group=paste(expr.name, fun.name)),
-      linewidth=2,
-      data=ref.dt)+
-    geom_line(aes(
-      N, empirical, color=expr.name),
-      linewidth=1,
-      data=meas.dt)+
-    geom_ribbon(aes(
-      N, ymin=q25, ymax=q75, fill=expr.name),
-      data=meas.dt[unit=="seconds"],
-      alpha=0.5)+
-    scale_x_log10("N = Number of columns")+
-    scale_y_log10("median line, quartiles band")+
-    scale_color_manual(values=write.colors)+
-    scale_fill_manual(values=write.colors)
-  dl <- if(require(directlabels)){
-    gg+
-      directlabels::geom_dl(aes(
-        N, reference,
-        label.group=paste(expr.name, fun.name),
-        label=fun.name),
-        method="left.polygons",
-        data=ref.dt)+
-      theme(legend.position="none")
-  }else{
-    gg
-  }
-  ##png("figure-write-chr-vary-rows-complexity.png", 9, 6, units="in", res=100)
-  print(dl)
-  ##dev.off()
-}
+facetPlot(write.chr.vary.rows)
 ```
 
 The figure above shows that all functions are linear time, and
 `write.csv` is linear memory.
-The code below is for character data with a constant number of
+The code below is for a character data.frame with a constant number of
 rows, and a variable number of columns.
 
 ```{r}
 cache(write.chr.vary.cols, atime_write(
-  function(N.cols, N.rows=10)chr_mat(N.rows, N.cols),
+  function(N.cols, N.rows=10)chr_dt(N.rows, N.cols),
   "10_chr_rows_%s_%d.csv"))
-aplot(write.chr.vary.cols, "Write CSV with 10 character rows", 1e9, 1e1, "Number of columns", write.colors)
+aplot(write.chr.vary.cols, "Write CSV from data.table with 10 character rows", 1e9, 1e1, "Number of columns", write.colors)
 ```
 
 The figure above shows that `data.table::fwrite` clearly has a smaller
@@ -301,55 +314,97 @@ best reference lines above and below each empirical measurement
 asymptote.
 
 ```{r}
-best.list <- atime::references_best(write.chr.vary.cols)
-meas.dt <- one.thread(best.list$meas)
-ref.dt <- one.thread(best.list$ref)[
-  fun.name %in% c("N^2","N") & N >= 1e2]
-if(require(ggplot2)){
-  hline.df <- with(write.chr.vary.cols, data.frame(
-    seconds.limit, unit="seconds"))
-  gg <- ggplot()+
-    ggtitle("Write CSV with 10 character rows, asymptotic complexity")+
-    theme_bw()+
-    facet_grid(unit ~ expr.name, scales="free")+
-    geom_hline(aes(
-      yintercept=seconds.limit),
-      color="grey",
-      data=hline.df)+
-    geom_line(aes(
-      N, reference, group=paste(expr.name, fun.name)),
-      linewidth=2,
-      data=ref.dt)+
-    geom_line(aes(
-      N, empirical, color=expr.name),
-      linewidth=1,
-      data=meas.dt)+
-    geom_ribbon(aes(
-      N, ymin=q25, ymax=q75, fill=expr.name),
-      data=meas.dt[unit=="seconds"],
-      alpha=0.5)+
-    scale_x_log10("N = Number of columns")+
-    scale_y_log10("median line, quartiles band")+
-    scale_color_manual(values=write.colors)+
-    scale_fill_manual(values=write.colors)
-  if(require(directlabels)){
-    gg+
-      directlabels::geom_dl(aes(
-        N, reference,
-        label.group=paste(expr.name, fun.name),
-        label=fun.name),
-        method="left.polygons",
-        data=ref.dt)+
-      theme(legend.position="none")
-  }else{
-    gg
-  }
-}
+facetPlot(write.chr.vary.cols)
 ```
 
 The comparisons above show significant advantages for `data.table` for
 writing CSV data with a large number of columns: asymptotically less
 time and memory (linear rather than quadratic in number of columns).
+
+### Write CSV from data.table with factor columns
+
+The code below is for factor data with a constant number of
+columns, and a variable number of rows.
+
+```{r}
+fac_dt <- function(N.rows, N.cols){
+  data.vec <- factor(paste0("'quoted", c(" ", "_"), "data'"))
+  as.data.table(lapply(1:N.cols, function(col.i)rep(data.vec,l=N.rows)))
+}
+cache(write.fac.vary.rows, atime_write(
+  function(N.rows,N.cols=10)fac_dt(N.rows, N.cols),
+  "10_fac_cols_%s_%d.csv"))
+aplot(write.fac.vary.rows, "Write CSV from data.table with 10 factor columns", 1e9, 1e1, "Number of rows", write.colors)
+```
+
+TODO. Below, we draw reference lines, so we can see the complexity
+class.
+
+```{r}
+facetPlot(write.fac.vary.rows)
+```
+
+TODO
+The code below is for factor data with a constant number of
+rows, and a variable number of columns.
+
+```{r}
+cache(write.fac.vary.cols, atime_write(
+  function(N.cols, N.rows=10)fac_dt(N.rows, N.cols),
+  "10_fac_rows_%s_%d.csv"))
+aplot(write.fac.vary.cols, "Write CSV with 10 factor rows", 1e9, 1e1, "Number of columns", write.colors)
+```
+
+TODO.  In the plot below, we include best reference lines above and
+below each empirical measurement asymptote.
+
+```{r}
+facetPlot(write.fac.vary.cols)
+```
+
+TODO
+
+### Write CSV from data.table with POSIXct columns
+
+The code below is for factor data with a constant number of
+columns, and a variable number of rows.
+
+```{r}
+POSIXct_dt <- function(N.rows, N.cols){
+  as.data.table(lapply(1:N.cols, function(col.i)rep(Sys.time(),l=N.rows)))
+}
+cache(write.POSIXct.vary.rows, atime_write(
+  function(N.rows,N.cols=10)POSIXct_dt(N.rows, N.cols),
+  "10_fac_cols_%s_%d.csv"))
+aplot(write.POSIXct.vary.rows, "Write CSV from data.table with 10 POSIXct columns", 1e9, 1e1, "Number of rows", write.colors)
+```
+
+TODO. Below, we draw reference lines, so we can see the complexity
+class.
+
+```{r}
+facetPlot(write.POSIXct.vary.rows)
+```
+
+TODO
+The code below is for factor data with a constant number of
+rows, and a variable number of columns.
+
+```{r}
+cache(write.POSIXct.vary.cols, atime_write(
+  function(N.cols, N.rows=10)POSIXct_dt(N.rows, N.cols),
+  "10_POSIXct_rows_%s_%d.csv"))
+aplot(write.POSIXct.vary.cols, "Write CSV with 10 POSIXct rows", 1e9, 1e1, "Number of columns", write.colors)
+```
+
+TODO.  In the plot below, we include best reference lines above and
+below each empirical measurement asymptote.
+
+```{r}
+facetPlot(write.POSIXct.vary.cols)
+```
+
+TODO
 
 ## Reading CSV
 
@@ -476,53 +531,7 @@ class than the others. The plot below shows that the time complexity
 class of `read.csv` is in fact quadratic, whereas the others are linear.
 
 ```{r}
-best.list <- atime::references_best(read.real.vary.cols)
-meas.dt <- one.thread(best.list$meas)
-ref.dt <- one.thread(best.list$ref)[
-  fun.name %in% c("N^2","N log N", "N") & N >= 1e2]
-if(require(ggplot2)){
-  hline.df <- with(read.real.vary.cols, data.frame(
-    seconds.limit, unit="seconds"))
-  gg <- ggplot()+
-    ggtitle("Read CSV with 10 real rows, asymptotic complexity")+
-    theme_bw()+
-    facet_grid(unit ~ expr.name, scales="free")+
-    geom_hline(aes(
-      yintercept=seconds.limit),
-      color="grey",
-      data=hline.df)+
-    geom_line(aes(
-      N, reference, group=paste(expr.name, fun.name)),
-      linewidth=2,
-      data=ref.dt)+
-    geom_line(aes(
-      N, empirical, color=expr.name),
-      linewidth=1,
-      data=meas.dt)+
-    geom_ribbon(aes(
-      N, ymin=q25, ymax=q75, fill=expr.name),
-      data=meas.dt[unit=="seconds"],
-      alpha=0.5)+
-    scale_x_log10("N = Number of columns")+
-    scale_y_log10("median line, quartiles band")+
-    scale_color_manual(values=read.colors)+
-    scale_fill_manual(values=read.colors)
-  dl <- if(require(directlabels)){
-    gg+
-      directlabels::geom_dl(aes(
-        N, reference,
-        label.group=paste(expr.name, fun.name),
-        label=fun.name),
-        method="left.polygons",
-        data=ref.dt)+
-      theme(legend.position="none")
-  }else{
-    gg
-  }
-  ##png("figure-read-real-vary-cols-complexity.png", 12, 6, units="in", res=100)
-  print(dl)
-  ##dev.off()
-}
+facetPlot(read.real.vary.cols,c("N^2","N log N", "N"))
 ```
 
 

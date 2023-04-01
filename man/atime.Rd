@@ -35,6 +35,7 @@ string.result <- atime::atime(
     subject <- paste(rep("a", N), collapse="")
     pattern <- paste(rep(c("a?", "a"), each=N), collapse="")
   },
+  seconds.limit=0.001,
   PCRE.match=regexpr(pattern, subject, perl=TRUE),
   TRE.match=regexpr(pattern, subject, perl=FALSE),
   constant.replacement=gsub("a","constant size replacement",subject),
@@ -55,6 +56,7 @@ split.result <- atime::atime(
     )[sample(.N)]
     DF <- as.data.frame(DT)
   },
+  seconds.limit=0.001,
   frame=split(DF[names(DF) != "x1"], DF["x1"], drop = TRUE),
   table=split(DT, by = "x1", keep.by = FALSE, drop = TRUE)
 )
