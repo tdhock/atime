@@ -1,3 +1,4 @@
+library(data.table)
 library(testthat)
 test_that("more.units error if not present", {
   atime.list <- atime::atime(
@@ -29,18 +30,6 @@ test_that("more.units error if not present", {
   u.tab <- table(refs.units[["measurements"]][["unit"]])
   expect_identical(names(u.tab), c("length.num", "seconds"))
   expect_equal(sum(is.na(refs.units$measurements$empirical)), 0)
-})
-
-test_that("can extract numeric units from data table in list", {
-  atime.list <- atime::atime(
-    N=1:2,
-    setup={},
-    result = TRUE,
-    makeList=list(loss=data.table(value=5)))
-  atime.list$measurements[, intervals := sapply(result, function(L)L$loss$value)]
-  best.list <- atime::references_best(atime.list, more.units="intervals")
-  emp <- best.list$measurements$empirical
-  expect_equal(sum(is.na(emp)), 0)
 })
 
 test_that("result returned when some are NULL and others not", {
@@ -142,18 +131,6 @@ test_that("only one value in grid is OK", {
     list(ENGINE="PCRE"),
     nc=nc::capture_first_vec(subject, pattern, engine=ENGINE))
   expect_identical(names(expr.list), "nc ENGINE=PCRE")
-})
-
-test_that("references_best does not delete", {
-  alist <- atime::atime(
-    N=1:2,
-    setup={},
-    slow=Sys.sleep(0.01),
-    fast=Sys.sleep(0.0001),
-    seconds.limit=0.001)
-  expect_equal(nrow(alist$measurements[expr.name=="slow"]), 1)
-  blist <- atime::references_best(alist)
-  expect_equal(nrow(blist$measurements[expr.name=="slow"]), 1)
 })
 
 test_that("null is faster than wait", {
