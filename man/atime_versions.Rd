@@ -58,8 +58,7 @@ if(FALSE){
     cv="908b77c411bc7f4fcbcf53759245e738ae724c3e",
     "rm unord map"="dcd0808f52b0b9858352106cc7852e36d7f5b15d",
     "mvl_construct"="5942af606641428315b0e63c7da331c4cd44c091")      
-  refs.best <- atime::references_best(atime.list)
-  plot(refs.best)
+  plot(atime.list)
 
   atime::atime_versions_remove("binsegRcpp")
 

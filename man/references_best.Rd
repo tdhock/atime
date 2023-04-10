@@ -20,56 +20,41 @@
 
 \examples{
 
-atime.list <- atime::atime(
-  PCRE=regexpr(pattern, subject, perl=TRUE),
-  TRE=regexpr(pattern, subject, perl=FALSE),
+## Example 1: polynomial and exponential time string functions.
+string.result <- atime::atime(
+  N=unique(as.integer(10^seq(0,3.5,l=100))),
   setup={
     subject <- paste(rep("a", N), collapse="")
     pattern <- paste(rep(c("a?", "a"), each=N), collapse="")
   },
-  N=1:30)
-best.list <- atime::references_best(atime.list)
-plot(best.list)
+  seconds.limit=0.001,
+  PCRE.match=regexpr(pattern, subject, perl=TRUE),
+  TRE.match=regexpr(pattern, subject, perl=FALSE),
+  constant.replacement=gsub("a","constant size replacement",subject),
+  linear.replacement=gsub("a",subject,subject))
+(string.best <- atime::references_best(string.result))
+## plot method shows each expr in a separate panel.
+plot(string.best)
 
-if(require("ggplot2")){
-  hline.df <- with(atime.list, data.frame(seconds.limit, unit="seconds"))
-  ref.dt <- best.list$ref[overall.rank==1]
-  gg <- ggplot()+
-    theme_bw()+
-    facet_grid(unit ~ ., scales="free")+
-    geom_line(aes(
-      N, reference, group=paste(expr.name, fun.name)),
-      color="grey",
-      data=ref.dt)+
-    geom_hline(aes(
-      yintercept=seconds.limit),
-      color="grey",
-      data=hline.df)+
-    geom_ribbon(aes(
-      N, ymin=min, ymax=max, fill=expr.name),
-      data=best.list$meas[unit=="seconds"],
-      alpha=0.5)+
-    geom_line(aes(
-      N, empirical, color=expr.name),
-      data=best.list$meas)+
-    scale_y_log10("")+
-    scale_x_log10()
-  if(require("directlabels")){
-    gg+
-      theme(legend.position="none")+
-      directlabels::geom_dl(aes(
-        N, empirical, color=expr.name, label=expr.name),
-        data=best.list$meas,
-        method="last.polygons")+
-      directlabels::geom_dl(aes(
-        N, reference, label=fun.name),
-        data=ref.dt,
-        color="grey",
-        method="bottom.polygons")+
-      coord_cartesian(xlim=c(1,40))
-  }else{
-    gg
-  }
-}
+## Example 2: split data table vs frame, constant factor difference.
+library(data.table)
+split.result <- atime::atime(
+  N=as.integer(10^seq(1, 7)),
+  setup={
+    set.seed(1)
+    DT <- data.table(
+      x1 = rep(c("c","d"), l=N),
+      x2 = rep(c("x","y"), l=N),
+      x3 = rep(c("a","b"), l=N),
+      y = rnorm(N)
+    )[sample(.N)]
+    DF <- as.data.frame(DT)
+  },
+  seconds.limit=0.001,
+  frame=split(DF[names(DF) != "x1"], DF["x1"], drop = TRUE),
+  table=split(DT, by = "x1", keep.by = FALSE, drop = TRUE)
+)
+split.best <- atime::references_best(split.result)
+plot(split.best)
 
 }

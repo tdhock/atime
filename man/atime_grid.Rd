@@ -1,0 +1,66 @@
+\name{atime_grid}
+\alias{atime_grid}
+\title{
+  Asymptotic timing grid
+}
+\description{
+  Create expressions for asymptotic timing by substituting values into
+  expressions. 
+}
+\usage{
+atime_grid(
+  param.list = list(), 
+  name.value.sep="=",
+  expr.param.sep=" ",
+  collapse = ",", 
+  ...)
+}
+\arguments{
+  \item{param.list}{
+    Named list of items to replace in ... expressions, default empty
+    list means nothing to replace.
+  }
+  \item{name.value.sep}{
+    string: separator between names and values from \code{param.list},
+    default \code{"="}.
+  }
+  \item{expr.param.sep}{
+    string: separator between expressions and parameters, default
+    \code{" "}. 
+  }
+  \item{collapse}{
+    string: separator between parameters, default \code{","}.
+  }
+  \item{\dots}{
+    Named expressions which each must contain each name of
+    \code{param.list}.
+  }
+}
+\value{
+  Named list of expressions which can be used as \code{expr.list}
+  argument of \code{\link{atime}}.
+}
+\author{
+  Toby Dylan Hocking
+}
+\examples{
+
+## Example 0: with no param.list, same as quote inside named list.
+atime::atime_grid(m=mean(data), s=sum(data))
+list(m=quote(mean(data)), s=quote(sum(data)))
+
+## Example 1: polynomial vs exponential time regex.
+(expr.list <- atime::atime_grid(
+  list(PERL=c(TRUE, FALSE)),
+  expr.param.sep="\n",
+  regexpr=regexpr(pattern, subject, perl=PERL)))
+atime.list <- atime::atime(
+  N=unique(as.integer(10^seq(0,3.5,l=20))),
+  setup={
+    subject <- paste(rep("a", N), collapse="")
+    pattern <- paste(rep(c("a?", "a"), each=N), collapse="")
+  },
+  expr.list=expr.list)
+plot(atime.list)
+
+}

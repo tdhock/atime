@@ -1,3 +1,20 @@
+Changes in version 2023.3.31
+
+- delete test which failed on CRAN.
+
+Changes in version 2023.3.30
+
+- atime_grid(list(VAR="one value")) no longer errors.
+
+Changes in version 2023.1.24
+
+- new function atime_pkg with vignette ci.Rmd.
+
+Changes in version 2022.12.14
+
+- new function atime_grid.
+- atime argument results changed to result to be consistent with result column of output.
+
 Changes in version 2022.9.16
 
 - if(FALSE) in atime_versions*.Rd examples, for CRAN.
