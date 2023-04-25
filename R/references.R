@@ -50,6 +50,15 @@ references_best <- function(L, unit.col.vec=NULL, more.units=NULL, fun.list=NULL
     unit.col.vec <- c(unit.col.vec, more.units)
   }
   DT <- L[["measurements"]]
+  if(!"expr.name" %in% names(DT)){
+    stop("measurements must have expr.name column")
+  }
+  row.counts <- DT[, .(rows=.N), by=.(expr.name, N)]
+  bad.counts <- row.counts[1 < rows]
+  if(nrow(bad.counts)){
+    print(bad.counts)
+    stop("there should be only one row in measurements for each expr.name and N, problems above")
+  }
   not.found <- unit.col.vec[!unit.col.vec %in% names(DT)]
   if(length(not.found)){
     stop(
