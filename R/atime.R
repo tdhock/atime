@@ -124,6 +124,75 @@ atime <- function(N, setup, expr.list=NULL, times=10, seconds.limit=0.01, verbos
     class="atime")
 }
 
+predict.atime <- function(object, seconds=object$seconds.limit, ...){
+  object$prediction <- object$measurements[, .(
+    seconds,
+    N=approx(median, N, seconds)$y
+  ), by=expr.name]
+  class(object) <- c("atime_prediction", class(object))
+  object
+}
+
+plot.atime_prediction <- function(x, ...){
+  expr.name <- N <- kilobytes <- NULL
+  meas <- x[["measurements"]]
+  if(requireNamespace("ggplot2")){
+    pred <- x[["prediction"]]
+    one <- pred[1]
+    gg <- ggplot2::ggplot()+
+      ggplot2::theme_bw()+
+      ggplot2::geom_hline(ggplot2::aes(
+        yintercept=seconds),
+        data=one)+
+      ggplot2::geom_text(ggplot2::aes(
+        0, seconds, label=paste0("seconds=",seconds)),
+        hjust=0,
+        vjust=1.2, 
+        data=one)+
+      ggplot2::geom_ribbon(ggplot2::aes(
+        N, ymin=min, ymax=max, fill=expr.name),
+        data=meas,
+        alpha=0.5)+
+      ggplot2::geom_line(ggplot2::aes(
+        N, median, color=expr.name),
+        data=meas)+
+      ggplot2::scale_x_log10(
+        breaks=meas[, 10^seq(
+          ceiling(min(log10(N))),
+          floor(max(log10(N))))])+
+      ggplot2::scale_y_log10(
+        "Computation time (seconds), median line, min/max band")+
+      ggplot2::geom_point(ggplot2::aes(
+        N, seconds, color=expr.name),
+        data=pred,
+        shape=21,
+        fill="white")
+    if(requireNamespace("directlabels")){
+      gg+
+        directlabels::geom_dl(ggplot2::aes(
+          N, seconds, 
+          label=paste0(expr.name, "\nN=", round(N)),
+          color=expr.name),
+          data=pred,
+          method="top.polygons")+
+        ggplot2::theme(legend.position="none")
+    }else{
+      gg
+    }
+  }else{
+    lattice::xyplot(
+      log10(median) ~ log10(N), meas, 
+      groups=expr.name, type="l", 
+      ylab="log10(median seconds)",
+      auto.key=list(space="right", points=FALSE, lines=TRUE))
+  }
+}
+
+print.atime_prediction <- function(x, ...){
+  cat("atime_prediction object\n")
+  print(x$prediction)
+}
+
 plot.atime <- function(x, ...){
   expr.name <- N <- kilobytes <- NULL
   meas <- x[["measurements"]]

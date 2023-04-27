@@ -56,22 +56,19 @@ code to use the `seconds.limit` argument so that you can see what
 happens to ICU/PCRE for larger N (hint: you should see a difference at
 larger sizes).
 
-## Interpolate at seconds.limit
+## Interpolate at seconds.limit using predict method
 
 ```{r}
-interpolation.dt <- with(all.best, references[overall.rank==1, data.table(
-  unit="seconds",
-  seconds.limit,
-  N=approx(empirical, N, seconds.limit)$y
-), by=expr.name])
-if(require(ggplot2)){
-  plot(all.best)+
-    geom_point(aes(
-      N, seconds.limit),
-      shape=21,
-      fill="white",
-      data=interpolation.dt)
-}
+(all.pred <- predict(all.result))
+summary(all.pred)
+```
+
+The `predict` method above returns a list with a new element named
+`prediction`, which shows the data sizes that can be computed with a
+given time budget. The `plot`x method is used below,
+
+```{r}
+plot(all.pred)
 ```
 
 ## `atime_grid` to compare different engines
