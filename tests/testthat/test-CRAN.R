@@ -158,6 +158,8 @@ test_that("no error for results=FALSE", {
 regex.atime <- atime::atime(
   PCRE=regexpr(pattern, subject, perl=TRUE),
   TRE=regexpr(pattern, subject, perl=FALSE),
+  ## TODO: an expression with more consistent memory usage, sometimes
+  ## this one is zero after the first run.
   "constant\nreplacement"=gsub("a","constant size replacement",subject),
   "linear\nreplacement"=gsub("a",subject,subject),
   setup={
@@ -174,22 +176,42 @@ test_that("predict gives seconds.limit by default", {
     regex.pred.default$prediction[["unit.value"]]==regex.pred.default$seconds.limit))
 })
 
-test_that("predict gives seconds.limit by default", {
-  kb <- 100
+test_that("predict gives only kilobytes", {
+  kb <- 10
   regex.pred.kb <- predict(regex.best, kilobytes=kb)
   expect_true(all(regex.pred.kb$prediction[["unit"]]=="kilobytes"))
   expect_true(all(regex.pred.kb$prediction[["unit.value"]]==kb))
 })
 
-test_that("error for TODO", {
-  predict(seg.best, 5)
-  predict(seg.best, kilobytes=100, 5)
-  predict(seg.best, kilobytes="a")
-  predict(seg.best, kilobytes=NA_real_)
-  predict(seg.best, kilobytes=Inf)
-  predict(seg.best, kilobytes=1:2)
-  predict(seg.best, kilobytes=1e9)
-  predict(seg.best, kilobytes=1000, kilobytes=100, foo=5, bar=5, foo=3, foo=1)
-  (seg.pred <- predict(seg.best, kilobytes=20000, seconds=0.1))
-  (seg.pred <- predict(seg.best, kilobytes=5000, seconds=0.1))
+test_that("predict gives both seconds and kilobytes", {
+  regex.pred.both <- predict(
+    regex.best, kilobytes=1000, seconds=regex.best$seconds.limit)
+  unit.tab <- table(regex.pred.both$prediction$unit)
+  expect_identical(names(unit.tab), c("kilobytes","seconds"))
 })
+
+test_that("errors for predict method", {
+  expect_error({
+    predict(seg.best, 5)
+  }, "... has an un-named argument, but must have a unit as the name of each argument", fixed=TRUE)
+  expect_error({
+    predict(seg.best, kilobytes=100, 5)
+  }, "... has an un-named argument, but must have a unit as the name of each argument", fixed=TRUE)
+  expect_error({
+    predict(seg.best, kilobytes="a")
+  }, "... has a non-numeric argument (kilobytes), but each argument must be numeric (unit value at which to interpolate/predict N)", fixed=TRUE)
+  expect_error({
+    predict(seg.best, kilobytes=NA_real_)
+  }, "... has a non-finite argument (kilobytes) but each argument must be finite (unit value at which to interpolate/predict N)", fixed=TRUE)
+  expect_error({
+    predict(seg.best, kilobytes=1:2)
+  }, "... has an argument with length != 1 (kilobytes), but each argument must be scalar (unit value at which to interpolate/predict N)", fixed=TRUE)
+  expect_error({
+    predict(seg.best, kilobytes=1e9)
+  }, "kilobytes=1e+09 is too large, please decrease to a value that intersects at least one of the empirical curves", fixed=TRUE)
+  expect_error({
+    predict(seg.best, kilobytes=1000, kilobytes=100, foo=5, bar=5, foo=3, foo=1)
+  }, "argument names should be unique, problem(count): foo(3), kilobytes(2)", fixed=TRUE)
+})
+
+

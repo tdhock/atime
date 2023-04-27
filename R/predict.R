@@ -1,4 +1,6 @@
 predict.references_best <- function(object, ...){
+  . <- N <- expr.name <- NULL
+  ## Above for CRAN NOTEs.
   L <- list(...)
   if(length(L)==0){
     L <- list(seconds=object[["seconds.limit"]])
@@ -25,11 +27,16 @@ predict.references_best <- function(object, ...){
       stop("... has a non-finite argument (", unit, ") but each argument must be finite (unit value at which to interpolate/predict N)")
     }
     is.unit <- object$measurements$unit == unit
-    pred.dt <- object$measurements[is.unit & 0<empirical, {
+    meas <- object$measurements[is.unit & 0<empirical]
+    pred.dt <- meas[, {
       increasing.dt <- .SD[c(0<diff(empirical),TRUE)]
-      increasing.dt[, data.table(
-        unit.value,
-        N=10^approx(log10(empirical), log10(N), log10(unit.value))$y)]
+      if(nrow(increasing.dt)<2){
+        data.table()
+      }else{
+        increasing.dt[, data.table(
+          unit.value,
+          N=10^approx(log10(empirical), log10(N), log10(unit.value))$y)]
+      }
     }, by=expr.name]
     not.NA <- pred.dt[!is.na(N)]
     if(nrow(not.NA)==0){
@@ -42,7 +49,7 @@ predict.references_best <- function(object, ...){
 }
 
 plot.atime_prediction <- function(x, ...){
-  expr.name <- N <- kilobytes <- NULL
+  expr.name <- N <- empirical <- NULL
   meas <- x[["measurements"]][unit %in% x$prediction$unit]
   if(requireNamespace("ggplot2")){
     pred <- x[["prediction"]]
