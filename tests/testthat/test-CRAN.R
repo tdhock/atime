@@ -154,3 +154,42 @@ test_that("no error for results=FALSE", {
   expect_is(alist, "atime")
   expect_equal(sort(alist$measurements$expr.name), c("null","null","results","results","wait"))
 })
+
+regex.atime <- atime::atime(
+  PCRE=regexpr(pattern, subject, perl=TRUE),
+  TRE=regexpr(pattern, subject, perl=FALSE),
+  "constant\nreplacement"=gsub("a","constant size replacement",subject),
+  "linear\nreplacement"=gsub("a",subject,subject),
+  setup={
+    subject <- paste(rep("a", N), collapse="")
+    pattern <- paste(rep(c("a?", "a"), each=N), collapse="")
+  },
+  N=unique(as.integer(10^seq(0,5,l=100))))
+regex.best <- atime::references_best(regex.atime)
+
+test_that("predict gives seconds.limit by default", {
+  regex.pred.default <- predict(regex.best)
+  expect_true(all(regex.pred.default$prediction[["unit"]]=="seconds"))
+  expect_true(all(
+    regex.pred.default$prediction[["unit.value"]]==regex.pred.default$seconds.limit))
+})
+
+test_that("predict gives seconds.limit by default", {
+  kb <- 100
+  regex.pred.kb <- predict(regex.best, kilobytes=kb)
+  expect_true(all(regex.pred.kb$prediction[["unit"]]=="kilobytes"))
+  expect_true(all(regex.pred.kb$prediction[["unit.value"]]==kb))
+})
+
+test_that("error for TODO", {
+  predict(seg.best, 5)
+  predict(seg.best, kilobytes=100, 5)
+  predict(seg.best, kilobytes="a")
+  predict(seg.best, kilobytes=NA_real_)
+  predict(seg.best, kilobytes=Inf)
+  predict(seg.best, kilobytes=1:2)
+  predict(seg.best, kilobytes=1e9)
+  predict(seg.best, kilobytes=1000, kilobytes=100, foo=5, bar=5, foo=3, foo=1)
+  (seg.pred <- predict(seg.best, kilobytes=20000, seconds=0.1))
+  (seg.pred <- predict(seg.best, kilobytes=5000, seconds=0.1))
+})
