@@ -155,62 +155,63 @@ test_that("no error for results=FALSE", {
   expect_equal(sort(alist$measurements$expr.name), c("null","null","results","results","wait"))
 })
 
-regex.atime <- atime::atime(
-  PCRE=regexpr(pattern, subject, perl=TRUE),
-  TRE=regexpr(pattern, subject, perl=FALSE),
-  ## TODO: an expression with more consistent memory usage, sometimes
-  ## this one is zero after the first run.
-  "constant\nreplacement"=gsub("a","constant size replacement",subject),
-  "linear\nreplacement"=gsub("a",subject,subject),
+my.atime <- atime::atime(
+  vector=x,
+  "vector+1"=x+1,
+  matrix=matrix(x, N, N),
   setup={
-    subject <- paste(rep("a", N), collapse="")
-    pattern <- paste(rep(c("a?", "a"), each=N), collapse="")
+    x <- rep(1, N)
   },
-  N=unique(as.integer(10^seq(0,5,l=100))))
-regex.best <- atime::references_best(regex.atime)
+  N=unique(as.integer(10^seq(0,4,l=100))))
+if(interactive())plot(my.atime)
+my.best <- atime::references_best(my.atime)
+if(interactive())plot(my.best)
 
 test_that("predict gives seconds.limit by default", {
-  regex.pred.default <- predict(regex.best)
-  expect_true(all(regex.pred.default$prediction[["unit"]]=="seconds"))
+  my.pred.default <- predict(my.best)
+  if(interactive())plot(my.pred.default)
+  expect_true(all(my.pred.default$prediction[["unit"]]=="seconds"))
   expect_true(all(
-    regex.pred.default$prediction[["unit.value"]]==regex.pred.default$seconds.limit))
+    my.pred.default$prediction[["unit.value"]]==my.pred.default$seconds.limit))
 })
 
 test_that("predict gives only kilobytes", {
   kb <- 10
-  regex.pred.kb <- predict(regex.best, kilobytes=kb)
-  expect_true(all(regex.pred.kb$prediction[["unit"]]=="kilobytes"))
-  expect_true(all(regex.pred.kb$prediction[["unit.value"]]==kb))
+  my.pred.kb <- predict(my.best, kilobytes=kb)
+  if(interactive())plot(my.pred.kb)
+  expect_true(all(my.pred.kb$prediction[["unit"]]=="kilobytes"))
+  expect_true(all(my.pred.kb$prediction[["unit.value"]]==kb))
 })
 
 test_that("predict gives both seconds and kilobytes", {
-  regex.pred.both <- predict(
-    regex.best, kilobytes=1000, seconds=regex.best$seconds.limit)
-  unit.tab <- table(regex.pred.both$prediction$unit)
+  my.pred.both <- predict(
+    my.best, kilobytes=10, seconds=my.best$seconds.limit)
+  if(interactive())plot(my.pred.both)
+  unit.tab <- table(my.pred.both$prediction$unit)
   expect_identical(names(unit.tab), c("kilobytes","seconds"))
 })
 
 test_that("errors for predict method", {
   expect_error({
-    predict(seg.best, 5)
+    predict(my.best, 5)
   }, "... has an un-named argument, but must have a unit as the name of each argument", fixed=TRUE)
   expect_error({
-    predict(seg.best, kilobytes=100, 5)
+    predict(my.best, kilobytes=100, 5)
   }, "... has an un-named argument, but must have a unit as the name of each argument", fixed=TRUE)
   expect_error({
-    predict(seg.best, kilobytes="a")
+    predict(my.best, kilobytes="a")
   }, "... has a non-numeric argument (kilobytes), but each argument must be numeric (unit value at which to interpolate/predict N)", fixed=TRUE)
   expect_error({
-    predict(seg.best, kilobytes=NA_real_)
+    predict(my.best, kilobytes=NA_real_)
   }, "... has a non-finite argument (kilobytes) but each argument must be finite (unit value at which to interpolate/predict N)", fixed=TRUE)
   expect_error({
-    predict(seg.best, kilobytes=1:2)
+    predict(my.best, kilobytes=1:2)
   }, "... has an argument with length != 1 (kilobytes), but each argument must be scalar (unit value at which to interpolate/predict N)", fixed=TRUE)
   expect_error({
-    predict(seg.best, kilobytes=1e9)
+    predict(my.best, kilobytes=1e9)
   }, "kilobytes=1e+09 is too large, please decrease to a value that intersects at least one of the empirical curves", fixed=TRUE)
   expect_error({
-    predict(seg.best, kilobytes=1000, kilobytes=100, foo=5, bar=5, foo=3, foo=1)
+    predict(my.best, kilobytes=1000, kilobytes=100, foo=5, bar=5, foo=3, foo=1)
   }, "argument names should be unique, problem(count): foo(3), kilobytes(2)", fixed=TRUE)
 })
 
