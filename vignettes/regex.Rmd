@@ -59,7 +59,7 @@ larger sizes).
 ## Interpolate at seconds.limit using predict method
 
 ```{r}
-(all.pred <- predict(all.result))
+(all.pred <- predict(all.best))
 summary(all.pred)
 ```
 
