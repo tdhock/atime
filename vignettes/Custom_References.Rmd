@@ -87,7 +87,6 @@ measurement of the second to largest N.
 ## predict method
 
 ```{r}
-devtools::load_all()
 (seg.pred <- predict(seg.best))
 plot(seg.pred)
 ```
