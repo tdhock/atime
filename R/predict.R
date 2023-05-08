@@ -75,6 +75,7 @@ plot.atime_prediction <- function(x, ...){
         N, empirical, color=expr.name),
         data=meas)+
       ggplot2::scale_x_log10(
+        "N",
         breaks=meas[, 10^seq(
           ceiling(min(log10(N))),
           floor(max(log10(N))))])+

@@ -48,7 +48,12 @@ arguments:
   ## Compute and plot asymptotic reference lines:
   (best.list <- atime::references_best(atime.list))
   plot(best.list)
+  ## Compute and plot data size N for given time/memory.
+  pred.list <- predict(best.list, seconds=1e-2, kilobytes=10)
+  plot(pred.list)
 #+END_SRC
+
+*** Time/memory comparison overview
 
 On my machine I got the following results:
 
@@ -95,7 +100,11 @@ output of the plot method for this =atime= result list is shown below,
 The plot above facilitates comparing the time and memory of the
 different expressions, and makes it easy to see the ranking of
 different algorithms, but it does not show the asymptotic complexity
-class. To estimate the asymptotic complexity class, use the code
+class.
+
+*** Asymptotic complexity class estimation
+
+To estimate the asymptotic complexity class, use the code
 below:
 
 #+begin_src R
@@ -135,6 +144,36 @@ then you should be able to observe the following:
   =seconds.limit= and the max value in =N= until you start to see
   linear trends, and clearly overlapping reference lines (as is the
   case here).
+
+*** Highlight N for given time/memory
+
+When comparing algorithms in terms of computational resources, we can
+either
+- show the time/memory required for a given data size N, or
+- show the data size N possible for a given time/memory budget.
+
+We can do both using the code below,
+
+#+begin_src R
+> atime.list[["measurements"]][N==323, .(expr.name, seconds=median, kilobytes)]
+              expr.name   seconds kilobytes
+                 <char>     <num>     <num>
+1:            TRE.match 0.0678032    0.0000
+2: constant.replacement 0.0000667    7.9375
+3:   linear.replacement 0.0002435  101.9375
+> pred.list <- predict(best.list, seconds=1e-2, kilobytes=10)
+> pred.list[["prediction"]]
+        unit            expr.name unit.value          N
+      <char>               <char>      <num>      <num>
+1:   seconds           PCRE.match       0.01   17.82348
+2:   seconds            TRE.match       0.01  168.46338
+3:   seconds   linear.replacement       0.01 2069.38604
+4: kilobytes constant.replacement      10.00  407.55220
+5: kilobytes   linear.replacement      10.00  100.92007
+> plot(pred.list)
+#+end_src
+
+[[file:README-predict.png]]
 
 ** Related work
 

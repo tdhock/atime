@@ -35,7 +35,6 @@ string.result <- atime::atime(
 (string.best <- atime::references_best(string.result))
 ## plot method shows each expr in a separate panel.
 plot(string.best)
-
 ## predict method computes N for given units (default seconds limit).
 string.pred = predict(string.best)
 plot(string.pred)
