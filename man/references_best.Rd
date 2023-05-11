@@ -35,26 +35,8 @@ string.result <- atime::atime(
 (string.best <- atime::references_best(string.result))
 ## plot method shows each expr in a separate panel.
 plot(string.best)
-
-## Example 2: split data table vs frame, constant factor difference.
-library(data.table)
-split.result <- atime::atime(
-  N=as.integer(10^seq(1, 7)),
-  setup={
-    set.seed(1)
-    DT <- data.table(
-      x1 = rep(c("c","d"), l=N),
-      x2 = rep(c("x","y"), l=N),
-      x3 = rep(c("a","b"), l=N),
-      y = rnorm(N)
-    )[sample(.N)]
-    DF <- as.data.frame(DT)
-  },
-  seconds.limit=0.001,
-  frame=split(DF[names(DF) != "x1"], DF["x1"], drop = TRUE),
-  table=split(DT, by = "x1", keep.by = FALSE, drop = TRUE)
-)
-split.best <- atime::references_best(split.result)
-plot(split.best)
+## predict method computes N for given units (default seconds limit).
+string.pred = predict(string.best)
+plot(string.pred)
 
 }

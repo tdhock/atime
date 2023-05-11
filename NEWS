@@ -1,3 +1,7 @@
+Changes in version 2023.4.27
+
+- predict.references_best(kilobytes=1000) etc.
+
 Changes in version 2023.3.31
 
 - delete test which failed on CRAN.

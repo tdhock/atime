@@ -36,15 +36,16 @@ seg.result <- atime::atime(
     set.seed(1)
     data.vec <- 1:N
   },
-  "changepoint::cpt.mean"={
+  "changepoint\n::cpt.mean"={
     cpt.fit <- changepoint::cpt.mean(data.vec, method="BinSeg", Q=max.changes)
     sort(c(N,cpt.fit@cpts.full[max.changes,]))
   },
-  "binsegRcpp::binseg_normal"={
-    binseg.fit <- binsegRcpp::binseg_normal(data.vec, max.segs)
+  "binsegRcpp\nmultiset"={
+    binseg.fit <- binsegRcpp::binseg(
+      "mean_norm", data.vec, max.segs, container.str="multiset")
     sort(binseg.fit$splits$end)
   },
-  "fpop::multiBinSeg"={
+  "fpop::\nmultiBinSeg"={
     mbs.fit <- fpop::multiBinSeg(data.vec, max.changes)
     sort(c(mbs.fit$t.est, N))
   },
@@ -53,7 +54,7 @@ seg.result <- atime::atime(
     split.dt <- data.table(wbs.fit$res)[order(-min.th, scale)]
     sort(split.dt[, c(N, cpt)][1:max.segs])
   },
-  binsegRcpp.list={
+  "binsegRcpp\nlist"={
     binseg.fit <- binsegRcpp::binseg(
       "mean_norm", data.vec, max.segs, container.str="list")
     sort(binseg.fit$splits$end)
@@ -82,6 +83,13 @@ The figure above shows asymptotic references which are best fit for
 each expression. We do the best fit by adjusting each reference to the
 largest N, and then ranking each reference by distance to the
 measurement of the second to largest N.
+
+## predict method
+
+```{r}
+(seg.pred <- predict(seg.best))
+plot(seg.pred)
+```
 
 ## Custom asymptotic references
 
