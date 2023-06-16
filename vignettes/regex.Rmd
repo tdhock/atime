@@ -56,6 +56,21 @@ code to use the `seconds.limit` argument so that you can see what
 happens to ICU/PCRE for larger N (hint: you should see a difference at
 larger sizes).
 
+## Interpolate at seconds.limit using predict method
+
+```{r}
+(all.pred <- predict(all.best))
+summary(all.pred)
+```
+
+The `predict` method above returns a list with a new element named
+`prediction`, which shows the data sizes that can be computed with a
+given time budget. The `plot`x method is used below,
+
+```{r}
+plot(all.pred)
+```
+
 ## `atime_grid` to compare different engines
 
 In the `nc` package there is an `engine` argument which controls which
