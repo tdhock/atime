@@ -12,6 +12,9 @@ knitr::opts_chunk$set(
   fig.width=14,
   fig.height=10
 )
+if(FALSE){
+  rmarkdown::render("compare-data.table-tidyverse.Rmd")
+}
 ```
 
 In this vignette we compare computational requirements (time and
@@ -23,12 +26,12 @@ memory) of common operations using `data.table` and tidyverse functions.
 library(data.table)
 hostname <- system("hostname",intern=TRUE)
 (max.threads <- as.integer(Sys.getenv("SLURM_JOB_CPUS_PER_NODE", "1")))
-threads.vec <- unique(as.integer(c(1, max.threads/2, max.threads)))
+threads.vec <- unique(as.integer(c(1, ceiling(max.threads/2), max.threads)))
 seconds.limit <- 1
 cache.list <- list()
 cache <- function(symbol, code){
   cache.symb <- substitute(symbol)
-  suffix <- ifelse(grepl("devel",R.version.string),"patched","release")
+  suffix <- ifelse(grepl("devel",R.version.string),"devel","release")
   cache.dir <- paste0("~/R/atime-cache-",suffix)
   cache.rds <- file.path(cache.dir, paste0(cache.symb, ".RDS"))
   if(file.exists(cache.rds)){
@@ -99,14 +102,20 @@ atime_write <- function(make.input.fun, fmt){
     list(THREADS=threads.vec),
     "data.table::fwrite"=quote({
       data.table::setDTthreads(THREADS)
-      data.table::fwrite(input, name.list$fwrite, showProgress = FALSE)
+      data.table::fwrite(input, name.list[["fwrite"]], showProgress = FALSE)
     }))
   small.input <- make.input.fun(2,2)
+  if(requireNamespace("arrow") && is.data.frame(small.input)){
+    grid.args[["write_csv_arrow"]] <- quote({
+      arrow::set_cpu_count(THREADS)
+      arrow::write_csv_arrow(input, name.list[["write_csv_arrow"]])
+    })
+  }
   if(requireNamespace("readr") && is.data.frame(small.input)){
     ##readr can't handle matrix input.
     grid.args[["readr::write_csv"]] <- quote({
       readr::write_csv(
-        input, name.list$write_csv, progress = FALSE, num_threads = THREADS)
+        input, name.list[["write_csv"]], progress = FALSE, num_threads = THREADS)
     })
   }
   expr.list <- do.call(atime::atime_grid, grid.args)
@@ -115,14 +124,14 @@ atime_write <- function(make.input.fun, fmt){
     setup={
       input <- make.input.fun(N)
       name.list <- list()
-      for(fun in c("fwrite", "write_csv", "write.csv")){
+      for(fun in c("fwrite", "write_csv", "write_csv_arrow", "write.csv")){
         name.list[[fun]] <- file.path(
           tempdir(), sprintf(fmt, fun, N))
       }
     },
     seconds.limit = seconds.limit,
     expr.list=expr.list,
-    "utils::write.csv"=utils::write.csv(input, name.list$write.csv))
+    "utils::write.csv"=utils::write.csv(input, name.list[["write.csv"]]))
 }
 one.thread <- function(DT)DT[grepl("utils|scan|THREADS=1$", expr.name)]
 facetPlot <- function(atime.list, fun.name.vec=c("N^2","N"), N.min=1e2){
@@ -176,19 +185,20 @@ if(FALSE){
   dput(RColorBrewer::brewer.pal(Inf, "Set2"))
   dput(RColorBrewer::brewer.pal(Inf, "RdGy"))
 }
+NAME <- function(prefix, ...){
+  structure(
+    c(...)[1:length(threads.vec)],
+    names=sprintf("%sTHREADS=%d", prefix, threads.vec))
+}
 write.colors <- c(
-  "#67001F",#dark red
-  "#B2182B", "#D6604D", "#F4A582", "#FDDBC7",
-  "#FFFFFF",#white
-  "#E0E0E0", "#BABABA", "#878787", "#4D4D4D",
-  "#1A1A1A",#almost black
+  NAME("readr::write_csv ", "#9970AB","#762A83", "#40004B"), #purple
+  "#5AAE61", "#1B7837", "#00441B",#green
+  NAME("data.table::fwrite ", "#D6604D", "#B2182B", "#67001F"),#reds
+  "#878787", "#4D4D4D", "#1A1A1A",#greys
+  NAME("write_csv_arrow ", "#BF812D", "#8C510A", "#543005"),#browns
+  "#35978F", "#01665E", "#003C30",#teal polars
   "utils::write.csv"="deepskyblue")
-some <- function(...)c(...)[1:length(threads.vec)]
-names(write.colors)[some(3,2,1)] <- paste0(
-  "data.table::fwrite THREADS=",threads.vec)
-names(write.colors)[some(9,10,11)] <- paste0(
-  "readr::write_csv THREADS=",threads.vec)
-write.colors <- write.colors[names(write.colors)!=""]
+(write.colors <- write.colors[names(write.colors)!=""])
 ```
 
 ### Writing CSV with real numbers
@@ -426,6 +436,18 @@ read.expr.list <- c(
       data.table::setDTthreads(THREADS)
       data.table::fread(f.csv, showProgress=FALSE)
     }),
+  if(FALSE && requireNamespace("polars"))atime::atime_grid(
+    ##TODO wait until we know how to set max number of threads.
+    "polars::pl$read_csv"={
+    },
+    "polars::pl$read_csv_lazy"={
+    }),
+  if(requireNamespace("arrow"))atime::atime_grid(
+    list(THREADS=threads.vec),
+    "read_csv_arrow"={
+      arrow::set_cpu_count(THREADS)#https://github.com/apache/arrow/issues/30205#issuecomment-1378060874
+      arrow::read_csv_arrow(f.csv)
+    }),
   atime::atime_grid(
     "utils::read.csv"={
       utils::read.csv(f.csv)
@@ -469,7 +491,6 @@ atime_read <- function(glob, compute=FALSE, colClasses, N.col){
   }else{
     read.more.list
   }
-  print(expr.list)
   atime::atime(
     N=csv.dt$N,
     setup={
@@ -479,23 +500,16 @@ atime_read <- function(glob, compute=FALSE, colClasses, N.col){
     expr.list=expr.list)
 }
 PRGn <- c(
-  "#40004B", "#762A83", "#9970AB", "#C2A5CF", "#E7D4E8",#5
-  "#F7F7F7", #6
-  "#D9F0D3", "#A6DBA0", "#5AAE61", "#1B7837", "#00441B",#11
-  "#67001F",#dark red 12
-  "#B2182B", "#D6604D", "#F4A582", "#FDDBC7",
-  "#FFFFFF",#white 17
-  "#E0E0E0", "#BABABA", "#878787", "#4D4D4D",
-  "#1A1A1A",#almost black 22
-  "#00FFFF",#"deepskyblue",
-  "#00CCCC",
-  "#009999")
-names(PRGn)[c(
-  some(3,2,1),
-  some(9,10,11),
-  some(14,13,12),
-  23,24,25)] <- c(names(read.expr.list),"read.csv(colClasses)","list2DF(scan)")
-read.colors <- PRGn[names(PRGn)!=""&!is.na(names(PRGn))]
+  NAME("readr::read_csv LAZY=FALSE,", "#9970AB","#762A83", "#40004B"), #purple
+  "#5AAE61", "#1B7837", "#00441B",#green
+  NAME("data.table::fread ", "#D6604D", "#B2182B", "#67001F"),#reds
+  NAME("readr::read_csv LAZY=TRUE,", "#878787", "#4D4D4D", "#1A1A1A"),#greys
+  NAME("read_csv_arrow ", "#BF812D", "#8C510A", "#543005"),#browns
+  "#35978F", "#01665E", "#003C30",#teal polars
+  "utils::read.csv"="#00FFFF",#"deepskyblue",
+  "read.csv(colClasses)"="#00CCCC",
+  "list2DF(scan)"="#009999")
+(read.colors <- PRGn[names(PRGn)!=""&!is.na(names(PRGn))])
 ```
 
 Below we read real numbers with a constant number of columns, and a
