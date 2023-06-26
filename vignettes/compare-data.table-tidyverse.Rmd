@@ -9,7 +9,7 @@ knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
   eval = TRUE,
-  fig.width=14,
+  fig.width=18,
   fig.height=10
 )
 if(FALSE){
@@ -586,6 +586,10 @@ the most efficient:
   `readr::read_csv`.
 * `utils::read.csv` uses asymptotically more time (super-linear in the
   number of columns).
+  
+```{r}
+facetPlot(read.chr.vary.cols,c("N^2","N log N", "N"))
+```
 
 ## Summarize by group
 
@@ -661,6 +665,7 @@ summary.expr.list <- c(atime::atime_grid(
           loss_sd=sd(values)))) |> 
       tidyr::unnest_wider(loss)
   }))
+some <- function(...)c(...)[1:length(threads.vec)]
 summary.colors <- c(
   some("#D6604D", "#B2182B", "#67001F"),#dark red
   "#66C2A5", "#FC8D62", "#8DA0CB", "#E78AC3", "#A6D854", "#FFD92F", 
