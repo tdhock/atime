@@ -31,7 +31,11 @@ seconds.limit <- 1
 cache.list <- list()
 cache <- function(symbol, code){
   cache.symb <- substitute(symbol)
-  suffix <- ifelse(grepl("devel",R.version.string),"devel","release")
+  suffix <- if(grepl("devel",R.version.string)){
+    "devel"
+  }else{
+    gsub("R version | .*", "", R.version.string)
+  }
   cache.dir <- paste0("~/R/atime-cache-",suffix)
   cache.rds <- file.path(cache.dir, paste0(cache.symb, ".RDS"))
   if(file.exists(cache.rds)){
