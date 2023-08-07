@@ -13,6 +13,7 @@ knitr::opts_chunk$set(
   fig.height=10
 )
 if(FALSE){
+  unlink("~/R/atime-cache-4.3.1/*")
   rmarkdown::render("compare-data.table-tidyverse.Rmd")
 }
 ```
@@ -432,25 +433,32 @@ read.expr.list <- c(
     "readr::read_csv"={
       readr::read_csv(
         f.csv, num_threads = THREADS, lazy = LAZY,
+        ##col_select=1:10,
+        ##n_max=10,
         show_col_types=FALSE, progress=FALSE)
     }),
   atime::atime_grid(
     list(THREADS=threads.vec),
     "data.table::fread"={
       data.table::setDTthreads(THREADS)
-      data.table::fread(f.csv, showProgress=FALSE)
+      data.table::fread(
+        f.csv,
+        ##nrows=10,
+        ##select=1:10,
+        showProgress=FALSE)
     }),
   if(FALSE && requireNamespace("polars"))atime::atime_grid(
     ##TODO wait until we know how to set max number of threads.
     "polars::pl$read_csv"={
-    },
-    "polars::pl$read_csv_lazy"={
+      TODO
+      polars::pl$scan_csv(f.csv)
     }),
   if(requireNamespace("arrow"))atime::atime_grid(
     list(THREADS=threads.vec),
     "read_csv_arrow"={
       arrow::set_cpu_count(THREADS)#https://github.com/apache/arrow/issues/30205#issuecomment-1378060874
-      arrow::read_csv_arrow(f.csv)
+      arrow::read_csv_arrow(
+        f.csv)#col_select=1:10?
     }),
   atime::atime_grid(
     "utils::read.csv"={
@@ -595,6 +603,90 @@ the most efficient:
 facetPlot(read.chr.vary.cols,c("N^2","N log N", "N"))
 ```
 
+## Reading CSV, first few rows or columns
+
+First we define a function which we will use for all of the read
+benchmarks,
+
+```{r}
+limit.expr.list <- c(
+  if(requireNamespace("readr"))atime::atime_grid(
+    "readr::read_csv"={
+      readr::read_csv(
+        f.csv, num_threads = 1,
+        col_select=1:10,
+        n_max=10, lazy=FALSE,
+        show_col_types=FALSE, progress=FALSE)
+    }),
+  atime::atime_grid(
+    "data.table::fread"={
+      data.table::setDTthreads(1)
+      data.table::fread(
+        f.csv,
+        nrows=10,
+        select=1:10,
+        showProgress=FALSE)
+    }),
+  if(requireNamespace("polars"))atime::atime_grid(
+    "polars::read_csv_"={
+      ## https://github.com/pola-rs/r-polars/issues/267
+      polars::pl$scan_csv(f.csv)[,1:10,drop=FALSE]$slice(0,10)$collect()
+    }),
+  if(requireNamespace("arrow"))atime::atime_grid(
+    "read_csv_arrow"={
+      arrow::set_cpu_count(1)
+      arrow::read_csv_arrow(f.csv, col_select=1:10)#n_max not possible, https://github.com/apache/arrow/issues/36325#issuecomment-1609738413
+    }),
+  atime::atime_grid(
+    "utils::read.csv"={
+      utils::read.csv(f.csv, nrows=10)
+    }))
+atime_read_limit <- function(glob){  
+  fmt <- sub("[*]", "%d", glob)
+  csv.dt <- nc::capture_first_vec(
+    Sys.glob(file.path(tempdir(), glob)),
+    N="[0-9]+", as.integer,
+    ".csv")[order(N)]
+  atime::atime(
+    N=csv.dt$N,
+    setup={
+      f.csv <- file.path(tempdir(), sprintf(fmt, N))
+    },
+    seconds.limit = seconds.limit,
+    expr.list=limit.expr.list)
+}
+limit.colors <- c(
+  "readr::read_csv"="#9970AB", #purple
+  ##"#5AAE61",#green
+  "data.table::fread"="#D6604D",#reds
+  "readr::read_csv"="#878787",#greys
+  "read_csv_arrow"="#BF812D",#browns
+  "polars::read_csv_"="#35978F",#teal polars
+  "utils::read.csv"="#00FFFF")#"deepskyblue",
+```
+
+Below we read real numbers with a constant number of columns, and a
+variable number of rows.
+
+```{r}
+cache(read.real.vary.rows.limit, atime_read_limit("10_real_cols_fwrite_*.csv"))
+aplot(read.real.vary.rows.limit, "Read first 10 rows of CSV with 10 real columns", 1e9, 1e1, "Number of rows in CSV", limit.colors)
+```
+
+Below we read real numbers with a constant number of rows, and a
+variable number of columns in the CSV file (only first 10 columns read into R).
+
+```{r}
+cache(read.real.vary.cols.limit, atime_read_limit("10_real_rows_fwrite_*.csv"))
+aplot(read.real.vary.cols.limit, "Read first 10 columns of CSV with 10 real rows", 1e8, 1e1, "Number of columns in CSV", limit.colors)
+```
+
+TODO
+
+```{r}
+facetPlot(read.real.vary.cols.limit,c("N","1"))
+```
+
 ## Summarize by group
 
 The next problem is motivated by a common operation in machine
@@ -603,6 +695,12 @@ learning code: computing the mean/SD over cross-validation folds.
 ```{r}
 summary.expr.list <- c(atime::atime_grid(
   list(THREADS=threads.vec),
+  if(FALSE && requireNamespace("collapse"))atime::atime_grid(
+    "collapse"={
+      TODO
+      ## https://sebkrantz.github.io/collapse/#regarding-performance
+    }
+  ),
   "[.data.table"={
     data.table::setDTthreads(THREADS)
     loss.dt[, .(
