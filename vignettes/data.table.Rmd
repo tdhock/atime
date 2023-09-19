@@ -16,9 +16,10 @@ expression which uses different versions of the `data.table` package,
 which we clone from github using the code below,
 
 ```{r}
-tdir <- tempfile()
-dir.create(tdir)
-git2r::clone("https://github.com/tdhock/data.table", tdir)
+dt.git2r <- tempfile()
+dir.create(dt.git2r)
+dt.gh.url <- "https://github.com/tdhock/data.table"
+git2r::clone(dt.gh.url, dt.git2r)
 ```
 
 After cloning the git repo, we give the repo path as the `pkg.path`
@@ -105,13 +106,13 @@ run.atime <- function(TDIR){
     verbose = TRUE,
     "1.14.0 on CRAN. Bump to 1.14.1"="263b53e50241914a22f7ba6a139b52162c9d7927",
     "1.14.3 dev master"="c4a2085e35689a108d67dacb2f8261e4964d7e12",
-    "1.14.4"="1.14.4")
+    "1.14.4"="8fd1c8e0250fdd7eb1bad9f03678755071eeb087")
 }
 atime.list <- if(requireNamespace("callr")){
   requireNamespace("atime")
-  callr::r(run.atime, list(tdir))
+  callr::r(run.atime, list(dt.git2r))
 }else{
-  run.atime(tdir)
+  run.atime(dt.git2r)
 }
 ```
 
