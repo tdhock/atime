@@ -204,6 +204,7 @@ atime_pkg <- function(pkg.path="."){
   blank.dt.list <- list()
   bench.dt.list <- list()
   limit.dt.list <- list()
+  compare.dt.list <- list()
   for(test.name in names(test.env$test.list)){
     pkg.sha.args <- list(pkg.path=pkg.path, sha.vec=sha.vec)
     user.args <- test.env$test.list[[test.name]]
@@ -216,11 +217,26 @@ atime_pkg <- function(pkg.path="."){
     max.dt <- sec.dt[, .(
       N.values=.N, max.N=max(N)
     ), by=.(expr.name)]
-    p.value <- sec.dt[data.table(N=min(max.dt$max.N)), {
-      best.vec <- log10(as.numeric(time[[which.min(median)]]))
-      head.vec <- log10(as.numeric(time[[which(expr.name==HEAD.name)]]))
-      stats::t.test(head.vec, best.vec, alternative = "greater")$p.value
-    }, on="N"]
+    largest.common.N <- sec.dt[N==min(max.dt$max.N)]
+    ## TODO: fixed comparison?
+    compare.name <- largest.common.N[
+      expr.name!=HEAD.name
+    ][which.min(median), expr.name]
+    HEAD.compare <- c(HEAD.name, compare.name)
+    largest.common.timings <- largest.common.N[
+      expr.name %in% HEAD.compare, .(
+        seconds=as.numeric(time[[1]])
+      ), by=.(N, unit, expr.name)][, log10.seconds := log10(seconds)][]
+    compare.dt.list[[test.name]] <- data.table(
+      test.name, largest.common.timings)
+    test.args <- list()
+    for(commit.i in seq_along(HEAD.compare)){
+      commit.name <- HEAD.compare[[commit.i]]
+      test.args[[commit.i]] <- largest.common.timings[
+        expr.name==commit.name, log10.seconds]
+    }
+    test.args$alternative <- "greater"
+    p.value <- do.call(stats::t.test, test.args)$p.value
     hline.df <- with(atime.list, data.frame(seconds.limit, unit="seconds"))
     limit.dt.list[[test.name]] <- data.table(test.name, hline.df)
     bench.dt.list[[test.name]] <- data.table(
@@ -279,6 +295,7 @@ atime_pkg <- function(pkg.path="."){
   meta.dt <- unique(bench.dt[, .(test.name, P.value)])
   limit.dt <- rbindlist(limit.dt.list)[meta.dt, on="test.name"]
   blank.dt <- rbindlist(blank.dt.list)[meta.dt, on="test.name"]
+  compare.dt <- rbindlist(compare.dt.list)[meta.dt, on="test.name"]
   tests.RData <- sub("R$", "RData", tests.R)
   save(
     pkg.results, bench.dt, limit.dt, color.vec, blank.dt, 
@@ -303,6 +320,10 @@ atime_pkg <- function(pkg.path="."){
       N, ymin=q25, ymax=q75, fill=expr.name),
       data=bench.dt[unit=="seconds"],
       alpha=0.5)+
+    ggplot2::geom_point(ggplot2::aes(
+      N, seconds, color=expr.name),
+      shape=1,
+      data=compare.dt)+
     ggplot2::scale_x_log10()+
     ggplot2::scale_y_log10("median line, quartiles band")+
     directlabels::geom_dl(ggplot2::aes(
