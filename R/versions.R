@@ -185,6 +185,7 @@ atime_pkg <- function(pkg.path="."){
   color.vec <- structure(
     c("red","black","deepskyblue","violet"), 
     names=c(HEAD.name, base.name, "merge-base", CRAN.name))
+  ## TODO Also before/regression/fixed?
   if(git2r::is_commit(base.commit)){
     add_if_new <- function(name, commit.obj){
       sha <- git2r::sha(commit.obj)
