@@ -159,7 +159,7 @@ atime_pkg <- function(pkg.path="."){
   ## https://github.com/tdhock/binsegRcpp/blob/another-branch/inst/atime/tests.R
   each.sign.rank <- unit <- . <- N <- expr.name <- reference <- fun.name <- 
     empirical <- q25 <- q75 <- p.str <- p.value <- P.value <- 
-      seconds.limit <- time <- NULL
+      seconds.limit <- time <- log10.seconds <- seconds <- NULL
   ## above to avoid CRAN check NOTE.
   pkg.DESC <- file.path(pkg.path, "DESCRIPTION")
   DESC.mat <- read.dcf(pkg.DESC)

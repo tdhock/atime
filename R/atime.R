@@ -59,7 +59,7 @@ atime_grid <- function
 }
 
 atime <- function(N, setup, expr.list=NULL, times=10, seconds.limit=0.01, verbose=FALSE, result=FALSE, ...){
-  kilobytes <- mem_alloc <- NULL
+  kilobytes <- mem_alloc <- . <- sizes <- NULL
   ## above for CRAN NOTE.
   if(missing(N)){
     N <- as.integer(2^seq(1, 20))

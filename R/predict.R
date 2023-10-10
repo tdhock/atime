@@ -1,5 +1,6 @@
 predict.references_best <- function(object, ...){
-  . <- N <- expr.name <- NULL
+  . <- N <- expr.name <- unit <- empirical <- log10.empirical <-
+    log10.N <- NULL
   ## Above for CRAN NOTEs.
   L <- list(...)
   if(length(L)==0){
@@ -51,7 +52,7 @@ predict.references_best <- function(object, ...){
 }
 
 plot.atime_prediction <- function(x, ...){
-  expr.name <- N <- empirical <- NULL
+  expr.name <- N <- empirical <- unit <- unit.value <- NULL
   meas <- x[["measurements"]][unit %in% x$prediction$unit]
   if(requireNamespace("ggplot2")){
     pred <- x[["prediction"]]
