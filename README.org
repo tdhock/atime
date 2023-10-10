@@ -6,6 +6,10 @@ atime: Asymptotic Timing
 ** Installation
 
 #+BEGIN_SRC R
+  ## Install last released version from CRAN:
+  install.packages("atime")
+
+  ## Install latest version from GitHub:
   if(!require("remotes"))install.packages("remotes")
   remotes::install_github("tdhock/atime")
 #+END_SRC
