@@ -1,3 +1,10 @@
+Changes in version 2023.10.9
+
+- default and errors for N in atime.
+- warning if only one N evaluated in atime.
+- error if no SHA specified in atime_versions.
+- regex vignette/test uses re2 if present.
+
 Changes in version 2023.4.27
 
 - predict.references_best(kilobytes=1000) etc.

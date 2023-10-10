@@ -127,6 +127,9 @@ atime_versions_exprs <- function(pkg.path, expr, sha.vec=NULL, verbose=FALSE, pk
   mc.args <- as.list(match.call()[-1])
   dots.vec <- mc.args[!names(mc.args) %in% formal.names]
   SHA.vec <- c(dots.vec, sha.vec)
+  if(length(SHA.vec)==0){
+    stop("need to specify at least one git SHA, in either sha.vec, or ...")
+  }
   pkg.DESC <- file.path(pkg.path, "DESCRIPTION")
   DESC.mat <- read.dcf(pkg.DESC)
   Package <- DESC.mat[,"Package"]

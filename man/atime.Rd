@@ -7,7 +7,7 @@
 N, setup, expr.list=NULL, times=10, seconds.limit=0.01, verbose=FALSE,
 result=FALSE, ...)}
 \arguments{
-  \item{N}{numeric vector of data sizes to vary.}
+  \item{N}{numeric vector of at least two data sizes, default is \code{2^seq(2,20)}.}
   \item{setup}{expression to evaluate for every data size, before timings.}
   \item{expr.list}{named list of expressions to time.}
   \item{times}{number of times to evaluate each timed expression.}
@@ -45,7 +45,6 @@ plot(string.result)
 ## Example 2: split data table vs frame, constant factor difference.
 library(data.table)
 split.result <- atime::atime(
-  N=as.integer(10^seq(1, 7)),
   setup={
     set.seed(1)
     DT <- data.table(

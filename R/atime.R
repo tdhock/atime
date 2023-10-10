@@ -60,6 +60,16 @@ atime_grid <- function
 
 atime <- function(N, setup, expr.list=NULL, times=10, seconds.limit=0.01, verbose=FALSE, result=FALSE, ...){
   kilobytes <- mem_alloc <- NULL
+  ## above for CRAN NOTE.
+  if(missing(N)){
+    N <- as.integer(2^seq(1, 20))
+  }
+  if(!is.numeric(N)){
+    stop("N should be a numeric vector")
+  }
+  if(length(N)<2){
+    stop("length(N) should be at least 2")
+  }
   formal.names <- names(formals())
   mc.args <- as.list(match.call()[-1])
   dots.list <- mc.args[!names(mc.args) %in% formal.names]
@@ -117,10 +127,15 @@ atime <- function(N, setup, expr.list=NULL, times=10, seconds.limit=0.01, verbos
       metric.dt.list[[paste(N.value)]] <- N.stats
     }
   }
+  measurements <- rbindlist(metric.dt.list)
+  only.one <- measurements[, .(sizes=.N), by=expr.name][sizes==1]
+  if(nrow(only.one)){
+    warning("please increase max N or seconds.limit, because only one N was evaluated for expr.name: ", paste(only.one[["expr.name"]], collapse=", "))
+  }
   structure(
     list(
       seconds.limit=seconds.limit,
-      measurements=do.call(rbind, metric.dt.list)),
+      measurements=measurements),
     class="atime")
 }
 

@@ -1,5 +1,48 @@
 library(data.table)
 library(testthat)
+
+test_that("warning for only one N", {
+  expect_warning({
+    seconds.limit <- 0.001
+    atime.list <- atime::atime(
+      wait=Sys.sleep(seconds.limit),
+      TRE=regexpr(pattern, subject, perl=FALSE),
+      setup={
+        subject <- paste(rep("a", N), collapse="")
+        pattern <- paste(rep(c("a?", "a"), each=N), collapse="")
+      },
+      seconds.limit=seconds.limit)
+  },
+  "please increase max N or seconds.limit, because only one N was evaluated for expr.name: wait",
+  fixed=TRUE)
+})
+
+test_that("error for N wrong type", {
+  expect_error({
+    atime.list <- atime::atime(
+      PCRE=regexpr(pattern, subject, perl=TRUE),
+      TRE=regexpr(pattern, subject, perl=FALSE),
+      setup={
+        subject <- paste(rep("a", N), collapse="")
+        pattern <- paste(rep(c("a?", "a"), each=N), collapse="")
+      },
+      N="foo")
+  }, "N should be a numeric vector")
+})
+
+test_that("error for length(N)==1", {
+  expect_error({
+    atime.list <- atime::atime(
+      PCRE=regexpr(pattern, subject, perl=TRUE),
+      TRE=regexpr(pattern, subject, perl=FALSE),
+      setup={
+        subject <- paste(rep("a", N), collapse="")
+        pattern <- paste(rep(c("a?", "a"), each=N), collapse="")
+      },
+      N=100)
+  }, "length(N) should be at least 2", fixed=TRUE)
+})
+
 test_that("more.units error if not present", {
   atime.list <- atime::atime(
     PCRE=regexpr(pattern, subject, perl=TRUE),
@@ -105,7 +148,7 @@ test_that("atime_grid ok when THREADS used", {
 test_that("error for expr.list not list", {
   expr.list <- atime::atime_grid(
     list(ENGINE=c(
-      ##if(requireNamespace("re2"))"RE2",#uncomment when new nc on CRAN.
+      if(requireNamespace("re2"))"RE2",
       "PCRE",
       if(requireNamespace("stringi"))"ICU")),
     nc=nc::capture_first_vec(subject, pattern, engine=ENGINE))
@@ -134,23 +177,27 @@ test_that("only one value in grid is OK", {
 })
 
 test_that("null is faster than wait", {
-  alist <- atime::atime(
-    N=1:2,
-    setup={},
-    wait=Sys.sleep(0.01),
-    null=NULL,
-    seconds.limit=0.001)
+  suppressWarnings({
+    alist <- atime::atime(
+      N=1:2,
+      setup={},
+      wait=Sys.sleep(0.01),
+      null=NULL,
+      seconds.limit=0.001)
+  })
   expect_equal(nrow(alist$measurements[expr.name=="null"]), 2)
 })
 
 test_that("no error for results=FALSE", {
-  alist <- atime::atime(
-    N=1:2,
-    setup={},
-    wait=Sys.sleep(0.01),
-    null=NULL,
-    results=FALSE,
-    seconds.limit=0.001)
+  suppressWarnings({
+    alist <- atime::atime(
+      N=1:2,
+      setup={},
+      wait=Sys.sleep(0.01),
+      null=NULL,
+      results=FALSE,
+      seconds.limit=0.001)
+  })
   expect_is(alist, "atime")
   expect_equal(sort(alist$measurements$expr.name), c("null","null","results","results","wait"))
 })
@@ -214,5 +261,4 @@ test_that("errors for predict method", {
     predict(my.best, kilobytes=1000, kilobytes=100, foo=5, bar=5, foo=3, foo=1)
   }, "argument names should be unique, problem(count): foo(3), kilobytes(2)", fixed=TRUE)
 })
-
 
