@@ -3,18 +3,31 @@
 \title{Asymptotic timing of git versions}
 \description{Computation time and memory for a single R expression
   evaluated using several different git versions.}
-\usage{atime_versions(
-pkg.path, N, setup, expr, sha.vec=NULL,
-times=10, seconds.limit=0.01, verbose=FALSE,
-pkg.edit.fun=pkg.edit.default, results=TRUE,
-...)}
+\usage{
+atime_versions(
+ pkg.path, N, setup, expr, sha.vec=NULL,
+ times=10, seconds.limit=0.01, verbose=FALSE,
+ pkg.edit.fun=pkg.edit.default, results=TRUE,
+ ...)
+}
 \arguments{
   \item{pkg.path}{Path to git repo containing R package.}
   \item{N}{numeric vector of data sizes to vary.}
-  \item{setup}{expression to evaluate for every data size, before timings.}
+  \item{setup}{
+    expression to evaluate for every data size, before timings.
+    In contrast to \code{expr},
+    no replacement of \code{Package:} is performed.
+  }
   \item{expr}{code with package double-colon prefix, for example
-    Package::fun(argA, argB) which will be
-    evaluated for each different package version.}
+    \code{Package::fun(argA, argB)}, where Package is the name of the
+    package specified by \code{pkg.path}. This code will be
+    evaluated for each different package version, by replacing
+    \code{Package:} by \code{Package.SHA:}.
+    To run different versions of implicitly-called functions
+    like \code{DT[i,j]}, you need
+    to call them explicitly, as in 
+    \code{data.table:::`[.data.table`(DT,i,j)}.
+  }
   \item{sha.vec}{named character vector / list of SHA commit IDs.}
   \item{times}{number of times to evaluate each timed expression.}
   \item{seconds.limit}{if the median timing of any expression exceeds
@@ -37,6 +50,10 @@ pkg.edit.fun=pkg.edit.default, results=TRUE,
     name2=Package.SHA2::fun(argA,argB))}.}
 \value{list of class atime with elements \code{seconds.limit} (numeric
   input param), \code{timings} (data table of results).}
+\seealso{
+  \code{\link{atime_versions_exprs}} which is used to create the
+  different packages and expressions.
+}
 
 \author{Toby Dylan Hocking}
 
