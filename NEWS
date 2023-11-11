@@ -1,6 +1,7 @@
 Changes in version 2023.11.11
 
 - new function get_sha_vec, which is called in atime_versions_exprs, to check for correctly specified versions (new helpful errors when versions are not specified correctly)
+- atime_versions_install now uses R CMD INSTALL instead of install.packages, so we can stop with an error if there was some problem with installation.
 
 Changes in version 2023.10.9
 

@@ -52,62 +52,61 @@ atime_versions_install <- function(Package, pkg.path, new.Package.vec, sha.vec, 
     new.path <- file.path(tdir, basename(pkg.path))
     unlink(new.path, recursive=TRUE, force=TRUE)
     file.copy(pkg.path, tdir, recursive=TRUE)
-    repo <- git2r::repository(new.path)
     for(new.i in which(new.not.installed)){
       sha <- sha.vec[[new.i]]
       new.Package <- new.Package.vec[[new.i]]
       if(new.Package %in% pkgs.in.lib){
         if(verbose){
           message(sprintf(
-            "skipping %s because it already exists in %s",
+            "not installing %s because it already exists in %s",
             new.Package, first.lib))
         }
-      }else{#new.Package not in lib
-        if(sha==""){
-          install.packages(Package, verbose=verbose)
-        }else{#sha not empty
-          tryCatch(
-            git2r::checkout(repo, branch=sha, force=TRUE),
-            error=function(e)stop(
-              e, " when trying to checkout ", sha))
-          ## before editing and installing, make sure directory has sha
-          ## suffix, for windows checks.
-          sha.path <- paste0(new.path,".",sha)
-          file.rename(new.path, sha.path)
-          unlink(file.path(sha.path, "src", "*.o"))
-          pkg.edit.fun(
-            old.Package=Package, 
-            new.Package=new.Package,
-            sha=sha, 
-            new.pkg.path=sha.path)
-          install.packages(
-            sha.path, repos=NULL, type="source", verbose=verbose)
-          if(verbose){
-            cat("\nPackage info after editing and installation:\n")
-            grep_glob <- function(glob, pattern){
-              some.files <- Sys.glob(file.path(sha.path, glob))
-              out <- list()
-              for(f in some.files){
-                line.vec <- readLines(f)
-                match.vec <- grep(pattern, line.vec, value=TRUE)
-                if(length(match.vec)){
-                  out[[f]] <- match.vec
-                }
+      }else if(sha != ""){#new.Package not in lib
+        sha.path <- paste0(new.path,".",sha)
+        file.rename(new.path, sha.path)
+        repo <- git2r::repository(sha.path)
+        tryCatch(
+          git2r::checkout(repo, branch=sha, force=TRUE),
+          error=function(e)stop(
+            e, " when trying to checkout ", sha))
+        ## before editing and installing, make sure directory has sha
+        ## suffix, for windows checks.
+        unlink(file.path(sha.path, "src", "*.o"))
+        pkg.edit.fun(
+          old.Package=Package, 
+          new.Package=new.Package,
+          sha=sha, 
+          new.pkg.path=sha.path)
+        INSTALL.cmd <- paste("R CMD INSTALL", sha.path)
+        status.int <- system(INSTALL.cmd)
+        if(status.int != 0){
+          stop(INSTALL.cmd, " returned error status code ", status.int)
+        }
+        if(verbose){
+          cat("\nPackage info after editing and installation:\n")
+          grep_glob <- function(glob, pattern){
+            some.files <- Sys.glob(file.path(sha.path, glob))
+            out <- list()
+            for(f in some.files){
+              line.vec <- readLines(f)
+              match.vec <- grep(pattern, line.vec, value=TRUE)
+              if(length(match.vec)){
+                out[[f]] <- match.vec
               }
-              out
-            }#grep_glob
-            out <- c(
-              grep_glob("DESCRIPTION", "^Package"),
-              grep_glob("NAMESPACE", "^useDynLib"),
-              grep_glob(file.path("src", "*.c"), "R_init_"),
-              grep_glob(file.path("src", "*.cpp"), "R_init_"))
-            src.files <- dir(file.path(sha.path, "src"))
-            out[["src/*.so|dll"]] <- grep("(so|dll)$", src.files, value=TRUE)
-            print(out)
-            cat("\n")
-          }#if(verbose)
-          file.rename(sha.path, new.path)
-        }#if(sha) empty else
+            }
+            out
+          }#grep_glob
+          out <- c(
+            grep_glob("DESCRIPTION", "^Package"),
+            grep_glob("NAMESPACE", "^useDynLib"),
+            grep_glob(file.path("src", "*.c"), "R_init_"),
+            grep_glob(file.path("src", "*.cpp"), "R_init_"))
+          src.files <- dir(file.path(sha.path, "src"))
+          out[["src/*.so|dll"]] <- grep("(so|dll)$", src.files, value=TRUE)
+          print(out)
+          cat("\n")
+        }#if(verbose)
+        file.rename(sha.path, new.path)
       }#if(new package not in lib)
     }#for(new.i
   }#any to install
