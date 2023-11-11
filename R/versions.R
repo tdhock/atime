@@ -122,14 +122,28 @@ atime_versions <- function(pkg.path, N, setup, expr, sha.vec=NULL, times=10, sec
   do.call(atime, a.args)
 }
 
+get_sha_vec <- function(sha.vec, dots.vec){
+  SHA.vec <- as.list(c(dots.vec, sha.vec))
+  if(length(SHA.vec)==0){
+    stop("need to specify at least one git SHA, in either sha.vec, or ...")
+  }
+  if(is.null(names(SHA.vec)) || any(names(SHA.vec)=="")){
+    stop("each ... argument and sha.vec element must be named")
+  }
+  is.problem <- !sapply(SHA.vec, function(x){
+    is.character(x) && length(x)==1 && !is.na(x)
+  })
+  if(any(is.problem)){
+    stop("each ... argument value and sha.vec element must be a string (package version, length=1, not NA), problems: ", paste(names(SHA.vec[is.problem]), collapse=", "))
+  }
+  SHA.vec
+}  
+
 atime_versions_exprs <- function(pkg.path, expr, sha.vec=NULL, verbose=FALSE, pkg.edit.fun=pkg.edit.default, ...){
   formal.names <- names(formals())
   mc.args <- as.list(match.call()[-1])
   dots.vec <- mc.args[!names(mc.args) %in% formal.names]
-  SHA.vec <- c(dots.vec, sha.vec)
-  if(length(SHA.vec)==0){
-    stop("need to specify at least one git SHA, in either sha.vec, or ...")
-  }
+  SHA.vec <- get_sha_vec(sha.vec, dots.vec)
   pkg.DESC <- file.path(pkg.path, "DESCRIPTION")
   DESC.mat <- read.dcf(pkg.DESC)
   Package <- DESC.mat[,"Package"]

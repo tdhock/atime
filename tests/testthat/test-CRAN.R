@@ -262,3 +262,75 @@ test_that("errors for predict method", {
   }, "argument names should be unique, problem(count): foo(3), kilobytes(2)", fixed=TRUE)
 })
 
+test_that("atime_versions_exprs error when called with setup", {
+  expect_error({
+    atime::atime_versions_exprs(
+      pkg.path="~/R/data.table",
+      N=10^seq(2,10),
+      setup={ 
+        set.seed(1L)
+        dt <- data.table(
+          id = seq_len(N),
+          val = rnorm(N))
+      },
+      expr=data.table:::`[.data.table`(dt[, .(vs = (sum(val))), by = .(id)]),
+      "Before"="be2f72e6f5c90622fe72e1c315ca05769a9dc854",
+      "Regression"="e793f53466d99f86e70fc2611b708ae8c601a451", 
+      "Fixed"="58409197426ced4714af842650b0cc3b9e2cb842") 
+  }, "each ... argument value and sha.vec element must be a string (package version, length=1, not NA), problems: N, setup", fixed=TRUE)
+})
+
+test_that("atime_versions_exprs error when sha.vec element not string", {
+  expect_error({
+    atime::atime_versions_exprs(
+      pkg.path="~/R/data.table",
+      sha.vec=list(N=10^seq(2,10)),
+      expr=data.table:::`[.data.table`(dt[, .(vs = (sum(val))), by = .(id)]),
+      "Before"="be2f72e6f5c90622fe72e1c315ca05769a9dc854",
+      "Regression"="e793f53466d99f86e70fc2611b708ae8c601a451", 
+      "Fixed"="58409197426ced4714af842650b0cc3b9e2cb842") 
+  }, "each ... argument value and sha.vec element must be a string (package version, length=1, not NA), problems: N", fixed=TRUE)
+})
+
+test_that("atime_versions_exprs error when sha.vec element char vector", {
+  expect_error({
+    atime::atime_versions_exprs(
+      pkg.path="~/R/data.table",
+      sha.vec=list(foo=c("bar","baz")),
+      expr=data.table:::`[.data.table`(dt[, .(vs = (sum(val))), by = .(id)]),
+      "Before"="be2f72e6f5c90622fe72e1c315ca05769a9dc854",
+      "Regression"="e793f53466d99f86e70fc2611b708ae8c601a451", 
+      "Fixed"="58409197426ced4714af842650b0cc3b9e2cb842") 
+  }, "each ... argument value and sha.vec element must be a string (package version, length=1, not NA), problems: foo", fixed=TRUE)
+})
+
+test_that("atime_versions error when ... value NA", {
+  expect_error({
+    atime::atime_versions(
+      pkg.path="~/R/data.table",
+      expr=data.table:::`[.data.table`(dt[, .(vs = (sum(val))), by = .(id)]),
+      "Before"=NA_character_,
+      "Regression"="e793f53466d99f86e70fc2611b708ae8c601a451", 
+      "Fixed"="58409197426ced4714af842650b0cc3b9e2cb842") 
+  }, "each ... argument value and sha.vec element must be a string (package version, length=1, not NA), problems: Before", fixed=TRUE)
+})
+
+test_that("atime_versions error when sha.vec element not named", {
+  expect_error({
+    atime::atime_versions(
+      pkg.path="~/R/data.table",
+      expr=data.table:::`[.data.table`(dt[, .(vs = (sum(val))), by = .(id)]),
+      sha.vec=c(
+        "e793f53466d99f86e70fc2611b708ae8c601a451", 
+        "Fixed"="58409197426ced4714af842650b0cc3b9e2cb842"))
+  }, "each ... argument and sha.vec element must be named", fixed=TRUE)
+})
+
+test_that("atime_versions error when no versions specified", {
+  expect_error({
+    atime::atime_versions(
+      pkg.path="~/R/data.table",
+      expr=data.table:::`[.data.table`(dt[, .(vs = (sum(val))), by = .(id)]))
+  }, "need to specify at least one git SHA, in either sha.vec, or ...", fixed=TRUE)
+})
+
