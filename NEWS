@@ -1,3 +1,7 @@
+Changes in version 2023.12.4
+
+- improved documentation for atime_pkg, which clarifies that SHA versions and pkg.edit.fun may be specified in test.list elements.
+
 Changes in version 2023.11.11
 
 - new function get_sha_vec, which is called in atime_versions_exprs, to check for correctly specified versions (new helpful errors when versions are not specified correctly)

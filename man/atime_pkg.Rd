@@ -11,8 +11,10 @@
 \details{There should be a file named pkg.path/inst/atime/tests.R which
   defines \code{test.list}, a list with names corresponding to different
   tests. Each
-  element should be a list with named elements \code{N},
-  \code{setup}, \code{expr}, to be passed as named
+  element should be a list with at least three named elements: \code{N},
+  \code{setup}, \code{expr}, (possibly others such as
+  \code{pkg.edit.fun} and \code{version_name="1234567890abcdef"})
+  to be passed as named
   arguments to \code{atime_versions}.}
 \value{Named list, names come from names of \code{test.list}, and values
   come from results of \code{atime_versions}. Side effect is that

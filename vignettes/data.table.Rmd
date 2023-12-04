@@ -61,9 +61,10 @@ run.atime <- function(TDIR){
       pkg_find_replace <- function(glob, FIND, REPLACE){
         atime::glob_find_replace(file.path(new.pkg.path, glob), FIND, REPLACE)
       }
-      Package_regex <- gsub(".", "_?", old.Package, fixed=TRUE)
-      Package_ <- gsub(".", "_", old.Package, fixed=TRUE)
-      new.Package_ <- paste0(Package_, "_", sha)
+      Package_regex <- gsub(".", "_?", old.Package, fixed=TRUE)#data_?table
+      ## old.Package = data.table
+      Package_ <- gsub(".", "_", old.Package, fixed=TRUE)#data_table
+      new.Package_ <- paste0(Package_, "_", sha)#data_table_ddb345a
       pkg_find_replace(
         "DESCRIPTION", 
         paste0("Package:\\s+", old.Package),
