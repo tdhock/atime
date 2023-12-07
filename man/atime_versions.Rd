@@ -7,7 +7,7 @@
 atime_versions(
  pkg.path, N, setup, expr, sha.vec=NULL,
  times=10, seconds.limit=0.01, verbose=FALSE,
- pkg.edit.fun=pkg.edit.default, result=TRUE,
+ pkg.edit.fun=pkg.edit.default, result=FALSE,
  ...)
 }
 \arguments{
