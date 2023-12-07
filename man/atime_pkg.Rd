@@ -6,16 +6,22 @@
   versions (base, HEAD, CRAN, merge-base).}
 \usage{atime_pkg(pkg.path)}
 \arguments{
-  \item{pkg.path}{path to package source directory.}
+  \item{pkg.path}{path to git repository containing R package.}
 }
-\details{There should be a file named pkg.path/inst/atime/tests.R which
+\details{
+  There should be a file named pkg.path/inst/atime/tests.R which
   defines \code{test.list}, a list with names corresponding to different
   tests. Each
   element should be a list with at least three named elements: \code{N},
   \code{setup}, \code{expr}, (possibly others such as
   \code{pkg.edit.fun} and \code{version_name="1234567890abcdef"})
-  to be passed as named
-  arguments to \code{atime_versions}.}
+  to be passed as named arguments to \code{atime_versions}, along with
+  the following versions which are passed using the \code{sha.vec} argument:
+  base ref comes from GITHUB_BASE_REF environment variable (default master),
+  HEAD ref is the branch that you want to merge into base,
+  CRAN is current published version (sha value \code{""}),
+  merge-base is most recent common ancestor commit between base and HEAD.
+}
 \value{Named list, names come from names of \code{test.list}, and values
   come from results of \code{atime_versions}. Side effect is that
   data/plot files are saved to the inst/atime directory.}

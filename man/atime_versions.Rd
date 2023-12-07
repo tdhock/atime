@@ -18,17 +18,18 @@ atime_versions(
     In contrast to \code{expr},
     no replacement of \code{Package:} is performed.
   }
-  \item{expr}{code with package double-colon prefix, for example
-    \code{Package::fun(argA, argB)}, where Package is the name of the
+  \item{expr}{
+    code with package double-colon prefix, for example
+    \code{PKG::fun(argA, argB)}, where PKG is the name of the
     package specified by \code{pkg.path}. This code will be
     evaluated for each different package version, by replacing
-    \code{Package:} by \code{Package.SHA:}.
+    \code{PKG:} by \code{PKG.SHA:}.
     To run different versions of implicitly-called functions
     like \code{DT[i,j]}, you need
     to call them explicitly, as in 
     \code{data.table:::`[.data.table`(DT,i,j)}.
   }
-  \item{sha.vec}{named character vector / list of SHA commit IDs.}
+  \item{sha.vec}{named character vector / list of versions.}
   \item{times}{number of times to evaluate each timed expression.}
   \item{seconds.limit}{if the median timing of any expression exceeds
     this many seconds, then no timings for larger N are computed.}
@@ -37,22 +38,23 @@ atime_versions(
     installation, should typically replace instances of PKG with
     PKG.SHA, default works with Rcpp packages.}
   \item{results}{logical, save results?}
-  \item{\dots}{named SHA/commit IDs to time. Values passed as branch
-    arg to \code{git2r::checkout}, names used to identify/interpret
-    this version
-    of the code in the output.}
+  \item{\dots}{named versions.}
 }
-\details{First each version specified by \dots is checked out and
-  installed (to whatever R library is first on \code{.libPaths()}),
-  using the package name Package.SHA. Then the atime function is called
-  with arguments defined by the different SHA arguments,
-  \code{atime(name1=Package.SHA1::fun(argA, argB),
-    name2=Package.SHA2::fun(argA,argB))}.}
+\details{
+  For convenience, versions can
+  be specified either as code (\dots), data (\code{sha.vec}), or both.
+  Each version should be either \code{""} (to use currently installed
+  version of package, or if missing, install most recent
+  version from CRAN) or a SHA1 hash, which is passed as branch
+  arg to \code{git2r::checkout}; version names used to identify/interpret
+  the output/plots.
+}
 \value{list of class atime with elements \code{seconds.limit} (numeric
   input param), \code{timings} (data table of results).}
 \seealso{
-  \code{\link{atime_versions_exprs}} which is used to create the
-  different packages and expressions.
+  \code{\link{atime_versions_exprs}} 
+  converts \code{expr} into a list of expressions, one for each version,
+  passed to \code{\link{atime}} as the \code{expr.list} argument.
 }
 
 \author{Toby Dylan Hocking}

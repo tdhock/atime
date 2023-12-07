@@ -61,7 +61,9 @@ atime_versions_install <- function(Package, pkg.path, new.Package.vec, sha.vec, 
             "not installing %s because it already exists in %s",
             new.Package, first.lib))
         }
-      }else if(sha != ""){#new.Package not in lib
+      }else if(sha == ""){
+        install.packages(Package)
+      }else{
         sha.path <- paste0(new.path,".",sha)
         file.rename(new.path, sha.path)
         repo <- git2r::repository(sha.path)
