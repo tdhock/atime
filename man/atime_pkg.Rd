@@ -28,3 +28,23 @@
 
 \author{Toby Dylan Hocking}
 
+\examples{
+
+if(FALSE){
+
+  tdir <- tempfile()
+  dir.create(tdir)
+  git2r::clone("https://github.com/tdhock/binsegRcpp", tdir)
+  repo <- git2r::repository(tdir)
+  git2r::checkout(repo, "another-branch")
+  result.list <- atime::atime_pkg(tdir)
+  inst.atime <- file.path(tdir, "inst", "atime")
+  dir(inst.atime)
+  tests.RData <- file.path(inst.atime, "tests.RData")
+  (objs <- load(tests.RData))
+
+  atime::atime_versions_remove("binsegRcpp")
+
+}
+
+}

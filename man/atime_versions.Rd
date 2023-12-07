@@ -7,7 +7,7 @@
 atime_versions(
  pkg.path, N, setup, expr, sha.vec=NULL,
  times=10, seconds.limit=0.01, verbose=FALSE,
- pkg.edit.fun=pkg.edit.default, results=TRUE,
+ pkg.edit.fun=pkg.edit.default, result=TRUE,
  ...)
 }
 \arguments{
@@ -37,7 +37,7 @@ atime_versions(
   \item{pkg.edit.fun}{function called to edit package before
     installation, should typically replace instances of PKG with
     PKG.SHA, default works with Rcpp packages.}
-  \item{results}{logical, save results?}
+  \item{result}{logical, save results? (default FALSE)}
   \item{\dots}{named versions.}
 }
 \details{

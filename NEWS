@@ -1,3 +1,8 @@
+Changes in version 2023.12.7
+
+- improved documentation for atime_versions and atime_versions_exprs.
+- results argument of atime_versions renamed to result, for consistency with atime.
+
 Changes in version 2023.12.4
 
 - improved documentation for atime_pkg, which clarifies that SHA versions and pkg.edit.fun may be specified in test.list elements.
