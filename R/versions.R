@@ -200,9 +200,6 @@ atime_pkg <- function(pkg.path="."){
   width.in <- 4
   height.in <- 8
   expand.prop <- 0.5
-  color.vec <- structure(
-    c("red","black","deepskyblue","violet"), 
-    names=c(HEAD.name, base.name, "merge-base", CRAN.name))
   if(git2r::is_commit(base.commit)){
     add_if_new <- function(name, commit.obj){
       sha <- git2r::sha(commit.obj)
@@ -218,6 +215,11 @@ atime_pkg <- function(pkg.path="."){
   test.env <- new.env()
   tests.parsed <- parse(tests.R)
   eval(tests.parsed, test.env)
+  color.vec <- if(is.null(test.env$version.colors)){
+    structure(c(#RColorBrewer::brewer.pal(7, "Dark2")
+      "#1B9E77", "#D95F02", "#7570B3", "#E7298A", "#66A61E", "#E6AB02", "#A6761D"),
+      names=c(HEAD.name, base.name, "merge-base", CRAN.name, "Before", "Regression", "Fixed"))
+  }else test.env$version.colors
   pkg.results <- list()
   blank.dt.list <- list()
   bench.dt.list <- list()
