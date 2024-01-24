@@ -1,4 +1,4 @@
-Changes in version 2023.12.7
+Changes in version 2024.1.24
 
 - improved documentation for atime_versions and atime_versions_exprs.
 - results argument of atime_versions renamed to result, for consistency with atime.
