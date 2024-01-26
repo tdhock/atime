@@ -43,21 +43,21 @@ test_that("error for length(N)==1", {
   }, "length(N) should be at least 2", fixed=TRUE)
 })
 
+atime.list <- atime::atime(
+  PCRE=regexpr(pattern, subject, perl=TRUE),
+  TRE=regexpr(pattern, subject, perl=FALSE),
+  setup={
+    subject <- paste(rep("a", N), collapse="")
+    pattern <- paste(rep(c("a?", "a"), each=N), collapse="")
+  },
+  result=TRUE,
+  N=1:30)
+atime.list$measurements[, `:=`(
+  length.num=sapply(result, function(L){
+    at <- attr(L,"match.length")
+    if(is.numeric(at))at else NA_real_
+  }))]
 test_that("more.units error if not present", {
-  atime.list <- atime::atime(
-    PCRE=regexpr(pattern, subject, perl=TRUE),
-    TRE=regexpr(pattern, subject, perl=FALSE),
-    setup={
-      subject <- paste(rep("a", N), collapse="")
-      pattern <- paste(rep(c("a?", "a"), each=N), collapse="")
-    },
-    result=TRUE,
-    N=1:30)
-  atime.list$measurements[, `:=`(
-    length.num=sapply(result, function(L){
-      at <- attr(L,"match.length")
-      if(is.numeric(at))at else NA_real_
-    }))]
   expect_error({
     atime::references_best(atime.list, more.units="foo")
   }, "some units were not found (fix by creating columns in measurements): foo", fixed=TRUE)
@@ -67,12 +67,40 @@ test_that("more.units error if not present", {
   expect_error({
     atime::references_best(atime.list, more.units="result")
   }, "each unit must be numeric, but result is not")
+})
+test_that("more.units works for numeric", {
   refs.more <- atime::references_best(atime.list, more.units="length.num")
   expect_true("length.num" %in% refs.more[["measurements"]][["unit"]])
-  refs.units <- atime::references_best(atime.list, unit.col.vec=c(seconds="median", "length.num"))
+})
+refs.units <- atime::references_best(atime.list, unit.col.vec=c(seconds="median", "length.num"))
+test_that("unit.col.vec works for seconds and length", {
   u.tab <- table(refs.units[["measurements"]][["unit"]])
   expect_identical(names(u.tab), c("length.num", "seconds"))
   expect_equal(sum(is.na(refs.units$measurements$empirical)), 0)
+})
+test_that("informative error for length too large", {
+  expect_error({
+    predict(refs.units, length.num=40)
+  }, "length.num=40 is outside range of data, please change to a value that intersects at least one of the empirical curves")
+})
+test_that("informative error for length too small", {
+  expect_error({
+    predict(refs.units, length.num=0)
+  }, "length.num=0 is outside range of data, please change to a value that intersects at least one of the empirical curves")
+})
+length.num <- 2
+test_that("predict gives only length", {
+  my.pred.length <- predict(refs.units, length.num=length.num)
+  if(interactive())plot(my.pred.length)
+  expect_true(all(my.pred.length$prediction[["unit"]]=="length.num"))
+  expect_true(all(my.pred.length$prediction[["unit.value"]]==length.num))
+})
+test_that("predict gives both seconds and length", {
+  my.pred.both <- predict(
+    refs.units, length.num=length.num, seconds=refs.units$seconds.limit)
+  if(interactive())plot(my.pred.both)
+  unit.tab <- table(my.pred.both$prediction$unit)
+  expect_identical(names(unit.tab), c("length.num","seconds"))
 })
 
 test_that("result returned when some are NULL and others not", {
@@ -213,29 +241,12 @@ my.atime <- atime::atime(
 if(interactive())plot(my.atime)
 my.best <- atime::references_best(my.atime)
 if(interactive())plot(my.best)
-
 test_that("predict gives seconds.limit by default", {
   my.pred.default <- predict(my.best)
   if(interactive())plot(my.pred.default)
   expect_true(all(my.pred.default$prediction[["unit"]]=="seconds"))
   expect_true(all(
     my.pred.default$prediction[["unit.value"]]==my.pred.default$seconds.limit))
-})
-
-test_that("predict gives only kilobytes", {
-  kb <- 10
-  my.pred.kb <- predict(my.best, kilobytes=kb)
-  if(interactive())plot(my.pred.kb)
-  expect_true(all(my.pred.kb$prediction[["unit"]]=="kilobytes"))
-  expect_true(all(my.pred.kb$prediction[["unit.value"]]==kb))
-})
-
-test_that("predict gives both seconds and kilobytes", {
-  my.pred.both <- predict(
-    my.best, kilobytes=10, seconds=my.best$seconds.limit)
-  if(interactive())plot(my.pred.both)
-  unit.tab <- table(my.pred.both$prediction$unit)
-  expect_identical(names(unit.tab), c("kilobytes","seconds"))
 })
 
 test_that("errors for predict method", {
@@ -254,9 +265,6 @@ test_that("errors for predict method", {
   expect_error({
     predict(my.best, kilobytes=1:2)
   }, "... has an argument with length != 1 (kilobytes), but each argument must be scalar (unit value at which to interpolate/predict N)", fixed=TRUE)
-  expect_error({
-    predict(my.best, kilobytes=1e9)
-  }, "kilobytes=1e+09 is too large, please decrease to a value that intersects at least one of the empirical curves", fixed=TRUE)
   expect_error({
     predict(my.best, kilobytes=1000, kilobytes=100, foo=5, bar=5, foo=3, foo=1)
   }, "argument names should be unique, problem(count): foo(3), kilobytes(2)", fixed=TRUE)

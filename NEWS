@@ -1,3 +1,8 @@
+Changes in version 2024.1.31
+
+- modify predict tests to use length.num instead of kilobytes (fails on CRAN).
+- improved error message for predict when unit value is out of range of data.
+
 Changes in version 2024.1.24
 
 - improved documentation for atime_versions and atime_versions_exprs.

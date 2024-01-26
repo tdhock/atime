@@ -43,7 +43,7 @@ predict.references_best <- function(object, ...){
     }, by=expr.name]
     not.NA <- pred.dt[!is.na(N)]
     if(nrow(not.NA)==0){
-      stop(unit, "=", unit.value, " is too large, please decrease to a value that intersects at least one of the empirical curves")
+      stop(unit, "=", unit.value, " is outside range of data, please change to a value that intersects at least one of the empirical curves")
     }
     not.NA
   }, by=unit]
