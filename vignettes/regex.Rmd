@@ -65,7 +65,7 @@ summary(all.pred)
 
 The `predict` method above returns a list with a new element named
 `prediction`, which shows the data sizes that can be computed with a
-given time budget. The `plot`x method is used below,
+given time budget. The `plot` method is used below,
 
 ```{r}
 plot(all.pred)
