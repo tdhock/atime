@@ -10,15 +10,20 @@
 \usage{
 atime_grid(
   param.list = list(), 
+  ...,
   name.value.sep="=",
   expr.param.sep=" ",
   collapse = ",", 
-  ...)
+  symbol.params=character())
 }
 \arguments{
   \item{param.list}{
     Named list of items to replace in ... expressions, default empty
     list means nothing to replace.
+  }
+  \item{\dots}{
+    Named expressions which each must contain each name of
+    \code{param.list}.
   }
   \item{name.value.sep}{
     string: separator between names and values from \code{param.list},
@@ -31,10 +36,9 @@ atime_grid(
   \item{collapse}{
     string: separator between parameters, default \code{","}.
   }
-  \item{\dots}{
-    Named expressions which each must contain each name of
-    \code{param.list}.
-  }
+  \item{symbol.params}{
+    character vector: these elements of \code{param.list} will be converted to symbols before substitution.
+    }
 }
 \value{
   Named list of expressions which can be used as \code{expr.list}
@@ -62,5 +66,21 @@ atime.list <- atime::atime(
   },
   expr.list=expr.list)
 plot(atime.list)
+
+## Example 2: symbol.params arg.
+sub.param.list <- list(FUN=c("sub","gsub"), PERL=c(TRUE,FALSE))
+## with base R we can use as.symbol and substitute:
+sapply(sub.param.list$FUN,function(name)substitute(fun("a","",subject), list(fun=as.symbol(name))))
+## with atime_grid the analog is to use symbol.params argument:
+(sub.expr.list <- atime::atime_grid(
+  sub.param.list,
+  replace=FUN("a","",subject,perl=PERL),
+  symbol.params="FUN"))
+sub.atime.list <- atime::atime(
+  setup={
+    subject <- paste(rep("a",N),collapse="")
+  }, 
+  expr.list=sub.expr.list)
+plot(sub.atime.list)
 
 }

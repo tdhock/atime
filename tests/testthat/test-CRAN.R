@@ -204,6 +204,34 @@ test_that("only one value in grid is OK", {
   expect_identical(names(expr.list), "nc ENGINE=PCRE")
 })
 
+test_that("atime_grid symbol.params arg OK", {
+  grid.result <- atime::atime_grid(list(
+    PERL=TRUE,
+    FUN="strcapture"
+  ),
+  foo=FUN(regex, text, proto, perl = PERL),
+  symbol.params="FUN")
+  expect_identical(grid.result, list("foo PERL=TRUE,FUN=strcapture"=quote(strcapture(regex, text, proto, perl=TRUE))))
+})
+
+test_that("atime_grid error for list of funs", {
+  expect_error({
+    atime::atime_grid(list(FUN=list(gsub)), strcapture=FUN(regex, text, proto, perl = TRUE))
+  }, "param.list elements must be atomic, but some are not: FUN")
+})
+
+test_that("atime_grid error for un-named expr in ...", {
+  expect_error({
+    atime::atime_grid(list(FUN=1:2), FUN(regex, text, proto, perl = TRUE))
+  }, "each expression in ... must be named")
+})
+
+test_that("atime_grid error for args named sorted, unique", {
+  expect_error({
+    atime::atime_grid(list(sorted=1:2), foo=FUN(regex, text, proto, perl = TRUE))
+  }, "param.list must not have elements named: sorted")
+})
+
 test_that("null is faster than wait", {
   suppressWarnings({
     alist <- atime::atime(

@@ -1,3 +1,7 @@
+Changes in version 2024.2.13
+
+- atime_grid gains new argument symbol.params, and more informative error messages.
+
 Changes in version 2024.1.31
 
 - modify predict tests to use length.num instead of kilobytes (fails on CRAN).

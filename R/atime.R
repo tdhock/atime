@@ -1,9 +1,20 @@
 atime_grid <- function
 (param.list=list(),
+  ...,
   name.value.sep="=",
   expr.param.sep=" ",
   collapse=",",
-  ...){
+  symbol.params=character()
+){
+  if(!(is.character(symbol.params) && all(!is.na(symbol.params)))){
+    stop("symbol.params must be a character vector with no missing values")
+  }
+  if(!(is.character(name.value.sep) && length(name.value.sep)==1 && !is.na(name.value.sep))){
+    stop("name.value.sep must be a non-missing string")
+  }
+  if(!(is.character(expr.param.sep) && length(expr.param.sep)==1 && !is.na(expr.param.sep))){
+    stop("expr.param.sep must be a non-missing string")
+  }
   if(!is.list(param.list)){
     stop("param.list must be a named list of parameters")
   }
@@ -17,6 +28,16 @@ atime_grid <- function
     stop("each expression in ... must be named")
   }
   if(length(param.list)==0)return(elist)
+  CJ.arg.names <- setdiff(names(formals(CJ)),"...")
+  bad.params <- intersect(CJ.arg.names,names(param.list))
+  if(length(bad.params)){
+    stop("param.list must not have elements named: ", paste(bad.params, collapse=", "))
+  }
+  bad.types <- !sapply(param.list, is.atomic)
+  if(any(bad.types)){
+    bad.names <- names(param.list)[bad.types]
+    stop("param.list elements must be atomic, but some are not: ", paste(bad.names, collapse=", "))
+  }
   param.dt <- do.call(CJ, param.list)
   ## check to make sure each param is in each expr.
   one.param.list <- as.list(param.dt[1])
@@ -50,8 +71,11 @@ atime_grid <- function
     for(row.i in 1:nrow(param.dt)){
       param.name.value <- name.value.vec[[row.i]]
       out.name <- paste0(expr.name, expr.param.sep, param.name.value)
+      param.row.list <- as.list(param.dt[row.i])
+      param.row.list[symbol.params] <- lapply(
+        param.row.list[symbol.params], as.symbol)
       out.list[[out.name]] <- eval(substitute(
-        substitute(EXPR, param.dt[row.i]), 
+        substitute(EXPR, param.row.list), 
         list(EXPR=elist[[expr.name]])))
     }
   }
