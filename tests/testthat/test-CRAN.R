@@ -173,37 +173,6 @@ test_that("atime_grid ok when THREADS used", {
   expect_equal(length(expr.list), 3)
 })
 
-test_that("error for expr.list not list", {
-  expr.list <- atime::atime_grid(
-    list(ENGINE=c(
-      if(requireNamespace("re2"))"RE2",
-      "PCRE",
-      if(requireNamespace("stringi"))"ICU")),
-    nc=nc::capture_first_vec(subject, pattern, engine=ENGINE))
-  dolist <- function(elist){
-    atime::atime(
-      N=1:25,
-      setup={
-        rep.collapse <- function(chr)paste(rep(chr, N), collapse="")
-        subject <- rep.collapse("a")
-        pattern <- list(maybe=rep.collapse("a?"), rep.collapse("a"))
-      },
-      expr.list=elist)
-  }
-  atime.list <- dolist(expr.list)
-  expect_is(atime.list, "atime")
-  expect_error({
-    dolist(structure(2, class=c("foo","bar")))
-  }, "expr.list should be a list of expressions to run for various N, but has classes foo, bar")
-})
-
-test_that("only one value in grid is OK", {
-  expr.list <- atime::atime_grid(
-    list(ENGINE="PCRE"),
-    nc=nc::capture_first_vec(subject, pattern, engine=ENGINE))
-  expect_identical(names(expr.list), "nc ENGINE=PCRE")
-})
-
 test_that("atime_grid symbol.params arg OK", {
   grid.result <- atime::atime_grid(list(
     PERL=TRUE,
@@ -369,4 +338,36 @@ test_that("atime_versions error when no versions specified", {
       expr=data.table:::`[.data.table`(dt[, .(vs = (sum(val))), by = .(id)]))
   }, "need to specify at least one git SHA, in either sha.vec, or ...", fixed=TRUE)
 })
+
+if(requireNamespace("nc")){
+  test_that("only one value in grid is OK", {
+    expr.list <- atime::atime_grid(
+      list(ENGINE="PCRE"),
+      nc=nc::capture_first_vec(subject, pattern, engine=ENGINE))
+    expect_identical(names(expr.list), "nc ENGINE=PCRE")
+  })
+  test_that("error for expr.list not list", {
+    expr.list <- atime::atime_grid(
+      list(ENGINE=c(
+        if(requireNamespace("re2"))"RE2",
+        "PCRE",
+        if(requireNamespace("stringi"))"ICU")),
+      nc=nc::capture_first_vec(subject, pattern, engine=ENGINE))
+    dolist <- function(elist){
+      atime::atime(
+        N=1:25,
+        setup={
+          rep.collapse <- function(chr)paste(rep(chr, N), collapse="")
+          subject <- rep.collapse("a")
+          pattern <- list(maybe=rep.collapse("a?"), rep.collapse("a"))
+        },
+        expr.list=elist)
+    }
+    atime.list <- dolist(expr.list)
+    expect_is(atime.list, "atime")
+    expect_error({
+      dolist(structure(2, class=c("foo","bar")))
+    }, "expr.list should be a list of expressions to run for various N, but has classes foo, bar")
+  })
+}
 

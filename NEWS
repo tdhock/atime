@@ -1,3 +1,7 @@
+Changes in version 2024.3.5
+
+- if(requireNamespace("nc")) in tests, thanks CRAN.
+
 Changes in version 2024.2.13
 
 - atime_grid gains new argument symbol.params, and more informative error messages.
