@@ -7,9 +7,10 @@
 \usage{atime_pkg(pkg.path)}
 \arguments{
   \item{pkg.path}{path to git repository containing R package.}
+  \item{tests.R.path}{path of tests R code file, relative to \code{pkg.path}.}
 }
 \details{
-  There should be a file named pkg.path/inst/atime/tests.R which
+  There should be a tests R code file which
   defines \code{test.list}, a list with names corresponding to different
   tests.
   Each element should be a list with at least three named elements: \code{N},
@@ -22,7 +23,7 @@
   CRAN is current published version (sha value \code{""}),
   merge-base is most recent common ancestor commit between base and
   HEAD.
-  The tests.R file can define \code{version.colors} which should be
+  The tests R code file can define \code{version.colors} which should be
   a character vector (names for versions, values for colors).
 }
 \value{Named list, names come from names of \code{test.list}, and values
