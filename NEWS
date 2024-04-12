@@ -1,6 +1,7 @@
 Changes in version 2024.4.12
 
-- atime_pkg gains tests.dir arg.
+- atime_pkg gains tests.dir arg, thanks @MichaelChirico for the suggestion.
+- atime no longer keeps memory column (sometimes too large) from bench::mark.
 
 Changes in version 2024.3.5
 

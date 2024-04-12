@@ -134,7 +134,11 @@ atime <- function(N, setup, expr.list=NULL, times=10, seconds.limit=0.01, verbos
       N.stats <- data.table(N=N.value, expr.name=not.done.yet, N.df)
       N.stats[, `:=`(
         kilobytes=as.numeric(mem_alloc)/1024,
-        mem_alloc=NULL, total_time=NULL, expression=NULL)]
+        memory=NULL,
+        mem_alloc=NULL,
+        total_time=NULL,
+        expression=NULL
+      )]
       summary.funs <- list(
         median=median, min=min,
         q25=function(x)quantile(x,0.25),
