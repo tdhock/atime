@@ -4,7 +4,7 @@
 \description{Computation time and memory for several R expressions of
   several different data sizes, for several package
   versions (base, HEAD, CRAN, merge-base, others specified by user).}
-\usage{atime_pkg(pkg.path)}
+\usage{atime_pkg(pkg.path=".", tests.dir="inst")}
 \arguments{
   \item{pkg.path}{path to git repository containing R package.}
   \item{tests.dir}{path to directory which contains atime/tests.R,
