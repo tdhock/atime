@@ -4,12 +4,14 @@
 \description{Computation time and memory for several R expressions of
   several different data sizes, for several package
   versions (base, HEAD, CRAN, merge-base, others specified by user).}
-\usage{atime_pkg(pkg.path)}
+\usage{atime_pkg(pkg.path=".", tests.dir="inst")}
 \arguments{
   \item{pkg.path}{path to git repository containing R package.}
+  \item{tests.dir}{path to directory which contains atime/tests.R,
+    relative to \code{pkg.path} (default \code{"inst"}).}
 }
 \details{
-  There should be a file named pkg.path/inst/atime/tests.R which
+  There should be a \code{tests.R} code file which
   defines \code{test.list}, a list with names corresponding to different
   tests.
   Each element should be a list with at least three named elements: \code{N},
@@ -22,12 +24,12 @@
   CRAN is current published version (sha value \code{""}),
   merge-base is most recent common ancestor commit between base and
   HEAD.
-  The tests.R file can define \code{version.colors} which should be
+  The \code{tests.R} code file can define \code{version.colors} which should be
   a character vector (names for versions, values for colors).
 }
 \value{Named list, names come from names of \code{test.list}, and values
   come from results of \code{atime_versions}. Side effect is that
-  data/plot files are saved to the inst/atime directory.}
+  data/plot files are saved in \code{atime} directory.}
 
 \author{Toby Dylan Hocking}
 

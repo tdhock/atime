@@ -1,3 +1,7 @@
+Changes in version 2024.4.12
+
+- atime_pkg gains tests.dir arg.
+
 Changes in version 2024.3.5
 
 - if(requireNamespace("nc")) in tests, thanks CRAN.
