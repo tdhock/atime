@@ -7,10 +7,11 @@
 \usage{atime_pkg(pkg.path)}
 \arguments{
   \item{pkg.path}{path to git repository containing R package.}
-  \item{tests.R.path}{path of tests R code file, relative to \code{pkg.path}.}
+  \item{tests.dir}{path to directory which contains atime/tests.R,
+    relative to \code{pkg.path} (default \code{"inst"}).}
 }
 \details{
-  There should be a tests R code file which
+  There should be a \code{tests.R} code file which
   defines \code{test.list}, a list with names corresponding to different
   tests.
   Each element should be a list with at least three named elements: \code{N},
@@ -23,12 +24,12 @@
   CRAN is current published version (sha value \code{""}),
   merge-base is most recent common ancestor commit between base and
   HEAD.
-  The tests R code file can define \code{version.colors} which should be
+  The \code{tests.R} code file can define \code{version.colors} which should be
   a character vector (names for versions, values for colors).
 }
 \value{Named list, names come from names of \code{test.list}, and values
   come from results of \code{atime_versions}. Side effect is that
-  data/plot files are saved to the inst/atime directory.}
+  data/plot files are saved in \code{atime} directory.}
 
 \author{Toby Dylan Hocking}
 

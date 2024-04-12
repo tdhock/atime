@@ -169,7 +169,7 @@ atime_versions_exprs <- function(pkg.path, expr, sha.vec=NULL, verbose=FALSE, pk
   a.args
 }
 
-atime_pkg <- function(pkg.path=".", tests.R.path=file.path("inst", "atime", "tests.R"))){
+atime_pkg <- function(pkg.path=".", tests.dir="inst"){
   ## For an example package see
   ## https://github.com/tdhock/binsegRcpp/blob/another-branch/inst/atime/tests.R
   each.sign.rank <- unit <- . <- N <- expr.name <- reference <- fun.name <- 
@@ -211,7 +211,7 @@ atime_pkg <- function(pkg.path=".", tests.R.path=file.path("inst", "atime", "tes
     mb.commit <- git2r::merge_base(HEAD.commit, base.commit)
     add_if_new("merge-base", mb.commit)
   }
-  tests.R <- file.path(pkg.path, tests.R.path)
+  tests.R <- file.path(pkg.path, tests.dir, "atime", "tests.R")
   test.env <- new.env()
   tests.parsed <- parse(tests.R)
   eval(tests.parsed, test.env)
