@@ -13,7 +13,7 @@ knitr::opts_chunk$set(
 
 In this vignette we show you how to compare asymptotic timings of an R
 expression which uses different versions of the `data.table` package,
-which we clone from github using the code below,
+which we clone from GitHub using the code below,
 
 ```{r}
 tdir <- tempfile()
@@ -31,7 +31,7 @@ following arguments:
 * `expr` is an expression that will be evaluated for all of the
   different git commit versions. It must call a function from the
   cloned package, using double or triple colon prefix (the package
-  named before the colons will be replaced by a new package name that
+  name before the colons will be replaced by a new package name that
   uses the commit SHA hash). Below we use `data.table:::[.data.table`,
   which will become something like
   `data.table.3fa8b20435d33b3d4b5c26fd9b0ac14c10b98800:::[.data.table`
@@ -160,7 +160,7 @@ the timings of the commits.
   small computation time),
 * version 1.14.3 dev master is slow (relatively large computation time)
 * version 1.14.4 is fast again (bug fixed),
-* a similar analyis was used in https://github.com/Rdatatable/data.table/issues/5371 to fix the bug.
+* a similar analysis was used in https://github.com/Rdatatable/data.table/issues/5371 to fix the bug.
 
 Below we remove the installed packages,
 
