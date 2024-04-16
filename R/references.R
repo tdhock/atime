@@ -37,7 +37,7 @@ references <- function
   }, by=.(fun.latex, fun.name=gsub("\\", "", fun.latex, fixed=TRUE))]
 }
 
-references_best <- function(L, unit.col.vec=NULL, more.units=NULL, fun.list=NULL){
+references_best <- function(L, unit.col.vec=NULL, more.units=L$more.units, fun.list=NULL){
   N <- expr.name <- . <- fun.name <- dist <- empirical <- reference <-
     fun.latex <- overall.rank <- NULL
   ## Above for R CMD check.
