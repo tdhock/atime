@@ -86,6 +86,7 @@ atime_versions_install <- function(Package, pkg.path, new.Package.vec, sha.vec, 
             "R")),
           'CMD INSTALL',
           sha.path)
+        print(.libPaths())
         status.int <- system(INSTALL.cmd)
         if(status.int != 0){
           stop(INSTALL.cmd, " returned error status code ", status.int)
