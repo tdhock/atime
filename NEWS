@@ -1,6 +1,7 @@
 Changes in version 2024.4.16
 
 - If result is data frame with 1 row, save more.units.
+- atime_pkg version names HEAD/base/CRAN defined in R color names are now translated to their expanded names on the plot (CRAN=1.15.0 etc), and default colors were added for Slow and Fast.
 
 Changes in version 2024.4.12
 

@@ -25,7 +25,9 @@
   merge-base is most recent common ancestor commit between base and
   HEAD.
   The \code{tests.R} code file can define \code{version.colors} which should be
-  a character vector (names for versions, values for colors).
+  a character vector (names for versions, values for colors; names/versions are
+  HEAD, base, CRAN, merge-base, and any others you may define such as
+  Before, Regression, Slow, Fixed, Fast).
 }
 \value{Named list, names come from names of \code{test.list}, and values
   come from results of \code{atime_versions}. Side effect is that
