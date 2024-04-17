@@ -52,11 +52,12 @@ atime.list <- atime::atime(
   },
   result=TRUE,
   N=1:30)
+match_len <- function(L){
+  at <- attr(L,"match.length")
+  if(is.numeric(at))at else NA_integer_
+}
 atime.list$measurements[, `:=`(
-  length.num=sapply(result, function(L){
-    at <- attr(L,"match.length")
-    if(is.numeric(at))at else NA_real_
-  }))]
+  length.num=sapply(result, match_len))]
 test_that("more.units error if not present", {
   expect_error({
     atime::references_best(atime.list, more.units="foo")
@@ -101,6 +102,26 @@ test_that("predict gives both seconds and length", {
   if(interactive())plot(my.pred.both)
   unit.tab <- table(my.pred.both$prediction$unit)
   expect_identical(names(unit.tab), c("length.num","seconds"))
+})
+
+test_that("automatic more.units match.len", {
+  expr.list <- atime::atime_grid(
+    list(perl=c(TRUE,FALSE)),
+    regexpr=data.table(
+      num=1,
+      int=2L,
+      match.len=match_len(regexpr(pattern, subject, perl=perl))))
+  atime.list <- atime::atime(
+    expr.list=expr.list,
+    setup={
+      subject <- paste(rep("a", N), collapse="")
+      pattern <- paste(rep(c("a?", "a"), each=N), collapse="")
+    },
+    result=TRUE,
+    N=1:30)
+  ref.list <- atime::references_best(atime.list)
+  disp.units <- sort(unique(ref.list$measurements$unit))
+  expect_identical(disp.units, c("int","kilobytes","match.len","num","seconds"))
 })
 
 test_that("result returned when some are NULL and others not", {

@@ -2,13 +2,20 @@
 \alias{references_best}
 \title{Best references}
 \description{Compute best asymptotic references.}
-\usage{references_best(L, unit.col.vec=NULL, more.units=NULL, fun.list=NULL)}
+\usage{
+references_best(
+  L,
+  unit.col.vec=NULL,
+  more.units=L$more.units,
+  fun.list=NULL
+)
+}
 \arguments{
   \item{L}{List output from atime.}
   \item{unit.col.vec}{Named character vector of units, default NULL
     means standard units (kilobytes and seconds).}
   \item{more.units}{Named character vector of units to add to
-    \code{unit.col.vec}, default NULL means nothing.}
+    \code{unit.col.vec}, default is to take from \code{L}.}
   \item{fun.list}{List of asymptotic complexity reference functions,
     default NULL means to use package default.}
 }
