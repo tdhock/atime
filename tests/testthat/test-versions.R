@@ -22,6 +22,7 @@ test_that("atime_pkg produces tests_all_facet.png", {
   repo <- git2r::repository(tdir)
   git2r::checkout(repo, branch="another-branch")
   inst.atime <- file.path(tdir, "inst", "atime")
+  options(repos="http://cloud.r-project.org")#required to check CRAN version.
   result.list <- atime::atime_pkg(tdir)
   tests_all_facet.png <- file.path(inst.atime, "tests_all_facet.png")
   expect_true(file.exists(tests_all_facet.png))
