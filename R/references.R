@@ -18,10 +18,13 @@ references <- function
     log10.vec <- fun(N)
     last.empirical <- empirical[which.max(N)]
     one.fun <- data.table(
-      N, empirical,
+      N,
+      empirical=as.numeric(empirical),
       reference=10^(log10.vec-max(log10.vec)+log10(last.empirical))
     )
-    above <- one.fun[lower.limit < reference]
+    ## When plotting the reference, we do not want to see anything too
+    ## far below the data (lower.limit).
+    above <- one.fun[lower.limit <= reference]
     last.two <- one.fun[(.N-1):.N]
     if(1 < nrow(above) || length(unique(one.fun$reference))==1){
       above
@@ -30,6 +33,7 @@ references <- function
       lower.emp <- last.two[, stats::approx(N, empirical, lower.N)$y]
       rbind(data.table(
         N=as.integer(lower.N), 
+
         empirical=lower.emp, 
         reference=lower.limit), 
         above)
@@ -37,7 +41,7 @@ references <- function
   }, by=.(fun.latex, fun.name=gsub("\\", "", fun.latex, fixed=TRUE))]
 }
 
-references_best <- function(L, unit.col.vec=NULL, more.units=NULL, fun.list=NULL){
+references_best <- function(L, unit.col.vec=NULL, more.units=L$more.units, fun.list=NULL){
   N <- expr.name <- . <- fun.name <- dist <- empirical <- reference <-
     fun.latex <- overall.rank <- NULL
   ## Above for R CMD check.

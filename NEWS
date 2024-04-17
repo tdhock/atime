@@ -1,3 +1,7 @@
+Changes in version 2024.4.16
+
+- If result is data frame with 1 row, save more.units.
+
 Changes in version 2024.4.12
 
 - atime_pkg gains tests.dir arg, thanks @MichaelChirico for the suggestion.

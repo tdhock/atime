@@ -103,6 +103,7 @@ atime <- function(N, setup, expr.list=NULL, times=10, seconds.limit=0.01, verbos
   elist <- c(expr.list, dots.list)
   name.tab <- table(names(elist))
   bad.names <- names(name.tab)[name.tab>1]
+  more.units <- character()
   if(length(bad.names))stop(
     "each expression must have a unique name, problems: ", 
     paste(bad.names, collapse=", "))
@@ -128,10 +129,20 @@ atime <- function(N, setup, expr.list=NULL, times=10, seconds.limit=0.01, verbos
       }
       m.call <- as.call(m.list)
       N.df <- eval(m.call, N.env)
+      if(
+        all(sapply(N.env$result.list, is.data.frame)) &&
+          all(sapply(N.env$result.list, nrow)==1)
+      ){
+        unit.df <- do.call(rbind, N.env$result.list)
+        is.more <- sapply(unit.df, is.numeric)
+        more.units <- names(unit.df)[is.more]
+      }else{
+        unit.df <- NULL
+      }
       if(result){
         N.df$result <- N.env$result.list
       }
-      N.stats <- data.table(N=N.value, expr.name=not.done.yet, N.df)
+      N.stats <- data.table(N=N.value, expr.name=not.done.yet, N.df, unit.df)
       N.stats[, `:=`(
         kilobytes=as.numeric(mem_alloc)/1024,
         memory=NULL,
@@ -162,6 +173,7 @@ atime <- function(N, setup, expr.list=NULL, times=10, seconds.limit=0.01, verbos
   }
   structure(
     list(
+      more.units=more.units,
       seconds.limit=seconds.limit,
       measurements=measurements),
     class="atime")
