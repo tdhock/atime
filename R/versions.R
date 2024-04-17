@@ -79,7 +79,13 @@ atime_versions_install <- function(Package, pkg.path, new.Package.vec, sha.vec, 
           new.Package=new.Package,
           sha=sha, 
           new.pkg.path=sha.path)
-        INSTALL.cmd <- paste('"$R_HOME/bin/R" CMD INSTALL', sha.path)
+        INSTALL.cmd <- paste(
+          shQuote(file.path(
+            Sys.getenv("R_HOME"),
+            "bin",
+            "R")),
+          'CMD INSTALL',
+          sha.path)
         status.int <- system(INSTALL.cmd)
         if(status.int != 0){
           stop(INSTALL.cmd, " returned error status code ", status.int)
