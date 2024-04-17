@@ -215,11 +215,27 @@ atime_pkg <- function(pkg.path=".", tests.dir="inst"){
   test.env <- new.env()
   tests.parsed <- parse(tests.R)
   eval(tests.parsed, test.env)
-  color.vec <- if(is.null(test.env$version.colors)){
-    structure(c(#RColorBrewer::brewer.pal(7, "Dark2")
-      "#1B9E77", "#D95F02", "#7570B3", "#E7298A", "#66A61E", "#E6AB02", "#A6761D"),
-      names=c(HEAD.name, base.name, "merge-base", CRAN.name, "Before", "Regression", "Fixed"))
-  }else test.env$version.colors
+  color.vec <- if(is.character(test.env$version.colors)){
+    test.env$version.colors
+  }else{
+    c(#RColorBrewer::brewer.pal(7, "Dark2")
+      HEAD="#1B9E77",
+      base="#D95F02",
+      "merge-base"="#7570B3",
+      CRAN="#E7298A",
+      Before="#66A61E",
+      Regression="#E6AB02", Slow="#E6AB02",
+      Fixed="#A6761D", Fast="#A6761D"
+    )
+  }
+  abbrev2name <- c(
+    HEAD=HEAD.name,
+    base=base.name,
+    CRAN=CRAN.name)
+  names(color.vec) <- ifelse(
+    names(color.vec) %in% names(abbrev2name),
+    abbrev2name[names(color.vec)],
+    names(color.vec))
   pkg.results <- list()
   blank.dt.list <- list()
   bench.dt.list <- list()
