@@ -3,12 +3,7 @@
 \title{Best references}
 \description{Compute best asymptotic references.}
 \usage{
-references_best(
-  L,
-  unit.col.vec=NULL,
-  more.units=L$more.units,
-  fun.list=NULL
-)
+references_best(L, fun.list=NULL)
 }
 \arguments{
   \item{L}{List output from atime.}
