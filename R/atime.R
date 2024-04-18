@@ -133,23 +133,30 @@ atime <- function(N, setup, expr.list=NULL, times=10, seconds.limit=0.01, verbos
         all(sapply(N.env$result.list, is.data.frame)) &&
           all(sapply(N.env$result.list, nrow)==1)
       ){
-        unit.df <- do.call(rbind, N.env$result.list)
-        is.more <- sapply(unit.df, is.numeric)
-        more.units <- names(unit.df)[is.more]
+        names.list <- lapply(N.env$result.list, names)
+        for(result.i in seq_along(names.list)){
+          if(!identical(names.list[[1]], names.list[[result.i]])){
+            stop(sprintf("results are all 1 row data frames, but some have different names (%s, %s); please fix by making row names of results identical", names(names.list)[[1]], names(names.list)[[result.i]]))
+          }
+        }
+        result.rows <- do.call(rbind, N.env$result.list)
+        is.more <- sapply(result.rows, is.numeric)
+        more.units <- names(result.rows)[is.more]
       }else{
-        unit.df <- NULL
+        result.rows <- NULL
       }
       if(result){
         N.df$result <- N.env$result.list
       }
-      N.stats <- data.table(N=N.value, expr.name=not.done.yet, N.df, unit.df)
-      N.stats[, `:=`(
+      N.stats <- data.table(
+        N=N.value, expr.name=not.done.yet, N.df
+      )[, `:=`(
         kilobytes=as.numeric(mem_alloc)/1024,
         memory=NULL,
         mem_alloc=NULL,
         total_time=NULL,
         expression=NULL
-      )]
+      )][]
       summary.funs <- list(
         median=median, min=min,
         q25=function(x)quantile(x,0.25),
@@ -160,12 +167,21 @@ atime <- function(N, setup, expr.list=NULL, times=10, seconds.limit=0.01, verbos
       }
       done.pkgs <- N.stats[median > seconds.limit, paste(expr.name)]
       done.vec[done.pkgs] <- TRUE
-      if(verbose)print(N.stats[, data.table(
+      new.bad <- intersect(names(result.rows), names(N.stats))
+      if(length(new.bad)){
+        stop(sprintf("result is 1 row data frame with column(s) named %s (reserved for internal use); please fix by changing the column name(s) in your results", paste(new.bad, collapse=", ")))
+      }
+      N.out <- data.table(N.stats, result.rows)
+      if(verbose)print(N.out[, data.table(
         N, expr.name, seconds.median=median, kilobytes)],
         class=FALSE)
-      metric.dt.list[[paste(N.value)]] <- N.stats
+      metric.dt.list[[paste(N.value)]] <- N.out
     }
   }
+  unit.col.vec <- c(
+    "kilobytes",
+    seconds="median",
+    more.units)
   measurements <- rbindlist(metric.dt.list)
   only.one <- measurements[, .(sizes=.N), by=expr.name][sizes==1]
   if(nrow(only.one)){
@@ -173,7 +189,7 @@ atime <- function(N, setup, expr.list=NULL, times=10, seconds.limit=0.01, verbos
   }
   structure(
     list(
-      more.units=more.units,
+      unit.col.vec=unit.col.vec,
       seconds.limit=seconds.limit,
       measurements=measurements),
     class="atime")
@@ -181,11 +197,18 @@ atime <- function(N, setup, expr.list=NULL, times=10, seconds.limit=0.01, verbos
 
 plot.atime <- function(x, ...){
   expr.name <- N <- kilobytes <- NULL
+  ## Above to avoid CRAN NOTE.
   meas <- x[["measurements"]]
   if(requireNamespace("ggplot2")){
-    tall <- meas[, data.table(N, expr.name, rbind(
-      data.table(unit="seconds", median),
-      data.table(unit="kilobytes", median=kilobytes)))]
+    tall.list <- list()
+    for(unit.i in seq_along(x$unit.col.vec)){
+      col.name <- x$unit.col.vec[[unit.i]]
+      unit <- names(x$unit.col.vec)[[unit.i]]
+      if(is.null(unit)||unit=="")unit <- col.name
+      tall.list[[unit.i]] <- meas[, data.table(
+        N, expr.name, unit, median=get(col.name))]
+    }
+    tall <- rbindlist(tall.list)
     gg <- ggplot2::ggplot()+
       ggplot2::theme_bw()+
       ggplot2::geom_ribbon(ggplot2::aes(

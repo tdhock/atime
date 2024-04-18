@@ -43,74 +43,19 @@ test_that("error for length(N)==1", {
   }, "length(N) should be at least 2", fixed=TRUE)
 })
 
-atime.list <- atime::atime(
-  PCRE=regexpr(pattern, subject, perl=TRUE),
-  TRE=regexpr(pattern, subject, perl=FALSE),
-  setup={
-    subject <- paste(rep("a", N), collapse="")
-    pattern <- paste(rep(c("a?", "a"), each=N), collapse="")
-  },
-  result=TRUE,
-  N=1:30)
-match_len <- function(L){
-  at <- attr(L,"match.length")
-  if(is.numeric(at))at else NA_integer_
-}
-atime.list$measurements[, `:=`(
-  length.num=sapply(result, match_len))]
-test_that("more.units error if not present", {
-  expect_error({
-    atime::references_best(atime.list, more.units="foo")
-  }, "some units were not found (fix by creating columns in measurements): foo", fixed=TRUE)
-  expect_error({
-    atime::references_best(atime.list, more.units=c("foo", "bar", "length.num"))
-  }, "some units were not found (fix by creating columns in measurements): foo, bar", fixed=TRUE)
-  expect_error({
-    atime::references_best(atime.list, more.units="result")
-  }, "each unit must be numeric, but result is not")
-})
-test_that("more.units works for numeric", {
-  refs.more <- atime::references_best(atime.list, more.units="length.num")
-  expect_true("length.num" %in% refs.more[["measurements"]][["unit"]])
-})
-refs.units <- atime::references_best(atime.list, unit.col.vec=c(seconds="median", "length.num"))
-test_that("unit.col.vec works for seconds and length", {
-  u.tab <- table(refs.units[["measurements"]][["unit"]])
-  expect_identical(names(u.tab), c("length.num", "seconds"))
-  expect_equal(sum(is.na(refs.units$measurements$empirical)), 0)
-})
-test_that("informative error for length too large", {
-  expect_error({
-    predict(refs.units, length.num=40)
-  }, "length.num=40 is outside range of data, please change to a value that intersects at least one of the empirical curves")
-})
-test_that("informative error for length too small", {
-  expect_error({
-    predict(refs.units, length.num=0)
-  }, "length.num=0 is outside range of data, please change to a value that intersects at least one of the empirical curves")
-})
-length.num <- 2
-test_that("predict gives only length", {
-  my.pred.length <- predict(refs.units, length.num=length.num)
-  if(interactive())plot(my.pred.length)
-  expect_true(all(my.pred.length$prediction[["unit"]]=="length.num"))
-  expect_true(all(my.pred.length$prediction[["unit.value"]]==length.num))
-})
-test_that("predict gives both seconds and length", {
-  my.pred.both <- predict(
-    refs.units, length.num=length.num, seconds=refs.units$seconds.limit)
-  if(interactive())plot(my.pred.both)
-  unit.tab <- table(my.pred.both$prediction$unit)
-  expect_identical(names(unit.tab), c("length.num","seconds"))
-})
-
-test_that("automatic more.units match.len", {
+test_that("more units defined in 1 row result", {
   expr.list <- atime::atime_grid(
     list(perl=c(TRUE,FALSE)),
     regexpr=data.table(
       num=1,
       int=2L,
-      match.len=match_len(regexpr(pattern, subject, perl=perl))))
+      match.len={
+        L <- regexpr(pattern, subject, perl=perl)
+        at <- attr(L,"match.length")
+        if(is.numeric(at))at else NA_integer_
+      }
+    )
+  )
   atime.list <- atime::atime(
     expr.list=expr.list,
     setup={
@@ -121,7 +66,27 @@ test_that("automatic more.units match.len", {
     N=1:30)
   ref.list <- atime::references_best(atime.list)
   disp.units <- sort(unique(ref.list$measurements$unit))
-  expect_identical(disp.units, c("int","kilobytes","match.len","num","seconds"))
+  expected.units <- c("int","kilobytes","match.len","num","seconds")
+  expect_identical(disp.units, expected.units)
+  expect_error({
+    predict(ref.list, match.len=40)
+  }, "match.len=40 is outside range of data, please change to a value that intersects at least one of the empirical curves")
+  expect_error({
+    predict(ref.list, match.len=0)
+  }, "match.len=0 is outside range of data, please change to a value that intersects at least one of the empirical curves")
+  match.len <- 2
+  my.pred.length <- predict(ref.list, match.len=match.len)
+  if(interactive())plot(my.pred.length)
+  expect_true(all(my.pred.length$prediction[["unit"]]=="match.len"))
+  expect_true(all(my.pred.length$prediction[["unit.value"]]==match.len))
+  expect_error({
+    predict(ref.list, foobar=0)
+  }, paste("foobar is not a valid unit; argument names of predict must be one of these valid units:", paste(expected.units, collapse=", ")))
+  my.pred.both <- predict(
+    ref.list, match.len=match.len, seconds=ref.list$seconds.limit)
+  if(interactive())plot(my.pred.both)
+  unit.tab <- table(my.pred.both$prediction$unit)
+  expect_identical(names(unit.tab), c("match.len","seconds"))
 })
 
 test_that("result returned when some are NULL and others not", {
@@ -392,3 +357,41 @@ if(requireNamespace("nc")){
   })
 }
 
+test_that("references for non-NA unit, with NA unit",{
+  atime.list <- atime::atime(
+    missing=data.frame(my_unit=NA),
+    constant=data.frame(my_unit=1),
+    linear=data.frame(my_unit=N),
+    quadratic=data.frame(my_unit=N^2),
+    seconds.limit=0.001,
+    result=TRUE)
+  (atab <- table(atime.list$meas$expr.name))
+  ref.list <- atime::references_best(atime.list)
+  if(interactive())plot(ref.list)
+  (rtab <- table(ref.list$references[unit=="my_unit", expr.name]))
+  expect_identical(sort(names(rtab)), c("linear","quadratic"))
+})
+
+test_that("references for non-NA unit, with NA unit",{
+  expect_error({
+    atime::atime(
+      missing=data.frame(my_unit=NA),
+      constant=data.frame(foo=1),
+      linear=data.frame(my_unit=N),
+      quadratic=data.frame(my_unit=N^2),
+      seconds.limit=0.001,
+      result=TRUE)
+  }, "results are all 1 row data frames, but some have different names (missing, constant); please fix by making row names of results identical", fixed=TRUE)
+})
+
+test_that("error for new unit name conflicting with existing", {
+  expect_error({
+    atime::atime(
+      missing=data.frame(median=NA, kilobytes=1, ok=2),
+      constant=data.frame(median=1, kilobytes=1, ok=2),
+      linear=data.frame(median=N, kilobytes=1, ok=2),
+      quadratic=data.frame(median=N^2, kilobytes=1, ok=2),
+      seconds.limit=0.001,
+      result=TRUE)
+  }, "result is 1 row data frame with column(s) named median, kilobytes (reserved for internal use); please fix by changing the column name(s) in your results", fixed=TRUE)
+})

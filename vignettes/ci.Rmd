@@ -3,8 +3,6 @@
 %\VignetteIndexEntry{Continuous integration testing}
 -->
 
-# Binary segmentation examples
-
 ```{r setup, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,

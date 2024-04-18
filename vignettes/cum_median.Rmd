@@ -1,9 +1,7 @@
 <!--
 %\VignetteEngine{knitr::knitr}
-%\VignetteIndexEntry{Cumulative median}
+%\VignetteIndexEntry{Example: cumulative median}
 -->
-
-# Cumulative median
 
 ```{r setup, include = FALSE}
 knitr::opts_chunk$set(

@@ -28,6 +28,9 @@ predict.references_best <- function(object, ...){
       stop("... has a non-finite argument (", unit, ") but each argument must be finite (unit value at which to interpolate/predict N)")
     }
     is.unit <- object$measurements$unit == unit
+    if(!any(is.unit)){
+      stop(unit, " is not a valid unit; argument names of predict must be one of these valid units: ", paste(sort(unique(object$measurements$unit)), collapse=", "))
+    }
     meas <- object$measurements[is.unit & 0<empirical]
     pred.dt <- meas[, {
       uniq.dt <- .SD[, .(

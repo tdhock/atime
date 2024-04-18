@@ -10,53 +10,134 @@ knitr::opts_chunk$set(
 )
 ```
 
-# Custom Units
-
 The goal of this vignette is to explain how to estimate asymptotic
 complexity for custom units (other than the defaults, seconds and
 kilobytes).
+
+## Simple regex example
+
+Let us consider a simple adaptation of the regex example from the
+README.  The code below defines a function which replaces all
+occurrences of the character `a` with some other string `replace`, in
+`subject`.
+
+```{r}
+gsub_replace <- function(replace,subject){
+  string <- gsub("a",replace,subject)
+  data.frame(string, nchar=nchar(string))
+}
+gsub_replace("-","foobar")
+gsub_replace("--","foobar")
+```
+
+The output above shows that we can replace the `a` in `foobar` with
+either one or two dashes, and the output is a data frame with one row
+and two columns, including the numeric `nchar` column which we may
+want to visualize as a function of `N`. To do that in the code below,
+we use that function inside a call to `atime` with `result=TRUE`
+(required in order to save the resulting 1 row data frames).
+
+```{r}
+atime.gsub.list <- atime::atime(
+  setup={
+    subject <- paste(rep("a", N), collapse="")
+    pattern <- paste(rep(c("a?", "a"), each=N), collapse="")
+  },
+  constant.replacement=gsub_replace("constant size replacement",subject),
+  linear.replacement=gsub_replace(subject,subject),
+  result=TRUE)
+plot(atime.gsub.list)
+```
+
+The output above shows that atime computes and plots nchar, in
+addition to the usual kilobytes and seconds. In this case, it is
+useful to see the different asymptotic slopes of linear and constant
+replacement, for both `nchar` and `seconds`. To estimate their
+asymptotic complexity classes, we use the code below,
+
+```{r}
+ref.gsub.list <- atime::references_best(atime.gsub.list)
+plot(ref.gsub.list)
+```
+
+The plot above clearly shows the linear complexity of constant
+replacement, and the quadratic complexity of linear replacement.
 
 ## Dynamic programming algorithms for change-point detection
 
 The time complexity of the Dynamic Programming algorithm implemented
 in the PeakSegDisk package depends on the number of intervals
-(candidate changepoints stored). Here we compute the mean number of
+(candidate changepoints stored), so we may want to look at how the
+number of intervals changes with the data size `N`. Also we must input a
+non-negative penalty parameter, and then the algorithm outputs a
+certain number of segments, again which may be interesting to look at
+as a function of data size `N`. Here we compute the mean number of
 intervals for real Mono27ac data, and synthetic count data which are
 always increasing.
 
+First, in the code below, we define the data sets, as a function of
+data size `N`,
+
 ```{r}
-old.opt <- options(width=100)
-data(Mono27ac, package="PeakSegDisk", envir=environment())
 library(data.table)
-penalty <- 1e6
-expr.list <- c(
-  if(requireNamespace("PeakSegDisk"))atime::atime_grid(
-    real=PeakSegDisk::PeakSegFPOP_df(real, penalty),
-    synthetic=PeakSegDisk::PeakSegFPOP_df(synthetic, penalty)),
-  atime::atime_grid(mean=mean(real$count)))
-atime.list <- atime::atime(
-  N=as.integer(10^seq(1, 3, by=0.5)),
-  setup={
-    real <- Mono27ac$coverage[1:N]
-    synthetic <- data.table(real)[, count := 1:.N]
-  },
-  expr.list=expr.list,
-  seconds.limit=Inf,
-  result=TRUE)
-plot(atime.list)
+data(Mono27ac, package="PeakSegDisk", envir=environment())
+setup <- quote({
+  data.list <- list(real=Mono27ac$coverage[1:N])
+  data.list$synthetic <- data.table(data.list$real)[, count := 1:.N]
+})
 ```
 
-The plot above shows the timings in both kinds of data. Clearly the
-algorithm is much faster in real data than in synthetic increasing
-data. The code below creates a new column for the mean number of
-intervals computing during the algorithm, then computes the best
-asymptotic references: 
+Next, we define a list of expressions to run for each data size:
 
 ```{r}
-atime.list$measurements[, intervals := sapply(
-  result, function(L)if(is.numeric(L))NA else L$loss$mean.intervals)]
-best.list <- atime::references_best(atime.list, more.units="intervals")
-plot(best.list)
+penalty <- 1e6
+(expr.list <- c(
+  if(requireNamespace("PeakSegDisk"))atime::atime_grid(
+    list(Data=c("real","synthetic")),
+    FPOP={
+      fit <- PeakSegDisk::PeakSegFPOP_df(data.list[[Data]], penalty)
+      fit$loss[, .(intervals=mean.intervals, segments)]
+    }),
+  atime::atime_grid(mean={
+    mean(data.list$real$count)
+    data.frame(intervals=NA, segments=1)
+  })
+))
+```
+
+The output above shows the expressions which will be run for each data
+size. Note that each expression returns a data frame with one row and
+two numeric columns, `intervals` and `segments`, which will be
+used as additional units in asymptotic complexity analysis.
+
+Next, we use `substitute` to use the `setup` we defined above as
+an argument to `atime`, along with the other required arguments:
+
+```{r}
+(atime.DP.lang <- substitute(atime::atime(
+  N=as.integer(10^seq(1, 3, by=0.5)),
+  setup=SETUP,
+  expr.list=expr.list,
+  seconds.limit=Inf,
+  result=TRUE),
+  list(SETUP=setup)))
+```
+
+Next we run the timings:
+
+```{r}
+atime.DP.list <- eval(atime.DP.lang)
+plot(atime.DP.list)
+```
+
+The plot above shows the timings in both kinds of data (real and
+synthetic). Clearly the algorithm has much fewer intervals, in real
+data than in synthetic increasing data. The code below computes and
+plots the best asymptotic references:
+
+```{r}
+ref.DP.list <- atime::references_best(atime.DP.list)
+plot(ref.DP.list)
 ```
 
 Note in the code above the `more.units="intervals"` argument, which
@@ -76,35 +157,4 @@ Exercise for the reader: to see the expected asymptotic time
 complexity in the last plot, re-do the previous analyses, increasing
 the penalty as well as the max data size N.
 
-```{r}
-options(old.opt)
-```
-
-## Doing the same benchmark using `atime_grid`
-
-Note in the original `atime` call above, the only difference between
-real and synthetic is the data, so the `atime_grid` function could be
-used to create an expression list in this case. The advantage is that
-the code below avoids the repetition of the `PeakSegFPOP_df` function
-call, which would be even more beneficial if there were more than two
-data sets:
-
-```{r}
-(data.grid.exprs <- c(
-  if(requireNamespace("PeakSegDisk"))atime::atime_grid(
-    list(DATA=c("real","synthetic")),
-    PeakSegDisk=PeakSegDisk::PeakSegFPOP_df(data.list[[DATA]], penalty)),
-  atime::atime_grid(mean=mean(data.list$real$count))))
-data.grid.result <- atime::atime(
-  N=as.integer(10^seq(1, 3, by=0.5)),
-  setup={
-    real <- Mono27ac$coverage[1:N]
-    data.list <- list(
-      real=real, 
-      synthetic=data.table(real)[, count := 1:.N])
-  },
-  seconds.limit = Inf,
-  expr.list=data.grid.exprs)
-plot(data.grid.result)
-```
 

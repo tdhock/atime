@@ -3,8 +3,6 @@
 %\VignetteIndexEntry{Custom References}
 -->
 
-# Custom References
-
 ```{r setup, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,

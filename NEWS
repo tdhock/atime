@@ -1,6 +1,6 @@
-Changes in version 2024.4.16
+Changes in version 2024.4.17
 
-- If result is data frame with 1 row, save more.units.
+- New, simpler method for defining additional units to analyze (other than kilobytes and seconds): if result is data frame with 1 row, numeric columns are used as additional units. Arguments unit.col.vec and more.units have been removed from references_best.
 - atime_pkg version names HEAD/base/CRAN defined in R color names are now translated to their expanded names on the plot (CRAN=1.15.0 etc), and default colors were added for Slow and Fast.
 
 Changes in version 2024.4.12

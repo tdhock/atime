@@ -41,48 +41,41 @@ references <- function
   }, by=.(fun.latex, fun.name=gsub("\\", "", fun.latex, fixed=TRUE))]
 }
 
-references_best <- function(L, unit.col.vec=NULL, more.units=L$more.units, fun.list=NULL){
+references_best <- function(L, fun.list=NULL){
   N <- expr.name <- . <- fun.name <- dist <- empirical <- reference <-
     fun.latex <- overall.rank <- NULL
   ## Above for R CMD check.
-  if(is.null(unit.col.vec)){
-    unit.col.vec <- c(
-      "kilobytes",
-      seconds="median")
-  }
-  if(!is.null(more.units)){
-    unit.col.vec <- c(unit.col.vec, more.units)
-  }
   DT <- L[["measurements"]]
-  not.found <- unit.col.vec[!unit.col.vec %in% names(DT)]
+  not.found <- L$unit.col.vec[!L$unit.col.vec %in% names(DT)]
   if(length(not.found)){
     stop(
       "some units were not found (fix by creating columns in measurements): ",
       paste(not.found, collapse=", "))
   }
-  to.rep <- if(is.null(names(unit.col.vec))){
-    rep(TRUE, length(unit.col.vec))
+  to.rep <- if(is.null(names(L$unit.col.vec))){
+    rep(TRUE, length(L$unit.col.vec))
   }else{
-    names(unit.col.vec) == "" | is.na(names(unit.col.vec))
+    names(L$unit.col.vec) == "" | is.na(names(L$unit.col.vec))
   }
-  names(unit.col.vec)[to.rep] <- unit.col.vec[to.rep]
+  names(L$unit.col.vec)[to.rep] <- L$unit.col.vec[to.rep]
   ref.dt.list <- list()
   metric.dt.list <- list()
-  for(unit in names(unit.col.vec)){
-    col.name <- unit.col.vec[[unit]]
+  for(unit in names(L$unit.col.vec)){
+    col.name <- L$unit.col.vec[[unit]]
     values <- DT[[col.name]]
     if(!is.numeric(values)){
       stop("each unit must be numeric, but ", unit, " is not")
     }
-    only.positive <- values[0 < values]
+    only.positive <- values[!is.na(values) & 0 < values]
     if(length(only.positive)){
       prop.above <- 0.1
       m <- min(only.positive)
       M <- max(only.positive)
       lower.limit <- m*(M/m)^prop.above
       all.refs <- DT[
-      , references(N, .SD[[col.name]], lower.limit, fun.list)
-      , by=expr.name]
+        ,
+        references(N, .SD[[col.name]], lower.limit, fun.list),
+        by=expr.name]
       all.refs[, rank := rank(-N), by=.(expr.name, fun.name)]
       second <- all.refs[rank==2]
       second[, dist := log10(empirical/reference) ]

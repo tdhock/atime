@@ -1,9 +1,7 @@
 <!--
 %\VignetteEngine{knitr::knitr}
-%\VignetteIndexEntry{Regular expression examples}
+%\VignetteIndexEntry{Example: regular expressions}
 -->
-
-# Regular expression examples
 
 ```{r setup, include = FALSE}
 knitr::opts_chunk$set(
