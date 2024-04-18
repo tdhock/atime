@@ -1,7 +1,12 @@
 \name{references_best}
 \alias{references_best}
 \title{Best references}
-\description{Compute best asymptotic references.}
+\description{
+  Compute best asymptotic references,
+  for all empirical measurements which are
+  present (not missing) and increasing with data size.
+}
+
 \usage{
 references_best(L, fun.list=NULL)
 }
@@ -13,7 +18,6 @@ references_best(L, fun.list=NULL)
 \value{list of class \code{"references_best"} with elements
   \code{references} (data table of references),
   \code{measurements} (data table of measurements).}
-
 \author{Toby Dylan Hocking}
 
 \examples{
