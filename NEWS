@@ -1,6 +1,8 @@
 Changes in version 2024.4.23
 
 - Fix test-CRAN.R: kilobytes is not available on some systems.
+- added atime_test and atime_test_list for convenience in test definitions.
+- atime_versions_exprs now errors if expr has no Package: in code.
 
 Changes in version 2024.4.17
 

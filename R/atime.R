@@ -101,6 +101,9 @@ atime <- function(N, setup, expr.list=NULL, times=10, seconds.limit=0.01, verbos
     stop(domain=NA, gettextf("expr.list should be a list of expressions to run for various N, but has classes %s", paste(class(expr.list), collapse=", ")))
   }
   elist <- c(expr.list, dots.list)
+  if(length(elist)==0){
+    stop("no expressions to measure; please provide at least one expression in ... or expr.list")
+  }
   name.tab <- table(names(elist))
   bad.names <- names(name.tab)[name.tab>1]
   more.units <- character()

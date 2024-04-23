@@ -27,3 +27,20 @@ test_that("atime_pkg produces tests_all_facet.png", {
   tests_all_facet.png <- file.path(inst.atime, "tests_all_facet.png")
   expect_true(file.exists(tests_all_facet.png))
 })
+
+test_that("atime_pkg produces RData with expected names", {
+  repo <- git2r::repository(tdir)
+  git2r::checkout(repo, branch="atime-test-funs")
+  atime.dir <- file.path(tdir, ".ci", "atime")
+  options(repos="http://cloud.r-project.org")#required to check CRAN version.
+  result.list <- atime::atime_pkg(tdir, ".ci")
+  tests.RData <- file.path(atime.dir, "tests.RData")
+  (objs <- load(tests.RData))
+  expected.names <- c(
+    "binseg(1:N,maxSegs=N/2) DIST=l1",
+    "binseg(1:N,maxSegs=N/2) DIST=meanvar_norm", 
+    "binseg(1:N,maxSegs=N/2) DIST=poisson",
+    "binseg_normal(1:N,maxSegs=N/2)"
+  )
+  expect_identical(names(pkg.results), expected.names)
+})
