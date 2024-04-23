@@ -159,8 +159,6 @@ atime_versions_exprs <- function(pkg.path, expr, sha.vec=NULL, verbose=FALSE, pk
     Package, 
     ifelse(SHA.vec=="", "", "."), 
     SHA.vec)
-  atime_versions_install(
-    Package, pkg.path, new.Package.vec, SHA.vec, verbose, pkg.edit.fun)
   a.args <- list()
   for(commit.i in seq_along(SHA.vec)){
     sha <- SHA.vec[[commit.i]]
@@ -175,6 +173,9 @@ atime_versions_exprs <- function(pkg.path, expr, sha.vec=NULL, verbose=FALSE, pk
       stop(sprintf("expr should contain at least one instance of %s: to replace with %s:", Package, new.Package))
     }
     a.args[[commit.name]] <- str2lang(paste(new.lines, collapse="\n"))
+    atime_versions_install(
+      Package, normalizePath(pkg.path),
+      new.Package.vec, SHA.vec, verbose, pkg.edit.fun)
   }
   a.args
 }
