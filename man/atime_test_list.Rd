@@ -10,7 +10,11 @@
   list, and other arguments are copied to each element of the test list.
 }
 \usage{
-atime_test_list(..., N, setup, expr, times, seconds.limit, verbose, pkg.edit.fun, result, tests = NULL)
+atime_test_list(
+  ...,
+  N, setup, expr, times, seconds.limit,
+  verbose, pkg.edit.fun, result,
+  tests = NULL)
 }
 \arguments{
   \item{\dots}{
