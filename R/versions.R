@@ -171,8 +171,8 @@ atime_versions_exprs <- function(pkg.path, expr, sha.vec=NULL, verbose=FALSE, pk
       paste0(Package,":"),
       paste0(new.Package,":"),
       old.lines)
-    if(identical(old.lines,new.lines)){
-      stop("expr should contain at least one instance of data.table: to replace with data.table.SHA1:")
+    if(Package!=new.Package && identical(old.lines,new.lines)){
+      stop(sprintf("expr should contain at least one instance of %s: to replace with %s:", Package, new.Package))
     }
     a.args[[commit.name]] <- str2lang(paste(new.lines, collapse="\n"))
   }
@@ -334,11 +334,11 @@ atime_pkg <- function(pkg.path=".", tests.dir="inst"){
     print(gg)
     grDevices::dev.off()
   }
-  bench.dt <- rbindlist(bench.dt.list)
+  bench.dt <- rbindlist(bench.dt.list)[, Test := test.name]
   setkey(bench.dt, p.value)
   bench.dt[, p.str := sprintf("%.2e", p.value)]
   bench.dt[, P.value := factor(p.str, unique(p.str))]
-  meta.dt <- unique(bench.dt[, .(test.name, P.value)])
+  meta.dt <- unique(bench.dt[, .(Test, test.name, P.value)])
   limit.dt <- rbindlist(limit.dt.list)[meta.dt, on="test.name"]
   blank.dt <- rbindlist(blank.dt.list)[meta.dt, on="test.name"]
   compare.dt <- rbindlist(compare.dt.list)[meta.dt, on="test.name"]
@@ -355,7 +355,7 @@ atime_pkg <- function(pkg.path=".", tests.dir="inst"){
     ggplot2::scale_color_manual(values=color.vec)+
     ggplot2::scale_fill_manual(values=color.vec)+
     ggplot2::facet_grid(
-      unit ~ P.value + test.name, scales="free", labeller="label_both")+
+      unit ~ P.value + Test, scales="free", labeller="label_both")+
     ggplot2::geom_line(ggplot2::aes(
       N, empirical, color=expr.name),
       data=bench.dt)+

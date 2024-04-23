@@ -43,4 +43,5 @@ test_that("atime_pkg produces RData with expected names", {
     "binseg_normal(1:N,maxSegs=N/2)"
   )
   expect_identical(names(pkg.results), expected.names)
+  expect_is(bench.dt[["Test"]], "character")
 })
