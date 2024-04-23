@@ -1,3 +1,7 @@
+Changes in version 2024.4.23
+
+- Fix test-CRAN.R: kilobytes is not available on some systems.
+
 Changes in version 2024.4.17
 
 - New, simpler method for defining additional units to analyze (other than kilobytes and seconds): if result is data frame with 1 row, numeric columns are used as additional units. Arguments unit.col.vec and more.units have been removed from references_best.

@@ -66,8 +66,9 @@ test_that("more units defined in 1 row result", {
     N=1:30)
   ref.list <- atime::references_best(atime.list)
   disp.units <- sort(unique(ref.list$measurements$unit))
-  expected.units <- c("int","kilobytes","match.len","num","seconds")
-  expect_identical(disp.units, expected.units)
+  expected.units <- c("int","match.len","num","seconds")
+  ## TDH 23 Apr 2024: kilobytes is not available on some systems.
+  expect_true(all(expected.units %in% disp.units))
   expect_error({
     predict(ref.list, match.len=40)
   }, "match.len=40 is outside range of data, please change to a value that intersects at least one of the empirical curves")
@@ -81,7 +82,7 @@ test_that("more units defined in 1 row result", {
   expect_true(all(my.pred.length$prediction[["unit.value"]]==match.len))
   expect_error({
     predict(ref.list, foobar=0)
-  }, paste("foobar is not a valid unit; argument names of predict must be one of these valid units:", paste(expected.units, collapse=", ")))
+  }, "foobar is not a valid unit; argument names of predict must be one of these valid units:")
   my.pred.both <- predict(
     ref.list, match.len=match.len, seconds=ref.list$seconds.limit)
   if(interactive())plot(my.pred.both)
