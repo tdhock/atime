@@ -18,6 +18,17 @@ test_that("error if no versions specified", {
   fixed=TRUE)
 })
 
+test_that("atime_versions_exprs error when expr does not contain pkg:", {
+  expect_error({
+    atime::atime_versions_exprs(
+      pkg.path=tdir,
+      expr=dt[, .(vs = (sum(val))), by = .(id)],
+      "Before"="be2f72e6f5c90622fe72e1c315ca05769a9dc854",
+      "Regression"="e793f53466d99f86e70fc2611b708ae8c601a451", 
+      "Fixed"="58409197426ced4714af842650b0cc3b9e2cb842") 
+  }, "expr should contain at least one instance of binsegRcpp: to replace with binsegRcpp.be2f72e6f5c90622fe72e1c315ca05769a9dc854:", fixed=TRUE)
+})
+
 test_that("atime_pkg produces tests_all_facet.png", {
   repo <- git2r::repository(tdir)
   git2r::checkout(repo, branch="another-branch")
@@ -45,3 +56,4 @@ test_that("atime_pkg produces RData with expected names", {
   expect_identical(names(pkg.results), expected.names)
   expect_is(bench.dt[["Test"]], "character")
 })
+
