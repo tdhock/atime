@@ -179,6 +179,17 @@ We can do both using the code below,
 
 [[file:README-predict.png]]
 
+** GitHub action for continuous performance testing
+
+[[https://github.com/marketplace/actions/autocomment-atime-results][autocomment-atime-results]] is a GitHub action which will run atime for
+every pull request, and show the results in a plot in a comment.
+First, you should define a .ci/atime/tests.R code file that creates an
+R object called =test.list= which should be a list of performance
+tests, each one is a list of arguments that will be passed to
+=atime_versions=, see
+[[https://github.com/tdhock/binsegRcpp/blob/atime-test-funs/.ci/atime/tests.R][atime-test-funs branch of binsegRcpp repo]]
+for an example, and see [[https://github.com/tdhock/atime/blob/main/man/atime_pkg.Rd][?atime_pkg]] for documentation.
+
 ** Related work
 
 [[https://cloud.r-project.org/web/packages/bench/][bench]]::press does something similar, and is more flexible because it

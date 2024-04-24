@@ -39,6 +39,12 @@
 
 \author{Toby Dylan Hocking}
 
+\seealso{
+  \code{\link{atime_test}} for defining each test,
+  \code{\link{atime_test_list}} for defining common arguments in each
+  element of the test list.
+}
+
 \examples{
 
 if(FALSE){
@@ -57,5 +63,8 @@ if(FALSE){
   atime::atime_versions_remove("binsegRcpp")
 
 }
+
+## https://github.com/tdhock/binsegRcpp/blob/atime-test-funs/.ci/atime/tests.R
+## has another real example, see how to run it in tests/testthat/test-versions.R
 
 }
