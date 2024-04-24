@@ -32,4 +32,7 @@ atime::atime_test(
   setup=data.vec <- rnorm(N),
   expr=binsegRcpp::binseg("mean_norm",data.vec))
 
+## https://github.com/tdhock/binsegRcpp/blob/atime-test-funs/.ci/atime/tests.R
+## has a real example, see how to run it in tests/testthat/test-versions.R
+
 }

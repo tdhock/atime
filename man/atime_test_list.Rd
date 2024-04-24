@@ -63,7 +63,7 @@ atime_test_list(
 }
 \examples{
 
-test.list <- atime::atime_test_list(
+(test.list <- atime::atime_test_list(
   N=as.integer(10^seq(1,3,by=0.5)),
   setup={
     set.seed(1)
@@ -71,6 +71,9 @@ test.list <- atime::atime_test_list(
   },
   mean_norm=atime::atime_test(expr=binsegRcpp::binseg("mean_norm",data.vec)),
   poisson=atime::atime_test(expr=binsegRcpp::binseg("poisson",data.vec)),
-  NULL)
+  NULL))
+
+## https://github.com/tdhock/binsegRcpp/blob/atime-test-funs/.ci/atime/tests.R
+## has a real example, see how to run it in tests/testthat/test-versions.R
 
 }
