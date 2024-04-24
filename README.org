@@ -182,13 +182,13 @@ We can do both using the code below,
 ** GitHub action for continuous performance testing
 
 [[https://github.com/marketplace/actions/autocomment-atime-results][autocomment-atime-results]] is a GitHub action which will run atime for
-every pull request, and show the results in a plot in a comment.
+every pull request, and plot results in a PR comment, so you can see
+if the PR affects performance (examples: [[https://github.com/Anirban166/binsegRcpp/pull/2#issuecomment-1986146565][binsegRcpp]], [[https://github.com/Rdatatable/data.table/pull/5427#issuecomment-2075471806][data.table]]).
 First, you should define a .ci/atime/tests.R code file that creates an
 R object called =test.list= which should be a list of performance
 tests, each one is a list of arguments that will be passed to
-=atime_versions=, see
-[[https://github.com/tdhock/binsegRcpp/blob/atime-test-funs/.ci/atime/tests.R][atime-test-funs branch of binsegRcpp repo]]
-for an example, and see [[https://github.com/tdhock/atime/blob/main/man/atime_pkg.Rd][?atime_pkg]] for documentation.
+=atime_versions=, see [[https://github.com/tdhock/binsegRcpp/blob/atime-test-funs/.ci/atime/tests.R][atime-test-funs branch of binsegRcpp repo]] for an
+example, and see [[https://github.com/tdhock/atime/blob/main/man/atime_pkg.Rd][?atime_pkg]] for documentation.
 
 ** Related work
 
