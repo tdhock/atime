@@ -166,11 +166,12 @@ atime_versions_exprs <- function(pkg.path, expr, sha.vec=NULL, verbose=FALSE, pk
     new.Package <- new.Package.vec[[commit.i]]
     old.lines <- capture.output(substitute(expr))
     new.lines <- gsub(
-      paste0(Package,":"),
-      paste0(new.Package,":"),
-      old.lines)
+      paste0(Package,"::"),
+      paste0(new.Package,"::"),
+      old.lines,
+      fixed=TRUE)
     if(Package!=new.Package && identical(old.lines,new.lines)){
-      stop(sprintf("expr should contain at least one instance of %s: to replace with %s:", Package, new.Package))
+      stop(sprintf("expr should contain at least one instance of %s:: to replace with %s::", Package, new.Package))
     }
     a.args[[commit.name]] <- str2lang(paste(new.lines, collapse="\n"))
     atime_versions_install(
