@@ -1,5 +1,10 @@
 atime: Asymptotic Timing
 
+- compare time/memory/other quantities of different R codes that depend on N: =atime()=
+- estimate the asymptotic complexity (big-O notation) of any R code that depends on some data size N: =references_best()=
+- compare time/memory of different git versions of R package code: =atime_versions()=
+- continuous performance testing of R packages: =atime_pkg()=
+
 | [[file:tests/testthat][tests]]    | [[https://github.com/tdhock/atime/actions][https://github.com/tdhock/atime/workflows/R-CMD-check/badge.svg]] |
 | [[https://github.com/jimhester/covr][coverage]] | [[https://app.codecov.io/gh/tdhock/atime?branch=main][https://codecov.io/gh/tdhock/atime/branch/main/graph/badge.svg]]  |
 
@@ -184,7 +189,7 @@ We can do both using the code below,
 [[https://github.com/marketplace/actions/autocomment-atime-results][autocomment-atime-results]] is a GitHub action which will run atime for
 every pull request, and plot results in a PR comment, so you can see
 if the PR affects performance (examples: [[https://github.com/Anirban166/binsegRcpp/pull/2#issuecomment-1986146565][binsegRcpp]], [[https://github.com/Rdatatable/data.table/pull/5427#issuecomment-2075471806][data.table]]).
-First, you should define a .ci/atime/tests.R code file that creates an
+First, you should define a =.ci/atime/tests.R= code file that creates an
 R object called =test.list= which should be a list of performance
 tests, each one is a list of arguments that will be passed to
 =atime_versions=, see [[https://github.com/tdhock/binsegRcpp/blob/atime-test-funs/.ci/atime/tests.R][atime-test-funs branch of binsegRcpp repo]] for an
