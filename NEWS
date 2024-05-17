@@ -1,3 +1,7 @@
+Changes in version 2024.5.17
+
+- atime_versions_exprs better error message, one instance of pkg:: (two colons instead of one), thanks @MichaelChirico for the suggestion.
+
 Changes in version 2024.4.23
 
 - Fix test-CRAN.R: kilobytes is not available on some systems.

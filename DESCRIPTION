@@ -1,7 +1,7 @@
 Package: atime
 Type: Package
 Title: Asymptotic Timing
-Version: 2024.4.23
+Version: 2024.5.17
 Authors@R: c(
     person("Toby", "Hocking",
      email="toby.hocking@r-project.org",
