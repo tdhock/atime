@@ -31,6 +31,7 @@ test_that("atime_versions_exprs error when expr does not contain pkg:", {
 
 test_that("atime_pkg produces tests_all_facet.png", {
   repo <- git2r::repository(tdir)
+  ## https://github.com/tdhock/binsegRcpp/tree/another-branch
   git2r::checkout(repo, branch="another-branch")
   inst.atime <- file.path(tdir, "inst", "atime")
   options(repos="http://cloud.r-project.org")#required to check CRAN version.
@@ -41,6 +42,7 @@ test_that("atime_pkg produces tests_all_facet.png", {
 
 test_that("atime_pkg produces RData with expected names", {
   repo <- git2r::repository(tdir)
+  ## https://github.com/tdhock/binsegRcpp/tree/atime-test-funs
   git2r::checkout(repo, branch="atime-test-funs")
   atime.dir <- file.path(tdir, ".ci", "atime")
   options(repos="http://cloud.r-project.org")#required to check CRAN version.
