@@ -82,12 +82,13 @@ atime_grid <- function
   out.list
 }
 
-atime <- function(N, setup, expr.list=NULL, times=10, seconds.limit=0.01, verbose=FALSE, result=FALSE, ...){
+default_N <- function(){
+  as.integer(2^seq(1, 20))
+}
+
+atime <- function(N=default_N(), setup, expr.list=NULL, times=10, seconds.limit=0.01, verbose=FALSE, result=FALSE, ...){
   kilobytes <- mem_alloc <- . <- sizes <- NULL
   ## above for CRAN NOTE.
-  if(missing(N)){
-    N <- as.integer(2^seq(1, 20))
-  }
   if(!is.numeric(N)){
     stop("N should be a numeric vector")
   }

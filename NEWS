@@ -1,3 +1,7 @@
+Changes in version 2024.7.12
+
+- atime_versions has default_N(), same as atime.
+
 Changes in version 2024.5.17
 
 - atime_versions_exprs better error message, one instance of pkg:: (two colons instead of one), thanks @MichaelChirico for the suggestion.

@@ -121,7 +121,7 @@ atime_versions_install <- function(Package, pkg.path, new.Package.vec, sha.vec, 
   }#any to install
 }
 
-atime_versions <- function(pkg.path, N, setup, expr, sha.vec=NULL, times=10, seconds.limit=0.01, verbose=FALSE, pkg.edit.fun=pkg.edit.default, result=FALSE, ...){
+atime_versions <- function(pkg.path, N=default_N(), setup, expr, sha.vec=NULL, times=10, seconds.limit=0.01, verbose=FALSE, pkg.edit.fun=pkg.edit.default, result=FALSE, ...){
   ver.args <- list(
     pkg.path, substitute(expr), sha.vec, verbose, pkg.edit.fun, ...)
   ver.exprs <- do.call(atime_versions_exprs, ver.args)
