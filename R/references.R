@@ -43,7 +43,7 @@ references <- function
 
 references_best <- function(L, fun.list=NULL){
   N <- expr.name <- . <- fun.name <- dist <- empirical <- reference <-
-    fun.latex <- overall.rank <- NULL
+    fun.latex <- overall.rank <- each.sign.rank <- NULL
   ## Above for R CMD check.
   DT <- L[["measurements"]]
   not.found <- L$unit.col.vec[!L$unit.col.vec %in% names(DT)]
@@ -100,21 +100,23 @@ references_best <- function(L, fun.list=NULL){
       )])
     }
   }
+  ref.dt <- rbindlist(ref.dt.list)
   structure(list(
     seconds.limit=L[["seconds.limit"]],
-    references=do.call(rbind, ref.dt.list),
+    references=ref.dt,
+    plot.references=ref.dt[each.sign.rank==1],
     measurements=do.call(rbind, metric.dt.list)),
     class="references_best")
 }
 
 plot.references_best <- function(x, ...){
   expr.name <- N <- reference <- fun.name <- empirical <- 
-    each.sign.rank <- seconds.limit <- unit <- NULL
+    seconds.limit <- unit <- NULL
   ## Above for R CMD check.
   meas <- x[["measurements"]]
   if(requireNamespace("ggplot2")){
     hline.df <- with(x, data.frame(seconds.limit, unit="seconds"))
-    ref.dt <- x[["references"]][each.sign.rank==1]
+    ref.dt <- x[["plot.references"]]
     ref.color <- "violet"
     emp.color <- "black"
     gg <- ggplot2::ggplot()+

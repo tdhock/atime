@@ -16,15 +16,18 @@ references_best(L, fun.list=NULL)
     default NULL means to use package default.}
 }
 \value{list of class \code{"references_best"} with elements
-  \code{references} (data table of references),
-  \code{measurements} (data table of measurements).}
+  \code{references} (data table of all references),
+  \code{plot.references} (data table of references to show using \code{plot}
+  method, default is to show closest larger and smaller references),
+  \code{measurements} (data table of measurements).
+}
 \author{Toby Dylan Hocking}
 
 \examples{
 
 ## Example 1: polynomial and exponential time string functions.
 string.result <- atime::atime(
-  N=unique(as.integer(10^seq(0,3.5,l=100))),
+  N=unique(as.integer(10^seq(0,4,l=100))),
   setup={
     subject <- paste(rep("a", N), collapse="")
     pattern <- paste(rep(c("a?", "a"), each=N), collapse="")
@@ -35,7 +38,11 @@ string.result <- atime::atime(
   constant.replacement=gsub("a","constant size replacement",subject),
   linear.replacement=gsub("a",subject,subject))
 (string.best <- atime::references_best(string.result))
-## plot method shows each expr in a separate panel.
+## plot method shows each expr and unit in a separate panel.
+## default is to show closest larger and smaller references.
+plot(string.best)
+## modifying plot.references changes violet references shown by plot.
+string.best$plot.references <- string.best$ref[fun.name %in% c("N","N^2","N^3","2^N")]
 plot(string.best)
 ## predict method computes N for given units (default seconds limit).
 string.pred = predict(string.best)

@@ -1,3 +1,7 @@
+Changes in version 2024.8.7
+
+- list returned by references_best contains new element "plot.references" which was previously computed in plot method, and now can be changed by user, to customize the references shown by plot method.
+
 Changes in version 2024.7.12
 
 - atime_versions has default_N(), same as atime.
