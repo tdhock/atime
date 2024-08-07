@@ -42,7 +42,7 @@ string.result <- atime::atime(
 ## default is to show closest larger and smaller references.
 plot(string.best)
 ## modifying plot.references changes violet references shown by plot.
-string.best$plot.references <- string.best$ref[fun.name %in% c("N","N^2","N^3","2^N")]
+string.best$plot.references <- string.best$ref[c("N","N^2","N^3","2^N"),on="fun.name"]
 plot(string.best)
 ## predict method computes N for given units (default seconds limit).
 string.pred = predict(string.best)
