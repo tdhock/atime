@@ -140,12 +140,11 @@ ref.DP.list <- atime::references_best(atime.DP.list)
 plot(ref.DP.list)
 ```
 
-Note in the code above the `more.units="intervals"` argument, which
-says to use the intervals column as an additional unit. The plot above
-shows plots of all three units as a function of data size. It is clear
+The plot above
+shows one panel/facet from top to bottom, for each unit. It is clear
 that there is a substantial difference in the number of intervals
 stored by the algorithm, between real and synthetic increasing
-data. From the plot above it is clear that 
+data. From the plot above, it should be clear that 
 
 * the number of intervals grows slowly (log) for real data, and much
   faster (linear) for synthetic increasing data,
@@ -155,6 +154,7 @@ data. From the plot above it is clear that
 
 Exercise for the reader: to see the expected asymptotic time
 complexity in the last plot, re-do the previous analyses, increasing
-the penalty as well as the max data size N.
+the penalty as well as the max data size N. (which were kept small in
+the code above in order to reduce computation time on CRAN)
 
 
