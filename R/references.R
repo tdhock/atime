@@ -115,17 +115,20 @@ plot.references_best <- function(x, ...){
   ## Above for R CMD check.
   meas <- x[["measurements"]]
   if(requireNamespace("ggplot2")){
-    hline.df <- with(x, data.frame(seconds.limit, unit="seconds"))
     ref.dt <- x[["plot.references"]]
     ref.color <- "violet"
     emp.color <- "black"
     gg <- ggplot2::ggplot()+
       ggplot2::facet_grid(unit ~ expr.name, scales="free")+
-      ggplot2::theme_bw()+
-      ggplot2::geom_hline(ggplot2::aes(
+      ggplot2::theme_bw()
+    if(nrow(ref.dt[unit=="seconds"]) || nrow(meas[unit=="seconds"])){
+      hline.df <- with(x, data.frame(seconds.limit, unit="seconds"))
+      gg <- gg+ggplot2::geom_hline(ggplot2::aes(
         yintercept=seconds.limit),
         color="grey",
-        data=hline.df)+
+        data=hline.df)
+    }
+    gg <- gg+
       ggplot2::geom_ribbon(ggplot2::aes(
         N, ymin=min, ymax=max),
         data=meas[unit=="seconds"],

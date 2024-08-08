@@ -368,8 +368,25 @@ test_that("references for non-NA unit, with NA unit",{
     result=TRUE)
   (atab <- table(atime.list$meas$expr.name))
   ref.list <- atime::references_best(atime.list)
-  if(interactive())plot(ref.list)
-  (rtab <- table(ref.list$references[unit=="my_unit", expr.name]))
+  gg.default <- plot(ref.list)
+  gg_classes <- function(gg){
+    sapply(gg$layers, function(L)class(L$geom)[1])
+  }
+  cls.default <- gg_classes(gg.default)
+  expect_true("GeomHline" %in% cls.default)
+  ref.sec <- ref.list
+  ref.sec$plot.references <- ref.list$ref[unit=="seconds"]
+  ref.sec$measurements <- ref.list$meas[unit=="seconds"]
+  gg.sec <- plot(ref.sec)
+  cls.sec <- gg_classes(gg.sec)
+  expect_true("GeomHline" %in% cls.default)
+  ref.my <- ref.list
+  ref.my$plot.references <- ref.my$ref[unit=="my_unit"]
+  ref.my$measurements <- ref.my$meas[unit=="my_unit"]
+  gg.my <- plot(ref.my)
+  cls.my <- gg_classes(gg.my)
+  expect_false("GeomHline" %in% cls.my)
+  (rtab <- table(ref.my$plot.references$expr.name))
   expect_identical(sort(names(rtab)), c("linear","quadratic"))
 })
 
@@ -396,3 +413,4 @@ test_that("error for new unit name conflicting with existing", {
       result=TRUE)
   }, "result is 1 row data frame with column(s) named median, kilobytes (reserved for internal use); please fix by changing the column name(s) in your results", fixed=TRUE)
 })
+
