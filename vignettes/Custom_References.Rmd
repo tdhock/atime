@@ -80,9 +80,11 @@ plot(seg.best)
 The figure above shows asymptotic references which are best fit for
 each expression. We do the best fit by adjusting each reference to the
 largest N, and then ranking each reference by distance to the
-measurement of the second to largest N.
+measurement of the second to largest N. For each panel/facet (method and unit), what appears to be the best fit asymptotic complexity? Which methods use quadratic time and/or memory?
 
 ## predict method
+
+The predict method estimates the data size `N` which each method can handle for a given unit value. The default is to estimate `N` for a time limit of 0.01 seconds, as shown in the plot below:
 
 ```{r}
 (seg.pred <- predict(seg.best))
@@ -98,17 +100,34 @@ as input the data size `N` and output log base 10 of the reference
 function, as below:
 
 ```{r}
-my.refs <- list(
+my.refs <- list(# names should be LaTeX math mode expressions.
+  "N"=function(N)log10(N),
   "N \\log N"=function(N)log10(N) + log10(log(N)),
   "N^2"=function(N)2*log10(N),
   "N^3"=function(N)3*log10(N))
 my.best <- atime::references_best(seg.result, fun.list=my.refs)
+dcast(my.best$references, expr.name + fun.name ~ unit, length)
+```
+
+The table above shows the counts of rows in the references table, which can be used to draw asymptotic reference curves, for each `expr.name`, `fun.name`, and unit (kilobytes and seconds). 
+To the best fit among these references, we use the code below:
+
+```{r}
 plot(my.best)
 ```
 
-From the plot above you should be able to see the asymptotic time
-complexity class of each algorithm. Keep in mind that the plot method
-displays only the next largest and next smallest reference lines, from those specified in `fun.list`.
+The default plot above shows only the closest references which are above and below the empirical/black measurements. To plot different references and measurements, you can specify the `plot.references` and `measurements` elements. For example, in the code below, we subset the data so that only the seconds unit is shown (not kilobytes), and only three expected references are shown (log-linear, quadratic, cubic):
+
+
+```{r}
+some.best <- my.best
+some.best$plot.references <- my.best$ref[unit=="seconds" & fun.name %in% c("N log N","N^2","N^3")]
+some.best$measurements <- my.best$meas[unit=="seconds"]
+plot(some.best)
+```
+
+From the plot above, you should be able to see the asymptotic time
+complexity class of each algorithm. 
 
 * the fastest packages are log-linear (fpop, wbs, binsegRcpp), 
 * that the binsegRcpp implementation that uses the list container is
