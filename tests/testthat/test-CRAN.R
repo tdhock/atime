@@ -414,3 +414,8 @@ test_that("error for new unit name conflicting with existing", {
   }, "result is 1 row data frame with column(s) named median, kilobytes (reserved for internal use); please fix by changing the column name(s) in your results", fixed=TRUE)
 })
 
+test_that("pkg.edit.fun is a function", {
+  example_tests.R <- system.file("example_tests.R", package="atime")
+  test.env <- atime:::test_file_to_env(example_tests.R)
+  expect_is(test.env$test.list$my_test$pkg.edit.fun, "function")
+})

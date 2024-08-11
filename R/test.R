@@ -1,3 +1,10 @@
+test_file_to_env <- function(tests.R){
+  test.env <- new.env()
+  tests.parsed <- parse(tests.R)
+  eval(tests.parsed, test.env)
+  test.env
+}
+
 atime_test <- function(...){
   as.list(match.call()[-1])
 }

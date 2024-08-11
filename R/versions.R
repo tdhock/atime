@@ -224,9 +224,7 @@ atime_pkg <- function(pkg.path=".", tests.dir="inst"){
     add_if_new("merge-base", mb.commit)
   }
   tests.R <- file.path(pkg.path, tests.dir, "atime", "tests.R")
-  test.env <- new.env()
-  tests.parsed <- parse(tests.R)
-  eval(tests.parsed, test.env)
+  test.env <- test_file_to_env(tests.R)
   color.vec <- if(is.character(test.env$version.colors)){
     test.env$version.colors
   }else{
