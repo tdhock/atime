@@ -6,8 +6,9 @@
 \description{
   Use this to define \code{test.list} in your atime/tests.R
   file, prior to running \code{\link{atime_pkg}}.
-  Arguments in \dots and \code{tests} are combined to form the test
-  list, and other arguments are copied to each element of the test list.
+  Arguments in \dots should all be named; if name is an argument of
+  atime_versions, it will be copied to each test; otherwise it should be
+  the name of a test. 
 }
 \usage{
 atime_test_list(
@@ -30,9 +31,11 @@ atime_test_list(
 }
   \item{setup}{
     expression that depends on \code{N}, to run before timings.
+    Not evaluated before copying to each test.
 }
   \item{expr}{
     expression to time.
+    Not evaluated before copying to each test.
 }
   \item{times}{
     number of times to run \code{expr}.
@@ -51,7 +54,8 @@ atime_test_list(
 }
 }
 \value{
-  List representing performance tests, each element is a list of
+  List representing performance tests,
+  from \dots and \code{tests}; each element is a list of
   arguments to pass to \code{\link{atime_versions}}.
 }
 \author{
@@ -63,7 +67,7 @@ atime_test_list(
 }
 \examples{
 
-(test.list <- atime::atime_test_list(
+(test.list.named <- atime::atime_test_list(
   N=as.integer(10^seq(1,3,by=0.5)),
   setup={
     set.seed(1)

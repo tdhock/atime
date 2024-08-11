@@ -13,7 +13,11 @@ atime_test_list <- function(..., N, setup, expr, times, seconds.limit, verbose, 
   could.copy <- intersect(names(formals(atime_versions)),names(formals()))
   mc <- as.list(match.call()[-1])
   copy.names <- intersect(names(mc), could.copy)
-  args.eval <- mget(copy.names)
+  possible.uneval <- c("setup","expr")
+  uneval.names <- intersect(copy.names, possible.uneval)
+  eval.names <- setdiff(copy.names, possible.uneval)
+  args.eval <- mget(eval.names)
+  args.eval[uneval.names] <- mc[uneval.names]
   L <- c(tests, list(...))
   out <- list()
   for(L.i in seq_along(L)){
