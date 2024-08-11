@@ -32,5 +32,8 @@ edit.data.table <- function(old.Package, new.Package, sha, new.pkg.path){
     paste0('useDynLib(', new.Package_))
 }
 test.list <- atime::atime_test_list(
-  pkg.edit.fun=my.edit.fun,
-  my_test=atime::atime_test(N=2^seq(1,20)))
+  pkg.edit.fun=edit.data.table,
+  my_test=atime::atime_test(
+    N=2^seq(1,20)
+  )
+)

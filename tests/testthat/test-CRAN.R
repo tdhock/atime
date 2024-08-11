@@ -417,5 +417,7 @@ test_that("error for new unit name conflicting with existing", {
 test_that("pkg.edit.fun is a function", {
   example_tests.R <- system.file("example_tests.R", package="atime")
   test.env <- atime:::test_file_to_env(example_tests.R)
-  expect_is(test.env$test.list$my_test$pkg.edit.fun, "function")
+  my_test <- test.env$test.list$my_test
+  expect_is(my_test$pkg.edit.fun, "function")
+  expect_is(my_test$N, "call")
 })
