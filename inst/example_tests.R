@@ -33,7 +33,7 @@ edit.data.table <- function(old.Package, new.Package, sha, new.pkg.path){
 }
 test.list <- atime::atime_test_list(
   pkg.edit.fun=edit.data.table,
-  my_test=atime::atime_test(
-    N=2^seq(1,20)
-  )
+  N=9,
+  test_N_expr=atime::atime_test(N=2, expr=rnorm(N)),
+  test_expr=atime::atime_test(expr=rnorm(N))
 )

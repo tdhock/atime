@@ -12,19 +12,19 @@ atime_test <- function(...){
 atime_test_list <- function(..., N, setup, expr, times, seconds.limit, verbose, pkg.edit.fun, result, tests=NULL){
   could.copy <- intersect(names(formals(atime_versions)),names(formals()))
   mc <- as.list(match.call()[-1])
-  copy.names <- intersect(names(mc), could.copy)
+  common.names <- intersect(names(mc), could.copy)
   possible.uneval <- c("setup","expr")
-  uneval.names <- intersect(copy.names, possible.uneval)
-  eval.names <- setdiff(copy.names, possible.uneval)
-  args.eval <- mget(eval.names)
-  args.eval[uneval.names] <- mc[uneval.names]
+  uneval.names <- intersect(common.names, possible.uneval)
+  eval.names <- setdiff(common.names, possible.uneval)
+  common.args <- mget(eval.names)
+  common.args[uneval.names] <- mc[uneval.names]
   L <- c(tests, list(...))
   out <- list()
   for(L.i in seq_along(L)){
     test.args <- L[[L.i]]
     test.name <- names(L)[[L.i]]
     if(!is.null(test.args)){
-      test.args[copy.names] <- args.eval[copy.names]
+      test.args[common.names] <- common.args[common.names]
       out[[test.name]] <- test.args
     }
   }

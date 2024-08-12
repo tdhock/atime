@@ -1,6 +1,6 @@
 Changes in version 2024.8.11
 
-- atime_test_list evaluates any arguments that are copied to each test.
+- atime_test_list evaluates any arguments that are copied to each test, except setup and expr.
 
 Changes in version 2024.8.8
 
