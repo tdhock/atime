@@ -24,8 +24,9 @@ atime_test_list <- function(..., N, setup, expr, times, seconds.limit, verbose, 
     test.args <- L[[L.i]]
     test.name <- names(L)[[L.i]]
     if(!is.null(test.args)){
-      test.args[common.names] <- common.args[common.names]
-      out[[test.name]] <- test.args
+      out.args <- common.args
+      out.args[names(test.args)] <- test.args
+      out[[test.name]] <- out.args
     }
   }
   out
