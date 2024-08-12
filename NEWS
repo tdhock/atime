@@ -1,3 +1,7 @@
+Changes in version 2024.8.11
+
+- atime_test_list evaluates any arguments that are copied to each test, except setup and expr.
+
 Changes in version 2024.8.8
 
 - plot.references_best now only adds geom_hline if there is at least one row with unit=="seconds" in measurements or plot.references.
