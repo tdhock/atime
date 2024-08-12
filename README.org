@@ -92,7 +92,7 @@ linear.replacement(N=1 to 3162)
 The output above shows the min and max N values that were run for each
 of the expressions. In this case =constant.replacement= and
 =linear.replacement= were run all the way up to the max size (3162),
-but =TRE.match= only went up to 20, and =PCRE.match= only went up to
+but =PCRE.match= only went up to 20, and =TRE.match= only went up to
 275, because no larger N values are considered after the median time
 for a given N has has exceeded =seconds.limit= which is 0.1
 above. This behavior ensures that total time taken by =atime= will be
