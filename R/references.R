@@ -45,6 +45,9 @@ references_best <- function(L, fun.list=NULL){
   N <- expr.name <- . <- fun.name <- dist <- empirical <- reference <-
     fun.latex <- overall.rank <- each.sign.rank <- NULL
   ## Above for R CMD check.
+  if(!inherits(L,"atime")){
+    stop("L argument to references_best should have class atime")
+  }
   DT <- L[["measurements"]]
   not.found <- L$unit.col.vec[!L$unit.col.vec %in% names(DT)]
   if(length(not.found)){

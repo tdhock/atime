@@ -181,80 +181,19 @@ atime_versions_exprs <- function(pkg.path, expr, sha.vec=NULL, verbose=FALSE, pk
   a.args
 }
 
-atime_pkg <- function(pkg.path=".", tests.dir="inst"){
+atime_pkg <- function(pkg.path=".", tests.dir=NULL){
   ## For an example package see
   ## https://github.com/tdhock/binsegRcpp/blob/another-branch/inst/atime/tests.R
   each.sign.rank <- unit <- . <- N <- expr.name <- reference <- fun.name <- 
     empirical <- q25 <- q75 <- p.str <- p.value <- P.value <- 
       seconds.limit <- time <- log10.seconds <- seconds <- Test <- NULL
   ## above to avoid CRAN check NOTE.
-  pkg.DESC <- file.path(pkg.path, "DESCRIPTION")
-  DESC.mat <- read.dcf(pkg.DESC)
-  Package <- DESC.mat[,"Package"]
-  ap <- utils::available.packages()
-  repo <- git2r::repository(pkg.path)
-  HEAD.commit <- git2r::revparse_single(repo, "HEAD")
-  sha.vec <- c()
-  HEAD.name <- paste0("HEAD=",git2r::repository_head(repo)$name)
-  sha.vec[[HEAD.name]] <- git2r::sha(HEAD.commit)
-  CRAN.name <- paste0("CRAN=",ap[Package,"Version"])
-  if(Package %in% rownames(ap)){
-    sha.vec[[CRAN.name]] <- ""
-  }
-  base.ref <- Sys.getenv("GITHUB_BASE_REF", "master")
-  base.commit <- tryCatch({
-    git2r::revparse_single(repo, base.ref)
-  }, error=function(e){
-    NULL
-  })
-  base.name <- paste0("base=",base.ref)
-  ## TODO take from tests.R file.
-  width.in <- 4
-  height.in <- 8
-  expand.prop <- 0.5
-  if(git2r::is_commit(base.commit)){
-    add_if_new <- function(name, commit.obj){
-      sha <- git2r::sha(commit.obj)
-      if(!sha %in% sha.vec){
-        sha.vec[[name]] <<- sha
-      }
-    }
-    add_if_new(base.name, base.commit)
-    mb.commit <- git2r::merge_base(HEAD.commit, base.commit)
-    add_if_new("merge-base", mb.commit)
-  }
-  tests.R <- file.path(pkg.path, tests.dir, "atime", "tests.R")
-  test.env <- test_file_to_env(tests.R)
-  color.vec <- if(is.character(test.env$version.colors)){
-    test.env$version.colors
-  }else{
-    c(#RColorBrewer::brewer.pal(7, "Dark2")
-      HEAD="#1B9E77",
-      base="#D95F02",
-      "merge-base"="#7570B3",
-      CRAN="#E7298A",
-      Before="#66A61E",
-      Regression="#E6AB02", Slow="#E6AB02",
-      Fixed="#A6761D", Fast="#A6761D"
-    )
-  }
-  abbrev2name <- c(
-    HEAD=HEAD.name,
-    base=base.name,
-    CRAN=CRAN.name)
-  names(color.vec) <- ifelse(
-    names(color.vec) %in% names(abbrev2name),
-    abbrev2name[names(color.vec)],
-    names(color.vec))
   pkg.results <- list()
   blank.dt.list <- list()
   bench.dt.list <- list()
   limit.dt.list <- list()
   compare.dt.list <- list()
   for(test.name in names(test.env$test.list)){
-    pkg.sha.args <- list(pkg.path=pkg.path, sha.vec=sha.vec)
-    user.args <- test.env$test.list[[test.name]]
-    atv.args <- c(pkg.sha.args, user.args)
     atime.list <- do.call(atime_versions, atv.args)
     pkg.results[[test.name]] <- atime.list
     best.list <- atime::references_best(atime.list)
