@@ -209,3 +209,17 @@ one expression (not several), and there is no special setup argument
 like atime (which means that the timing must include data setup code
 which may be irrelevant).
 
+
+|               | Project                  | Github workflow result display | Comparative benchmarking | Performance testing |
+|---------------|--------------------------|---------------------------------|--------------------------|---------------------|
+| bench     | R                        | -                               | yes                      | -                   |
+| microbenchmark | R                    | -                               | yes                      | -                   |
+| system.time | R                      | -                               | yes                      | -                   |
+| rbenchmark  | R                      | -                               | yes                      | -                   |
+| airspeed velocity | Python            | web page                        | -                        | yes                 |
+| conbench   | arrow                   | -                               | -                        | yes                 |
+| touchstone  | R                      | PR comments                     | -                        | yes                 |
+| pytest-benchmark | Python projects with pytest | webpage                        | -                        | yes                 |
+| atime (proposed) | R                 | PR comments                     | yes                      | yes                 |
+
+
