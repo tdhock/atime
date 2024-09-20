@@ -1,0 +1,160 @@
+<!--
+%\VignetteEngine{knitr::knitr}
+%\VignetteIndexEntry{Custom Units}
+-->
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+The goal of this vignette is to explain how to estimate asymptotic
+complexity for custom units (other than the defaults, seconds and
+kilobytes).
+
+## Simple regex example
+
+Let us consider a simple adaptation of the regex example from the
+README.  The code below defines a function which replaces all
+occurrences of the character `a` with some other string `replace`, in
+`subject`.
+
+```{r}
+gsub_replace <- function(replace,subject){
+  string <- gsub("a",replace,subject)
+  data.frame(string, nchar=nchar(string))
+}
+gsub_replace("-","foobar")
+gsub_replace("--","foobar")
+```
+
+The output above shows that we can replace the `a` in `foobar` with
+either one or two dashes, and the output is a data frame with one row
+and two columns, including the numeric `nchar` column which we may
+want to visualize as a function of `N`. To do that in the code below,
+we use that function inside a call to `atime` with `result=TRUE`
+(required in order to save the resulting 1 row data frames).
+
+```{r}
+atime.gsub.list <- atime::atime(
+  setup={
+    subject <- paste(rep("a", N), collapse="")
+    pattern <- paste(rep(c("a?", "a"), each=N), collapse="")
+  },
+  constant.replacement=gsub_replace("constant size replacement",subject),
+  linear.replacement=gsub_replace(subject,subject),
+  result=TRUE)
+plot(atime.gsub.list)
+```
+
+The output above shows that atime computes and plots nchar, in
+addition to the usual kilobytes and seconds. In this case, it is
+useful to see the different asymptotic slopes of linear and constant
+replacement, for both `nchar` and `seconds`. To estimate their
+asymptotic complexity classes, we use the code below,
+
+```{r}
+ref.gsub.list <- atime::references_best(atime.gsub.list)
+plot(ref.gsub.list)
+```
+
+The plot above clearly shows the linear complexity of constant
+replacement, and the quadratic complexity of linear replacement.
+
+## Dynamic programming algorithms for change-point detection
+
+The time complexity of the Dynamic Programming algorithm implemented
+in the PeakSegDisk package depends on the number of intervals
+(candidate changepoints stored), so we may want to look at how the
+number of intervals changes with the data size `N`. Also we must input a
+non-negative penalty parameter, and then the algorithm outputs a
+certain number of segments, again which may be interesting to look at
+as a function of data size `N`. Here we compute the mean number of
+intervals for real Mono27ac data, and synthetic count data which are
+always increasing.
+
+First, in the code below, we define the data sets, as a function of
+data size `N`,
+
+```{r}
+library(data.table)
+data(Mono27ac, package="PeakSegDisk", envir=environment())
+setup <- quote({
+  data.list <- list(real=Mono27ac$coverage[1:N])
+  data.list$synthetic <- data.table(data.list$real)[, count := 1:.N]
+})
+```
+
+Next, we define a list of expressions to run for each data size:
+
+```{r}
+penalty <- 1e6
+(expr.list <- c(
+  if(requireNamespace("PeakSegDisk"))atime::atime_grid(
+    list(Data=c("real","synthetic")),
+    FPOP={
+      fit <- PeakSegDisk::PeakSegFPOP_df(data.list[[Data]], penalty)
+      fit$loss[, .(intervals=mean.intervals, segments)]
+    }),
+  atime::atime_grid(mean={
+    mean(data.list$real$count)
+    data.frame(intervals=NA, segments=1)
+  })
+))
+```
+
+The output above shows the expressions which will be run for each data
+size. Note that each expression returns a data frame with one row and
+two numeric columns, `intervals` and `segments`, which will be
+used as additional units in asymptotic complexity analysis.
+
+Next, we use `substitute` to use the `setup` we defined above as
+an argument to `atime`, along with the other required arguments:
+
+```{r}
+(atime.DP.lang <- substitute(atime::atime(
+  N=as.integer(10^seq(1, 3, by=0.5)),
+  setup=SETUP,
+  expr.list=expr.list,
+  seconds.limit=Inf,
+  result=TRUE),
+  list(SETUP=setup)))
+```
+
+Next we run the timings:
+
+```{r}
+atime.DP.list <- eval(atime.DP.lang)
+plot(atime.DP.list)
+```
+
+The plot above shows the timings in both kinds of data (real and
+synthetic). Clearly the algorithm has much fewer intervals, in real
+data than in synthetic increasing data. The code below computes and
+plots the best asymptotic references:
+
+```{r}
+ref.DP.list <- atime::references_best(atime.DP.list)
+plot(ref.DP.list)
+```
+
+The plot above
+shows one panel/facet from top to bottom, for each unit. It is clear
+that there is a substantial difference in the number of intervals
+stored by the algorithm, between real and synthetic increasing
+data. From the plot above, it should be clear that 
+
+* the number of intervals grows slowly (log) for real data, and much
+  faster (linear) for synthetic increasing data,
+* the memory usage (kilobytes) is grows slowly (log or constant), 
+* the computation time grows slowly for real data (expected
+  log-linear), and much faster for synthetic increasing data (expected quadratic).
+
+Exercise for the reader: to see the expected asymptotic time
+complexity in the last plot, re-do the previous analyses, increasing
+the penalty as well as the max data size N. (which were kept small in
+the code above in order to reduce computation time on CRAN)
+
+

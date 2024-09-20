@@ -1,0 +1,142 @@
+<!--
+%\VignetteEngine{knitr::knitr}
+%\VignetteIndexEntry{Custom References}
+-->
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+The goal of this vignette is to show how to use custom asymptotic
+references. As an example, we explore the differences in asymptotic
+time complexity between different implementations of binary
+segmentation.
+
+## Asymptotic time/memory measurement of different R expressions
+
+The code below uses the following arguments:
+
+* `N` is a numeric vector of data sizes,
+* `setup` is an R expression to create the data,
+* the other arguments have names to identify them in the results, and
+  values which are R expressions to time,
+
+```{r}
+library(data.table)
+seg.result <- atime::atime(
+  N=2^seq(2, 20),
+  setup={
+    max.segs <- as.integer(N/2)
+    max.changes <- max.segs-1L
+    set.seed(1)
+    data.vec <- 1:N
+  },
+  "changepoint\n::cpt.mean"={
+    cpt.fit <- changepoint::cpt.mean(data.vec, method="BinSeg", Q=max.changes)
+    sort(c(N,cpt.fit@cpts.full[max.changes,]))
+  },
+  "binsegRcpp\nmultiset"={
+    binseg.fit <- binsegRcpp::binseg(
+      "mean_norm", data.vec, max.segs, container.str="multiset")
+    sort(binseg.fit$splits$end)
+  },
+  "fpop::\nmultiBinSeg"={
+    mbs.fit <- fpop::multiBinSeg(data.vec, max.changes)
+    sort(c(mbs.fit$t.est, N))
+  },
+  "wbs::sbs"={
+    wbs.fit <- wbs::sbs(data.vec)
+    split.dt <- data.table(wbs.fit$res)[order(-min.th, scale)]
+    sort(split.dt[, c(N, cpt)][1:max.segs])
+  },
+  "binsegRcpp\nlist"={
+    binseg.fit <- binsegRcpp::binseg(
+      "mean_norm", data.vec, max.segs, container.str="list")
+    sort(binseg.fit$splits$end)
+  })
+plot(seg.result)
+```
+
+The plot method creates a log-log plot of median time and memory vs
+data size, for each of the specified R expressions. 
+The plot above shows some speed differences between binary
+segmentation algorithms, but they could be even easier to see for
+larger data sizes (exercise for the reader: try modifying the `N` and
+`seconds.limit` arguments). You can also see that memory usage is much
+larger for changepoint than for the other packages.
+
+You can use
+`references_best` to get a tall/long data table that can be plotted to
+show both empirical time and memory complexity:
+
+```{r}
+seg.best <- atime::references_best(seg.result)
+plot(seg.best)
+```
+
+The figure above shows asymptotic references which are best fit for
+each expression. We do the best fit by adjusting each reference to the
+largest N, and then ranking each reference by distance to the
+measurement of the second to largest N. For each panel/facet (method and unit), what appears to be the best fit asymptotic complexity? Which methods use quadratic time and/or memory?
+
+## predict method
+
+The predict method estimates the data size `N` which each method can handle for a given unit value. The default is to estimate `N` for a time limit of 0.01 seconds, as shown in the plot below:
+
+```{r}
+(seg.pred <- predict(seg.best))
+plot(seg.pred)
+```
+
+## Custom asymptotic references
+
+If you have one or more expected time complexity classes that you want
+to compare with your empirical measurements, you can use the
+`fun.list` argument. Note that each function in that list should take
+as input the data size `N` and output log base 10 of the reference
+function, as below:
+
+```{r}
+my.refs <- list(# names should be LaTeX math mode expressions.
+  "N"=function(N)log10(N),
+  "N \\log N"=function(N)log10(N) + log10(log(N)),
+  "N^2"=function(N)2*log10(N),
+  "N^3"=function(N)3*log10(N))
+my.best <- atime::references_best(seg.result, fun.list=my.refs)
+dcast(my.best$references, expr.name + fun.name ~ unit, length)
+```
+
+The table above shows the counts of rows in the references table, which can be used to draw asymptotic reference curves, for each `expr.name`, `fun.name`, and unit (kilobytes and seconds). 
+To the best fit among these references, we use the code below:
+
+```{r}
+plot(my.best)
+```
+
+The default plot above shows only the closest references which are above and below the empirical/black measurements. To plot different references and measurements, you can specify the `plot.references` and `measurements` elements. For example, in the code below, we subset the data so that only the seconds unit is shown (not kilobytes), and only three expected references are shown (log-linear, quadratic, cubic):
+
+
+```{r}
+some.best <- my.best
+some.best$plot.references <- my.best$ref[unit=="seconds" & fun.name %in% c("N log N","N^2","N^3")]
+some.best$measurements <- my.best$meas[unit=="seconds"]
+plot(some.best)
+```
+
+From the plot above, you should be able to see the asymptotic time
+complexity class of each algorithm. 
+
+* the fastest packages are log-linear (fpop, wbs, binsegRcpp), 
+* that the binsegRcpp implementation that uses the list container is
+  much slower (quadratic).
+* the changepoint package uses a super-quadratic algorithm (actually
+  cubic, which you could see if you increase N even larger).
+
+## Exercises for the reader
+
+* increase `seconds.limit` to see the differences more clearly.
+* compute and plot asymptotic references for memory instead of time
+  (including expected memory complexity, linear).

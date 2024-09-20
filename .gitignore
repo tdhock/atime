@@ -1,2 +1,7 @@
+compare-data.table-tidyverse-patched.Rmd
+vignettes/*.RDS
+*.html
 .Rhistory
 *~
+/doc/
+/Meta/

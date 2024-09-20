@@ -12,27 +12,44 @@ verbose=FALSE,
 pkg.edit.fun=pkg.edit.default, ...)}
 \arguments{
   \item{pkg.path}{Path to git repo containing R package.}
-  \item{expr}{code with package double-colon prefix, for example
-    Package::fun(argA, argB) which will be
-    evaluated for each different package version.}
-  \item{sha.vec}{named character vector / list of SHA commit IDs.}
+  \item{expr}{
+    code with package double-colon prefix, for example
+    \code{PKG::fun(argA, argB)}, where PKG is the name of the
+    package specified by \code{pkg.path}. This code will be
+    evaluated for each different package version, by replacing
+    \code{PKG:} by \code{PKG.SHA:}.
+    To run different versions of implicitly-called functions
+    like \code{DT[i,j]}, you need
+    to call them explicitly, as in 
+    \code{data.table:::`[.data.table`(DT,i,j)}.
+  }
+  \item{sha.vec}{named character vector / list of versions.}
   \item{verbose}{logical, print messages after every data size?}
   \item{pkg.edit.fun}{function called to edit package before
-    installation, should typically replace instances of PKG with
-    PKG.SHA, default works with Rcpp packages.}
-  \item{\dots}{named SHA/commit IDs to time. Values passed as branch
-    arg to \code{git2r::checkout}, names used to identify/interpret
-    this version
-    of the code in the output.}
+    installation, should typically replace instances of \code{PKG} with
+    \code{PKG.SHA}, default works with Rcpp packages, but does not work
+    with all packages. For an example of a custom package editing
+    function, see the atime vignette about data.table.}
+  \item{\dots}{named versions.}
 }
-\details{First each version is checked out and
-  installed (to whatever R library is first on \code{.libPaths()}),
-  using the package name Package.SHA. Then an expression is created for
-  each version, by replacing the PKG name in colon-prefix with PKG.SHA, 
+\details{
+  For convenience, versions can
+  be specified either as code (\dots), data (\code{sha.vec}), or both.
+  Each version should be either \code{""} (to install most recent
+  version from CRAN) or a SHA1 hash, which is passed as branch
+  arg to \code{git2r::checkout}; version names used to identify/interpret
+  the output/plots.
+  Each version is installed as a separate package
+  (to whatever R library is first on \code{.libPaths()}),
+  using the package name \code{PKG.SHA}.
+}
+\value{
+  A list of expressions, one for
+  each version, created by replacing \code{PKG:}
+  in \code{expr} with \code{PKG.SHA:}, 
   \code{atime(name1=Package.SHA1::fun(argA, argB),
-    name2=Package.SHA2::fun(argA,argB))}. For convenience, versions can
-  be specified either as code (\dots) or data (\code{sha.vec}).}
-\value{list of expressions.}
+    name2=Package.SHA2::fun(argA,argB))}.
+}
 
 \author{Toby Dylan Hocking}
 
@@ -60,8 +77,7 @@ if(FALSE){
       changepoint=changepoint::cpt.mean(
         data.vec, penalty="Manual", pen.value=0, method="BinSeg",
         Q=max.segs-1))
-    refs.best <- atime::references_best(atime.list)
-    plot(refs.best)
+    plot(atime.list)
   }
 
   atime::atime_versions_remove("binsegRcpp")

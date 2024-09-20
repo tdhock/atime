@@ -1,0 +1,61 @@
+<!--
+%\VignetteEngine{knitr::knitr}
+%\VignetteIndexEntry{Continuous integration testing}
+-->
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+In this vignette, we show how to use atime for continuous integration
+testing. We begin by cloning a github repository of an R package which
+already has atime CI code.
+
+```{r}
+tdir <- tempfile()
+dir.create(tdir)
+git2r::clone("https://github.com/tdhock/binsegRcpp", tdir)
+repo <- git2r::repository(tdir)
+git2r::checkout(repo, branch="another-branch")
+```
+
+The code below is the atime test suite of the binsegRcpp package:
+
+```{r}
+inst.atime <- file.path(tdir, "inst", "atime")
+test.lines <- readLines(file.path(inst.atime, "tests.R"))
+cat(test.lines, sep="\n")
+```
+
+We can run the atime CI code in that package via:
+
+```{r}
+options(repos="http://cloud.r-project.org")
+result.list <- atime::atime_pkg(tdir)
+tests.png <- file.path(inst.atime, "tests_all_facet.png")
+knitr::include_graphics(tests.png)
+```
+
+The figure above shows four columns of panels from left to right, one
+for each test defined in the binsegRcpp package. The column panels are
+sorted so that the first one on the left is the most likely to have a
+speed regression. In detail they are sorted by `P.value` of difference
+between HEAD and min time at the largest `N` which was tested in all
+versions. The differences can be interpreted as follows:
+
+* For `DIST=poisson` there is no difference in computational
+  requirements between the three versions (neither time nor memory).
+* For `DIST=l1` there is a constant time slowdown in HEAD, which you
+  can see because there is some difference for small `N`, but not much
+  for larger `N` (timings about the same). In other words, the
+  slowdown happens outside of a for loop over `N`.
+* For `DIST=meanvar_norm` there is a constant *factor* slowdown, which
+  you can see as a small difference for small `N`, and a constant
+  amount of separation on the log-log plot for large `N` (slopes about
+  the same).
+* For `binseg_normal` the HEAD code has larger computational
+  requirements, for both time and memory, as can be seen by the larger
+  slope (difference grows with `N`).

@@ -11,8 +11,6 @@ knitr::opts_chunk$set(
 )
 ```
 
-# Comparing asymptotic timings of git versions
-
 In this vignette we explain how to use functions which compute
 asymptotic timings of different git versions of a package (useful for
 determining when a difference in performance started to happen).
@@ -82,7 +80,7 @@ Note that in your code you don't have to create a helper function like
 vignette code, in order to run the different versions of the code
 using `callr::r`, in a separate R process. This allows us to avoid
 CRAN warnings about unexpected files found in the package check
-directory, by safely delete/remove the installed packages, after
+directory, by safely deleting/removing the installed packages, after
 having run the example code. For a more typical usage see
 `example(atime_versions, package="atime")`.
 
@@ -106,45 +104,7 @@ usage (`kilobytes`) for every version (`expr.name`) and data size
 obtained via the code below:
 
 ```{r}
-best.ver.list <- atime::references_best(atime.ver.list)
-names(best.ver.list$measurements)
-best.ver.list$measurements[, .(N, expr.name, unit, empirical)]
-```
-
-The data table above is a tall/long version of the same data, which
-can be plotted using the code below:
-
-```{r}
-if(require(ggplot2)){
-  hline.df <- with(atime.ver.list, data.frame(seconds.limit, unit="seconds"))
-  gg <- ggplot()+
-    theme_bw()+
-    facet_grid(unit ~ ., scales="free")+
-    geom_hline(aes(
-      yintercept=seconds.limit),
-      color="grey",
-      data=hline.df)+
-    geom_line(aes(
-      N, empirical, color=expr.name),
-      data=best.ver.list$meas)+
-    geom_ribbon(aes(
-      N, ymin=min, ymax=max, fill=expr.name),
-      data=best.ver.list$meas[unit=="seconds"],
-      alpha=0.5)+
-    scale_x_log10()+
-    scale_y_log10("median line, min/max band")
-  if(require(directlabels)){
-    gg+
-      directlabels::geom_dl(aes(
-        N, empirical, color=expr.name, label=expr.name),
-        method="right.polygons",
-        data=best.ver.list$meas)+
-      theme(legend.position="none")+
-      coord_cartesian(xlim=c(1,2e7))
-  }else{
-    gg
-  }
-}
+plot(atime.ver.list)
 ```
 
 ## Advanced usage, `atime_versions_exprs` with `atime`

@@ -1,3 +1,94 @@
+Changes in version 2024.8.11
+
+- atime_test_list evaluates any arguments that are copied to each test, except setup and expr.
+
+Changes in version 2024.8.8
+
+- plot.references_best now only adds geom_hline if there is at least one row with unit=="seconds" in measurements or plot.references.
+
+Changes in version 2024.8.7
+
+- list returned by references_best contains new element "plot.references" which was previously computed in plot method, and now can be changed by user, to customize the references shown by plot method.
+
+Changes in version 2024.7.12
+
+- atime_versions has default_N(), same as atime.
+
+Changes in version 2024.5.17
+
+- atime_versions_exprs better error message, one instance of pkg:: (two colons instead of one), thanks @MichaelChirico for the suggestion.
+
+Changes in version 2024.4.23
+
+- Fix test-CRAN.R: kilobytes is not available on some systems.
+- added atime_test and atime_test_list for convenience in test definitions.
+- atime_versions_exprs now errors if expr has no Package: in code.
+
+Changes in version 2024.4.17
+
+- New, simpler method for defining additional units to analyze (other than kilobytes and seconds): if result is data frame with 1 row, numeric columns are used as additional units. Arguments unit.col.vec and more.units have been removed from references_best.
+- atime_pkg version names HEAD/base/CRAN defined in R color names are now translated to their expanded names on the plot (CRAN=1.15.0 etc), and default colors were added for Slow and Fast.
+
+Changes in version 2024.4.12
+
+- atime_pkg gains tests.dir arg, thanks @MichaelChirico for the suggestion.
+- atime no longer keeps memory column (sometimes too large) from bench::mark.
+
+Changes in version 2024.3.5
+
+- if(requireNamespace("nc")) in tests, thanks CRAN.
+
+Changes in version 2024.2.13
+
+- atime_grid gains new argument symbol.params, and more informative error messages.
+
+Changes in version 2024.1.31
+
+- modify predict tests to use length.num instead of kilobytes (fails on CRAN).
+- improved error message for predict when unit value is out of range of data.
+
+Changes in version 2024.1.24
+
+- improved documentation for atime_versions and atime_versions_exprs.
+- results argument of atime_versions renamed to result, for consistency with atime.
+
+Changes in version 2023.12.4
+
+- improved documentation for atime_pkg, which clarifies that SHA versions and pkg.edit.fun may be specified in test.list elements.
+
+Changes in version 2023.11.11
+
+- new function get_sha_vec, which is called in atime_versions_exprs, to check for correctly specified versions (new helpful errors when versions are not specified correctly)
+- atime_versions_install now uses R CMD INSTALL instead of install.packages, so we can stop with an error if there was some problem with installation.
+
+Changes in version 2023.10.9
+
+- default and errors for N in atime.
+- warning if only one N evaluated in atime.
+- error if no SHA specified in atime_versions.
+- regex vignette/test uses re2 if present.
+
+Changes in version 2023.4.27
+
+- predict.references_best(kilobytes=1000) etc.
+
+Changes in version 2023.3.31
+
+- delete test which failed on CRAN.
+
+Changes in version 2023.3.30
+
+- atime_grid(list(VAR="one value")) no longer errors.
+
+Changes in version 2023.1.24
+
+- new function atime_pkg with vignette ci.Rmd.
+
+Changes in version 2022.12.14
+
+- new function atime_grid.
+- atime argument results changed to result to be consistent with result column of output.
+
 Changes in version 2022.9.16
 
 - if(FALSE) in atime_versions*.Rd examples, for CRAN.

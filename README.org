@@ -1,75 +1,199 @@
 atime: Asymptotic Timing
 
-| [[file:tests/testthat][tests]]    | [[https://github.com/tdhock/atime/actions][https://github.com/tdhock/atime/workflows/R-CMD-check/badge.svg]]  |
-| [[https://github.com/jimhester/covr][coverage]] | [[https://app.codecov.io/gh/tdhock/atime?branch=master][https://codecov.io/gh/tdhock/atime/branch/master/graph/badge.svg]] |
+- compare time/memory/other quantities of different R codes that depend on N: =atime()=
+- estimate the asymptotic complexity (big-O notation) of any R code that depends on some data size N: =references_best()=
+- compare time/memory of different git versions of R package code: =atime_versions()=
+- continuous performance testing of R packages: =atime_pkg()=
+
+| [[file:tests/testthat][tests]]    | [[https://github.com/tdhock/atime/actions][https://github.com/tdhock/atime/workflows/R-CMD-check/badge.svg]] |
+| [[https://github.com/jimhester/covr][coverage]] | [[https://app.codecov.io/gh/tdhock/atime?branch=main][https://codecov.io/gh/tdhock/atime/branch/main/graph/badge.svg]]  |
 
 ** Installation
 
 #+BEGIN_SRC R
+  ## Install last released version from CRAN:
+  install.packages("atime")
+
+  ## Install latest version from GitHub:
   if(!require("remotes"))install.packages("remotes")
   remotes::install_github("tdhock/atime")
 #+END_SRC
 
 ** Usage
 
-The main function is =atime= for which you should specify at least
-these named arguments:
+The main function is =atime= for which you can specify these
+arguments:
 - =N= is numeric vector of data sizes to vary.
 - =setup= is an expression to evaluate for every data size, before
   timings.
+- =times= is the number of times each expression is timed (so we can
+  take the median and ignore outliers).
+- =seconds.limit= is the max number of seconds. If an expression takes
+  more time, then it will not be timed for larger N values.
 - there should also be at least one other named argument (an
   expression to time for every size N, name is the label which will
-  appear on plots). Below there are two such arguments, named TRE and
-  PCRE:
+  appear on plots). 
 
 #+BEGIN_SRC R
-  (atime.list <- atime::atime(
-    N=1:30,
-    setup={
+  ## When studying asymptotic complexity, always provide sizes on a log
+  ## scale (10^sequence) as below:
+  (subject.size.vec <- unique(as.integer(10^seq(0,3.5,l=100))))
+  ## Compute asymptotic time and memory measurement:
+  atime.list <- atime::atime(
+    N=subject.size.vec,#vector of sizes.
+    setup={#Run for each size, before timings:
       subject <- paste(rep("a", N), collapse="")
       pattern <- paste(rep(c("a?", "a"), each=N), collapse="")
     },
-    TRE=regexpr(pattern, subject, perl=FALSE),
-    PCRE=regexpr(pattern, subject, perl=TRUE)
-    ))
+    times=10,#number of timings to compute for each expression.
+    seconds.limit=0.1,#max seconds per expression.
+    ## Different expressions which will be evaluated for each size N:
+    PCRE.match=regexpr(pattern, subject, perl=TRUE),
+    TRE.match=regexpr(pattern, subject, perl=FALSE),
+    constant.replacement=gsub("a","constant size replacement",subject),
+    linear.replacement=gsub("a",subject,subject))
+  atime.list
+  plot(atime.list)
+  ## Compute and plot asymptotic reference lines:
+  (best.list <- atime::references_best(atime.list))
+  plot(best.list)
+  ## Compute and plot data size N for given time/memory.
+  pred.list <- predict(best.list, seconds=1e-2, kilobytes=10)
+  plot(pred.list)
 #+END_SRC
 
-On my machine I got the following result:
+*** Time/memory comparison overview
 
-#+begin_src
-47 timings for PCRE(N=1 to 17), TRE(N=1 to 30)
+On my machine I got the following results:
+
+#+begin_src R
+> (subject.size.vec <- unique(as.integer(10^seq(0,3.5,l=100))))
+ [1]    1    2    3    4    5    6    7    8    9   10   11   12   13   14   15
+[16]   17   18   20   22   23   25   28   30   33   35   38   42   45   49   53
+[31]   58   63   68   74   81   87   95  103  112  121  132  143  155  168  183
+[46]  198  215  233  253  275  298  323  351  380  413  448  486  527  572  620
+[61]  673  730  792  859  932 1011 1097 1190 1291 1401 1519 1648 1788 1940 2104
+[76] 2283 2477 2687 2915 3162
 #+end_src
 
-The result above states the min and max N values that were run for
-each of the named expressions to time. In this case TRE was run all
-the way up to the max size specified in the N argument, but PCRE only
-went up to 17, because the default is to stop when the median time has
-exceeded 0.01 seconds (you can specify the =seconds.limit= argument to
-modify this behavior). To visualize the results you can do:
+The vector above is the sequence of sizes N, used with each
+expression, to measure time and memory. When studying asymptotic
+complexity, always provide sizes on a log scale as above.
+
+#+begin_src R
+> atime.list
+atime list with 228 measurements for
+PCRE.match(N=1 to 20)
+TRE.match(N=1 to 275)
+constant.replacement(N=1 to 3162)
+linear.replacement(N=1 to 3162)
+#+end_src
+
+The output above shows the min and max N values that were run for each
+of the expressions. In this case =constant.replacement= and
+=linear.replacement= were run all the way up to the max size (3162),
+but =PCRE.match= only went up to 20, and =TRE.match= only went up to
+275, because no larger N values are considered after the median time
+for a given N has has exceeded =seconds.limit= which is 0.1
+above. This behavior ensures that total time taken by =atime= will be
+about seconds.limit * times * number of expressions (times is the
+number of times each expression is evaluated at each data size). The
+output of the plot method for this =atime= result list is shown below,
+
+#+begin_src R
+> plot(atime.list)
+#+end_src
+
+[[file:README-figure-compare.png]]
+
+The plot above facilitates comparing the time and memory of the
+different expressions, and makes it easy to see the ranking of
+different algorithms, but it does not show the asymptotic complexity
+class.
+
+*** Asymptotic complexity class estimation
+
+To estimate the asymptotic complexity class, use the code
+below:
+
+#+begin_src R
+> (best.list <- atime::references_best(atime.list))
+references_best list with 456 measurements, best fit complexity:
+constant.replacement (N kilobytes, N seconds)
+linear.replacement (N^2 kilobytes, N^2 seconds)
+PCRE.match (2^N seconds)
+TRE.match (N^3 seconds)
+#+end_src
+
+The output above shows the best fit asymptotic time complexity for
+each expression. To visualize the results you can do:
 
 #+BEGIN_SRC R
-plot(atime.list)
+plot(best.list)
 #+END_SRC
 
 [[file:README-figure.png]]
 
-This plot should allow you to see the asymptotic time complexity of
-your R code. Typically on the left you can see timings for small N,
-where overhead dominates the timings, and the curve is more or less
-constant (as is clear in the blue PCRE curve). Typically on the right
-you can see a linear trend on the log-log plot (if your algorithm is
-polynomial in N), and the slope indicates the asymptotic time
-complexity class (larger slope for more complex algorithm in N). If
-you do not see an interpretable result with clear linear trends on the
-right of the log-log plot, you should try to increase =seconds.limit=
-and the max value in =N= so that you start to see linear trends and
-are able to compare the slopes of the lines. Note that in this example
-PCRE is exponential time so it does not show a linear trend on the
-right of the log-log plot (but in practice you should rarely encounter
-exponential time algorithms). Actually PCRE has a fail-safe: if it
-performs too many iterations it will just give up -- you should see a
-[[https://github.com/tdhock/namedCapture-article/blob/master/figure-timings-pathological-linetype.png][constant trend for PCRE]] if you increase N large enough (exercise for
-the reader).
+The plot above shows the timings of each expression as a function of
+data size N (black), as well as the two closest asymptotic reference
+lines (violet, one smaller, one larger). If you have chosen N and
+seconds.limit appropriately for your problem (as we have in this case)
+then you should be able to observe the following:
+- on the left you can see timings for small N, where overhead
+  dominates the timings, and the curve is approximately constant.
+- on the right you can see the asymptotic trend.
+  - Polynomial complexity algorithms show up as linear trends, and the slope
+    indicates the asymptotic complexity class (larger slope for
+    more complex algorithm in N).
+  - Exponential complexity algorithms show up as super-linear curves
+    (such as PCRE.match in this case, but in practice you should
+    rarely encounter exponential time algorithms).
+- If you do not see an interpretable result with clear linear trends
+  on the right of the log-log plot, you should try to increase
+  =seconds.limit= and the max value in =N= until you start to see
+  linear trends, and clearly overlapping reference lines (as is the
+  case here).
+
+*** Highlight N for given time/memory
+
+When comparing algorithms in terms of computational resources, we can
+either
+- show the time/memory required for a given data size N, or
+- show the data size N possible for a given time/memory budget.
+
+We can do both using the code below,
+
+#+begin_src R
+> atime.list[["measurements"]][N==323, .(expr.name, seconds=median, kilobytes)]
+              expr.name   seconds kilobytes
+                 <char>     <num>     <num>
+1:            TRE.match 0.0678032    0.0000
+2: constant.replacement 0.0000667    7.9375
+3:   linear.replacement 0.0002435  101.9375
+> pred.list <- predict(best.list, seconds=1e-2, kilobytes=10)
+> pred.list[["prediction"]]
+        unit            expr.name unit.value          N
+      <char>               <char>      <num>      <num>
+1:   seconds           PCRE.match       0.01   17.82348
+2:   seconds            TRE.match       0.01  168.46338
+3:   seconds   linear.replacement       0.01 2069.38604
+4: kilobytes constant.replacement      10.00  407.55220
+5: kilobytes   linear.replacement      10.00  100.92007
+> plot(pred.list)
+#+end_src
+
+[[file:README-predict.png]]
+
+** GitHub action for continuous performance testing
+
+[[https://github.com/marketplace/actions/autocomment-atime-results][autocomment-atime-results]] is a GitHub action which will run atime for
+every pull request, and plot results in a PR comment, so you can see
+if the PR affects performance (examples: [[https://github.com/Anirban166/binsegRcpp/pull/2#issuecomment-1986146565][binsegRcpp]], [[https://github.com/Rdatatable/data.table/pull/5427#issuecomment-2075471806][data.table]]).
+First, you should define a =.ci/atime/tests.R= code file that creates an
+R object called =test.list= which should be a list of performance
+tests, each one is a list of arguments that will be passed to
+=atime_versions=, see [[https://github.com/tdhock/binsegRcpp/blob/atime-test-funs/.ci/atime/tests.R][atime-test-funs branch of binsegRcpp repo]] for an
+example, and see [[https://github.com/tdhock/atime/blob/main/man/atime_pkg.Rd][?atime_pkg]] for documentation.
 
 ** Related work
 
