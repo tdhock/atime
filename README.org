@@ -219,7 +219,7 @@ which may be irrelevant).
 | airspeed velocity | Python            | web page                        | -                        | yes                 |
 | conbench   | arrow                   | -                               | -                        | yes                 |
 | touchstone  | R                      | PR comments                     | -                        | yes                 |
-| pytest-benchmark | Python projects with pytest | webpage                        | -                        | yes                 |
+| pytest-benchmark | Python projects with pytest | web page                        | -                        | yes                 |
 | atime (proposed) | R                 | PR comments                     | yes                      | yes                 |
 
 
