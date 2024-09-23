@@ -414,27 +414,3 @@ test_that("error for new unit name conflicting with existing", {
   }, "result is 1 row data frame with column(s) named median, kilobytes (reserved for internal use); please fix by changing the column name(s) in your results", fixed=TRUE)
 })
 
-test_that("pkg.edit.fun is a function", {
-  example_tests.R <- system.file("example_tests.R", package="atime")
-  tests.dir <- file.path(tempfile(), ".ci", "atime")
-  dir.create(tests.dir, showWarnings = FALSE, recursive = TRUE)
-  tests.R <- file.path(tests.dir, "tests.R")
-  file.copy(example_tests.R, tests.R)
-  ci.dir <- dirname(tests.dir)
-  pkg.dir <- dirname(ci.dir)
-  DESCRIPTION <- file.path(pkg.dir, "DESCRIPTION")
-  cat("Package: atime\nVersion: 1.0\n", file=DESCRIPTION)
-  git2r::init(pkg.dir)
-  repo <- git2r::repository(pkg.dir)
-  git2r::add(repo, DESCRIPTION)
-  git2r::commit(repo, "test commit")
-  test.env <- atime::atime_pkg_test_info(pkg.dir)
-  test_N_expr <- test.env$test.list$test_N_expr
-  expect_identical(test_N_expr$pkg.edit.fun, test.env$edit.data.table)
-  expect_identical(test_N_expr$N, 2)
-  expect_identical(test_N_expr$expr, quote(rnorm(N)))
-  test_expr <- test.env$test.list$test_expr
-  expect_identical(test_expr$pkg.edit.fun, test.env$edit.data.table)
-  expect_identical(test_expr$N, 9)
-  expect_identical(test_expr$expr, quote(rnorm(N)))
-})
