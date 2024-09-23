@@ -1,3 +1,7 @@
+Changes in version 2024.9.23
+
+- atime_pkg_test_info returns un-evaluated calls to atime_versions, to make it easier to run one test at a time.
+
 Changes in version 2024.8.11
 
 - atime_test_list evaluates any arguments that are copied to each test, except setup and expr.
