@@ -112,10 +112,18 @@ atime_pkg <- function(pkg.path=".", tests.dir=NULL){
   blank.dt <- rbindlist(blank.dt.list)[meta.dt, on="test.name"]
   compare.dt <- rbindlist(compare.dt.list)[meta.dt, on="test.name"]
   tests.RData <- sub("R$", "RData", test.info$tests.R)
+  install.seconds <- sapply(pkg.results, "[[", "install.seconds")
+  cat(
+    sum(install.seconds),
+    file=file.path(dirname(tests.RData), "install_seconds.txt"))
   save(
     pkg.results, bench.dt, limit.dt, test.info, blank.dt, 
     file=tests.RData)
+  N.tests <- length(test.info$test.list)
   gg <- ggplot2::ggplot()+
+    ggplot2::ggtitle(paste(
+      N.tests,
+      "test cases, ordered by p-value (T-test, HEAD>min, dots show data tested)"))+
     ggplot2::theme_bw()+
     ggplot2::geom_hline(ggplot2::aes(
       yintercept=seconds.limit),
@@ -148,7 +156,6 @@ atime_pkg <- function(pkg.path=".", tests.dir=NULL){
     ggplot2::theme(legend.position="none")
   out.png <- file.path(
     dirname(test.info$tests.R), "tests_all_facet.png")
-  N.tests <- length(test.info$test.list)
   grDevices::png(
     out.png,
     width=test.info$width.in*N.tests,

@@ -38,6 +38,9 @@ test_that("atime_pkg produces tests_all_facet.png", {
   result.list <- atime::atime_pkg(tdir)
   tests_all_facet.png <- file.path(inst.atime, "tests_all_facet.png")
   expect_true(file.exists(tests_all_facet.png))
+  install_seconds.txt <- file.path(inst.atime, "install_seconds.txt")
+  install.seconds <- scan(install_seconds.txt, n=1, quiet=TRUE)
+  expect_is(install.seconds, "numeric")
 })
 
 test_that("atime_pkg produces RData with expected names", {

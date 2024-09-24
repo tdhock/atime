@@ -1,7 +1,8 @@
 Changes in version 2024.9.23
 
 - atime_pkg_test_info returns un-evaluated calls to atime_versions, to make it easier to run one test at a time.
-- atime_versions result list contains bench.seconds and install.seconds, to compare how much time is spent in each step.
+- atime_versions result list contains bench.seconds and install.seconds, to compare how much time is spent in each step. atime_pkg also writes total install time over all test cases to install_seconds.txt.
+- atime_pkg tests_all_facet.png now has ggtitle with number of plots and p-value interpretation.
 
 Changes in version 2024.8.11
 
