@@ -57,6 +57,12 @@ test_that("atime_pkg produces RData with expected names", {
   )
   expect_identical(names(pkg.results), expected.names)
   expect_is(bench.dt[["Test"]], "character")
+  install.seconds <- sapply(result.list, "[[", "install.seconds")
+  expect_is(install.seconds, "numeric")
+  expect_identical(names(install.seconds), expected.names)
+  bench.seconds <- sapply(result.list, "[[", "bench.seconds")
+  expect_is(bench.seconds, "numeric")
+  expect_identical(names(bench.seconds), expected.names)
 })
 
 test_that("pkg.edit.fun is a function", {
@@ -67,13 +73,13 @@ test_that("pkg.edit.fun is a function", {
   file.copy(example_tests.R, tests.R)
   ci.dir <- dirname(tests.dir)
   pkg.dir <- dirname(ci.dir)
-  options(repos=c(CRAN="http://cloud.r-project.org"))
   DESCRIPTION <- file.path(pkg.dir, "DESCRIPTION")
   cat("Package: atime\nVersion: 1.0\n", file=DESCRIPTION)
   git2r::init(pkg.dir)
   repo <- git2r::repository(pkg.dir)
   git2r::add(repo, DESCRIPTION)
   git2r::commit(repo, "test commit")
+  options(repos="http://cloud.r-project.org")#required to check CRAN version.
   test.env <- atime::atime_pkg_test_info(pkg.dir)
   test_N_expr <- test.env$test.list$test_N_expr
   expect_identical(test_N_expr$pkg.edit.fun, test.env$edit.data.table)
