@@ -1,6 +1,7 @@
 Changes in version 2024.9.23
 
 - atime_pkg_test_info returns un-evaluated calls to atime_versions, to make it easier to run one test at a time.
+- atime_versions result list contains bench.seconds and install.seconds, to compare how much time is spent in each step.
 
 Changes in version 2024.8.11
 
