@@ -36,36 +36,40 @@ result=FALSE, ...)}
 \examples{
 
 ## Example 1: polynomial and exponential time string functions.
-string.result <- atime::atime(
+atime_result_string <- atime::atime(
+  seconds.limit=0.001,
   N=unique(as.integer(10^seq(0,3.5,l=100))),
   setup={
     subject <- paste(rep("a", N), collapse="")
     pattern <- paste(rep(c("a?", "a"), each=N), collapse="")
+    linear_size_replacement <- paste(rep("REPLACEMENT", N), collapse="")
   },
-  seconds.limit=0.001,
   PCRE.match=regexpr(pattern, subject, perl=TRUE),
   TRE.match=regexpr(pattern, subject, perl=FALSE),
   constant.replacement=gsub("a","constant size replacement",subject),
-  linear.replacement=gsub("a",subject,subject))
-plot(string.result)
+  linear.replacement=gsub("a",linear_size_replacement,subject))
+plot(atime_result_string)
 
-## Example 2: split data table vs frame, constant factor difference.
-library(data.table)
-split.result <- atime::atime(
-  setup={
-    set.seed(1)
-    DT <- data.table(
-      x1 = rep(c("c","d"), l=N),
-      x2 = rep(c("x","y"), l=N),
-      x3 = rep(c("a","b"), l=N),
-      y = rnorm(N)
-    )[sample(.N)]
-    DF <- as.data.frame(DT)
-  },
+## Example 2: combine using rbind inside or outside for loop.
+atime_result_rbind <- atime::atime(
   seconds.limit=0.001,
-  frame=split(DF[names(DF) != "x1"], DF["x1"], drop = TRUE),
-  table=split(DT, by = "x1", keep.by = FALSE, drop = TRUE)
+  setup={
+    DF <- data.frame(i=1:100)
+  },
+  inside={
+    big.frame <- data.frame()
+    for(table.i in 1:N){
+      big.frame <- rbind(big.frame, DF)
+    }
+  },
+  outside={
+    big.frame.list <- list()
+    for(table.i in 1:N){
+      big.frame.list[[table.i]] <- DF
+    }
+    big.frame <- do.call(rbind, big.frame.list)
+  }
 )
-plot(split.result)
+plot(atime_result_rbind)
 
 }

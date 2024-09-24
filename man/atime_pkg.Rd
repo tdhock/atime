@@ -1,14 +1,25 @@
 \name{atime_pkg}
 \alias{atime_pkg}
+\alias{atime_pkg_test_info}
 \title{Asymptotic timing package tests}
-\description{Computation time and memory for several R expressions of
+\description{R package performance testing, by computing time/memory
+  usage of several R expressions of
   several different data sizes, for several package
-  versions (base, HEAD, CRAN, merge-base, others specified by user).}
-\usage{atime_pkg(pkg.path=".", tests.dir="inst")}
+  versions (base, HEAD, CRAN, merge-base, other historical references
+  specified by user).
+  \code{atime_pkg_test_info} returns an environment containing test
+  code/calls (useful for running a single test), whereas
+  \code{atime_pkg} runs all tests and saves results/plots to disk.
+}
+\usage{
+atime_pkg(pkg.path=".", tests.dir=NULL)
+atime_pkg_test_info(pkg.path=".", tests.dir=NULL)
+}
 \arguments{
   \item{pkg.path}{path to git repository containing R package.}
-  \item{tests.dir}{path to directory which contains atime/tests.R,
-    relative to \code{pkg.path} (default \code{"inst"}).}
+  \item{tests.dir}{path to directory which contains \code{atime/tests.R},
+    relative to \code{pkg.path} (default \code{NULL} means first
+    existing directory of \code{"inst"} or \code{".ci"}).}
 }
 \details{
   There should be a \code{tests.R} code file which
@@ -19,17 +30,28 @@
   \code{pkg.edit.fun} and \code{version_name="1234567890abcdef"})
   to be passed as named arguments to \code{atime_versions}, along with
   the following versions which are passed using the \code{sha.vec} argument:
-  base ref comes from GITHUB_BASE_REF environment variable (default master),
-  HEAD ref is the branch that you want to merge into base,
-  CRAN is current published version (sha value \code{""}),
-  merge-base is most recent common ancestor commit between base and
-  HEAD.
-  The \code{tests.R} code file can define \code{version.colors} which should be
-  a character vector (names for versions, values for colors; names/versions are
-  HEAD, base, CRAN, merge-base, and any others you may define such as
-  Before, Regression, Slow, Fixed, Fast).
+  \code{base} ref comes from \code{GITHUB_BASE_REF} environment variable (default \code{master}),
+  \code{HEAD} ref is the branch that you want to merge into base,
+  \code{CRAN} is current published version (sha value \code{""}),
+  \code{merge-base} is most recent common ancestor commit between \code{base} and
+  \code{HEAD}.
+  For visualization, default colors are provided for versions with names:
+  \code{HEAD}, \code{base}, \code{CRAN}, \code{merge-base},
+  \code{Before}, \code{Regression}, \code{Slow}, \code{Fixed},
+  \code{Fast}; other version names will be gray using
+  the default colors.
+  If \code{tests.R} defines a variable named \code{version.colors}, then
+  it should be a character vector of colors to be used instead of the
+  default (names for versions, values for colors). 
 }
-\value{Named list, names come from names of \code{test.list}, and values
+\value{
+  \code{atime_pkg_test_info} returns an environment in which the code of
+  \code{tests.R} was evaluated, including a variable \code{test.call}
+  which is a list of un-evaluated \code{atime_versions} calls,
+  one for each test
+  (use with \code{eval} to run a single test).
+  \code{atime_pkg} returns a named list of test results,
+  names come from names of \code{test.list}, and values
   come from results of \code{atime_versions}. Side effect is that
   data/plot files are saved in \code{atime} directory, including
   tests.RData (test results which can be read into R if you want to make
