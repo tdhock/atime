@@ -124,10 +124,17 @@ atime_versions_install <- function(Package, pkg.path, new.Package.vec, sha.vec, 
 atime_versions <- function(pkg.path, N=default_N(), setup, expr, sha.vec=NULL, times=10, seconds.limit=0.01, verbose=FALSE, pkg.edit.fun=pkg.edit.default, result=FALSE, ...){
   ver.args <- list(
     pkg.path, substitute(expr), sha.vec, verbose, pkg.edit.fun, ...)
-  ver.exprs <- do.call(atime_versions_exprs, ver.args)
+  install.seconds <- system.time({
+    ver.exprs <- do.call(atime_versions_exprs, ver.args)
+  })[["elapsed"]]
   a.args <- list(
     N, substitute(setup), ver.exprs, times, seconds.limit, verbose, result)
-  do.call(atime, a.args)
+  bench.seconds <- system.time({
+    out.list <- do.call(atime, a.args)
+  })[["elapsed"]]
+  out.list$install.seconds <- install.seconds
+  out.list$bench.seconds <- bench.seconds
+  out.list
 }
 
 get_sha_vec <- function(sha.vec, dots.vec){
