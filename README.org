@@ -212,14 +212,14 @@ which may be irrelevant).
 
 |               | Project                  | Github workflow result display | Comparative benchmarking | Performance testing |
 |---------------|--------------------------|---------------------------------|--------------------------|---------------------|
-| bench     | R                        | -                               | yes                      | -                   |
-| microbenchmark | R                    | -                               | yes                      | -                   |
-| system.time | R                      | -                               | yes                      | -                   |
-| rbenchmark  | R                      | -                               | yes                      | -                   |
-| airspeed velocity | Python            | web page                        | -                        | yes                 |
-| conbench   | arrow                   | -                               | -                        | yes                 |
-| touchstone  | R                      | PR comments                     | -                        | yes                 |
-| pytest-benchmark | Python projects with pytest | web page                        | -                        | yes                 |
-| atime (proposed) | R                 | PR comments                     | yes                      | yes                 |
+| [[https://github.com/r-lib/bench][bench]]     | R                        | -                               | yes                      | -                   |
+| [[https://www.rdocumentation.org/packages/microbenchmark/versions/1.5.0/topics/microbenchmark][microbenchmark]] | R                    | -                               | yes                      | -                   |
+| [[https://stat.ethz.ch/R-manual/R-devel/library/base/html/system.time.html][system.time]] | R                      | -                               | yes                      | -                   |
+| [[https://github.com/cran/rbenchmark][rbenchmark]]  | R                      | -                               | yes                      | -                   |
+| [[https://github.com/airspeed-velocity/asv][airspeed velocity]] | Python            | [[https://pv.github.io/numpy-bench/][web page]]                        | -                        | yes                 |
+| [[https://github.com/conbench/conbench][conbench]]  | arrow                   | -                               | -                        | yes                 |
+| [[https://github.com/lorenzwalthert/touchstone][touchstone]]  | R                      | [[man/figures/screenshot-pr-comment.png][PR comments]]                     | -                        | yes                 |
+| [[https://github.com/ionelmc/pytest-benchmark][pytest-benchmark]] | Python projects with pytest | [[https://github.com/ionelmc/pytest-benchmark#screenshots][web page]]                        | -                        | yes                 |
+| [[https://github.com/tdhock/atime][atime (proposed)]] | R                 | [[https://github.com/Rdatatable/data.table/pull/5427#issuecomment-2075471806][PR comments]]                     | yes                      | yes                 |
 
 
