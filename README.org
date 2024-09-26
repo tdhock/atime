@@ -217,7 +217,7 @@ which may be irrelevant).
 | [[https://github.com/cran/rbenchmark][rbenchmark]]        | R                     |       | -                              | yes                      | -                   |
 | [[https://github.com/airspeed-velocity/asv][airspeed velocity]] | Python   | numpy                   | [[https://pv.github.io/numpy-bench/][web page]]                       | -                        | yes                 |
 | [[https://github.com/conbench/conbench][conbench]]          | any | arrow                       | [[https://conbench.ursa.dev/][Arrow Conbench]]                              | -                        | yes                 |
-| [[https://github.com/lorenzwalthert/touchstone][touchstone]]        | R                           | [[https://github.com/lorenzwalthert/touchstone/blob/main/man/figures/screenshot-pr-comment.png][PR comments]]                    | -                        | yes                 |
+| [[https://github.com/lorenzwalthert/touchstone][touchstone]]        | R      |                      | [[https://github.com/lorenzwalthert/touchstone/blob/main/man/figures/screenshot-pr-comment.png][PR comments]]                    | -                        | yes                 |
 | [[https://github.com/ionelmc/pytest-benchmark][pytest-benchmark]]  | Python |  | [[https://github.com/ionelmc/pytest-benchmark#screenshots][web page]]                       | -                        | yes                 |
 | [[https://github.com/tdhock/atime][atime (proposed)]]  | R                    | data.table       | [[https://github.com/Rdatatable/data.table/pull/5427#issuecomment-2075471806][PR comments]]                    | yes                      | yes                 |
 
