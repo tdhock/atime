@@ -209,17 +209,26 @@ one expression (not several), and there is no special setup argument
 like atime (which means that the timing must include data setup code
 which may be irrelevant).
 
+|                   | Project                     | Github workflow result display | Comparative benchmarking | Performance testing |
+|-------------------+-----------------------------+--------------------------------+--------------------------+---------------------|
+| [[https://github.com/r-lib/bench][bench]]             | R                           | -                              | yes                      | -                   |
+| [[https://www.rdocumentation.org/packages/microbenchmark/versions/1.5.0/topics/microbenchmark][microbenchmark]]    | R                           | -                              | yes                      | -                   |
+| [[https://stat.ethz.ch/R-manual/R-devel/library/base/html/system.time.html][system.time]]       | R                           | -                              | yes                      | -                   |
+| [[https://github.com/cran/rbenchmark][rbenchmark]]        | R                           | -                              | yes                      | -                   |
+| [[https://github.com/airspeed-velocity/asv][airspeed velocity]] | Python                      | [[https://pv.github.io/numpy-bench/][web page]]                       | -                        | yes                 |
+| [[https://github.com/conbench/conbench][conbench]]          | arrow                       | -                              | -                        | yes                 |
+| [[https://github.com/lorenzwalthert/touchstone][touchstone]]        | R                           | [[https://github.com/lorenzwalthert/touchstone/blob/main/man/figures/screenshot-pr-comment.png][PR comments]]                    | -                        | yes                 |
+| [[https://github.com/ionelmc/pytest-benchmark][pytest-benchmark]]  | Python projects with pytest | [[https://github.com/ionelmc/pytest-benchmark#screenshots][web page]]                       | -                        | yes                 |
+| [[https://github.com/tdhock/atime][atime (proposed)]]  | R                           | [[https://github.com/Rdatatable/data.table/pull/5427#issuecomment-2075471806][PR comments]]                    | yes                      | yes                 |
 
-|               | Project                  | Github workflow result display | Comparative benchmarking | Performance testing |
-|---------------|--------------------------|---------------------------------|--------------------------|---------------------|
-| [[https://github.com/r-lib/bench][bench]]     | R                        | -                               | yes                      | -                   |
-| [[https://www.rdocumentation.org/packages/microbenchmark/versions/1.5.0/topics/microbenchmark][microbenchmark]] | R                    | -                               | yes                      | -                   |
-| [[https://stat.ethz.ch/R-manual/R-devel/library/base/html/system.time.html][system.time]] | R                      | -                               | yes                      | -                   |
-| [[https://github.com/cran/rbenchmark][rbenchmark]]  | R                      | -                               | yes                      | -                   |
-| [[https://github.com/airspeed-velocity/asv][airspeed velocity]] | Python            | [[https://pv.github.io/numpy-bench/][web page]]                        | -                        | yes                 |
-| [[https://github.com/conbench/conbench][conbench]]  | arrow                   | -                               | -                        | yes                 |
-| [[https://github.com/lorenzwalthert/touchstone][touchstone]]  | R                      | [[https://github.com/lorenzwalthert/touchstone/blob/main/man/figures/screenshot-pr-comment.png][PR comments]]                     | -                        | yes                 |
-| [[https://github.com/ionelmc/pytest-benchmark][pytest-benchmark]] | Python projects with pytest | [[https://github.com/ionelmc/pytest-benchmark#screenshots][web page]]                        | -                        | yes                 |
-| [[https://github.com/tdhock/atime][atime (proposed)]] | R                 | [[https://github.com/Rdatatable/data.table/pull/5427#issuecomment-2075471806][PR comments]]                     | yes                      | yes                 |
-
+See [[https://bencher.dev/docs/reference/prior-art/][Bencher prior art]] for even more related work, and see [[https://bencher.dev/docs/explanation/continuous-benchmarking/][continuous
+benchmarking]] for a plot that shows how false positives can show up if
+yo use a database of historical timings (perhaps run on different
+computers). In contrast, =atime_pkg= uses a database of historical
+commits (known Fast and Slow), and runs them alongside commits which
+are relevant to the current PR (HEAD, merge-base, etc), in the same R
+session, so we can be confident that any differences that we see are
+real. In the Bencher framework, a similar idea is presented in
+[[https://bencher.dev/docs/how-to/track-benchmarks/#relative-continuous-benchmarking][Relative Continuous Benchmarking]], which shows how to compare two
+branches, =feature-branch= and =main=.
 
