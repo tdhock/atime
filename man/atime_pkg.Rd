@@ -55,8 +55,10 @@ atime_pkg_test_info(pkg.path=".", tests.dir=NULL)
   come from results of \code{atime_versions}. Side effect is that
   data/plot files are saved in \code{atime} directory, including
   tests.RData (test results which can be read into R if you want to make
-  your own alternative plots/analyses), and tests_all_facet.png (plot
-  summarizing all test results).
+  your own alternative plots/analyses), tests_all_facet.png (plot
+  summarizing all test results), tests_preview_facet.png (plot
+  summarizing only most significant results), and install_seconds.txt
+  (total number of seconds used to install different package versions).
   }
 
 \author{Toby Dylan Hocking}

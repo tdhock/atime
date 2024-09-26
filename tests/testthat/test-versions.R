@@ -29,21 +29,7 @@ test_that("atime_versions_exprs error when expr does not contain pkg:", {
   }, "expr should contain at least one instance of binsegRcpp:: to replace with binsegRcpp.be2f72e6f5c90622fe72e1c315ca05769a9dc854:", fixed=TRUE)
 })
 
-test_that("atime_pkg produces tests_all_facet.png", {
-  repo <- git2r::repository(tdir)
-  ## https://github.com/tdhock/binsegRcpp/tree/another-branch
-  git2r::checkout(repo, branch="another-branch")
-  inst.atime <- file.path(tdir, "inst", "atime")
-  options(repos="http://cloud.r-project.org")#required to check CRAN version.
-  result.list <- atime::atime_pkg(tdir)
-  tests_all_facet.png <- file.path(inst.atime, "tests_all_facet.png")
-  expect_true(file.exists(tests_all_facet.png))
-  install_seconds.txt <- file.path(inst.atime, "install_seconds.txt")
-  install.seconds <- scan(install_seconds.txt, n=1, quiet=TRUE)
-  expect_is(install.seconds, "numeric")
-})
-
-test_that("atime_pkg produces RData with expected names", {
+test_that("atime_pkg produces tests_all_facet.png not tests_preview_facet.png", {
   repo <- git2r::repository(tdir)
   ## https://github.com/tdhock/binsegRcpp/tree/atime-test-funs
   git2r::checkout(repo, branch="atime-test-funs")
@@ -66,6 +52,29 @@ test_that("atime_pkg produces RData with expected names", {
   bench.seconds <- sapply(result.list, "[[", "bench.seconds")
   expect_is(bench.seconds, "numeric")
   expect_identical(names(bench.seconds), expected.names)
+  ## also test global PNG.
+  tests_all_facet.png <- file.path(atime.dir, "tests_all_facet.png")
+  expect_true(file.exists(tests_all_facet.png))
+  ##N.tests.preview undefined, default 4 == N.tests=4 so should not make PNG.
+  tests_preview_facet.png <- file.path(atime.dir, "tests_preview_facet.png")
+  expect_false(file.exists(tests_preview_facet.png))
+})
+
+test_that("atime_pkg produces tests_all_facet.png and tests_preview_facet.png", {
+  repo <- git2r::repository(tdir)
+  ## https://github.com/tdhock/binsegRcpp/tree/another-branch
+  git2r::checkout(repo, branch="another-branch")
+  inst.atime <- file.path(tdir, "inst", "atime")
+  options(repos="http://cloud.r-project.org")#required to check CRAN version.
+  result.list <- atime::atime_pkg(tdir)
+  tests_all_facet.png <- file.path(inst.atime, "tests_all_facet.png")
+  expect_true(file.exists(tests_all_facet.png))
+  ##N.tests.preview=2 < N.tests=4 so should make one more PNG with those two.
+  tests_preview_facet.png <- file.path(inst.atime, "tests_preview_facet.png")
+  expect_true(file.exists(tests_preview_facet.png))
+  install_seconds.txt <- file.path(inst.atime, "install_seconds.txt")
+  install.seconds <- scan(install_seconds.txt, n=1, quiet=TRUE)
+  expect_is(install.seconds, "numeric")
 })
 
 test_that("pkg.edit.fun is a function", {
