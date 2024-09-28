@@ -167,7 +167,7 @@ atime_pkg <- function(pkg.path=".", tests.dir=NULL){
       sprintf("tests_%s_facet.png", N_name))
     grDevices::png(
       out.png,
-      width=test.info$width.in*N.tests,
+      width=test.info$width.in*N_int,
       height=test.info$height.in,
       units="in",
       res=100)

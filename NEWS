@@ -1,3 +1,7 @@
+Changes in version 2024.9.27
+
+- atime_pkg tests_preview_facet.png width fixed/smaller (was same as width of tests_all_facet.png).
+
 Changes in version 2024.9.25
 
 - atime_pkg creates tests_preview_facet.png if N.tests.preview (default 4, can be defined in atime/tests.R) is less than the number of test cases. It should be informative even when zoomed out, since it shows only the test cases which had smallest p-values (most significant differences between HEAD and min). Recommended for display as thumbnail/preview image with links to the larger tests_preview_all.png that includes all test results (which may not be readable/informative unless you zoom/scroll, if there are 10+ tests).
