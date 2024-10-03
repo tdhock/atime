@@ -1,3 +1,7 @@
+Changes in version 2024.10.3
+
+- atime_pkg generates files such as _test_name_.png with underscores instead of special characters such as > which are not supported on some file systems, including github actions (https://github.com/tdhock/atime/issues/62).
+
 Changes in version 2024.9.27
 
 - atime_pkg tests_preview_facet.png width fixed/smaller (was same as width of tests_all_facet.png).

@@ -98,7 +98,7 @@ atime_pkg <- function(pkg.path=".", tests.dir=NULL){
       ggplot2::coord_cartesian(xlim=c(NA,xmax))
     out.png <- file.path(
       dirname(test.info$tests.R), 
-      paste0(gsub("[: /]", "_", Test), ".png"))
+      paste0(gsub('[\':\\ /*|<>"?\n\r]', "_", Test), ".png"))
     grDevices::png(out.png, width=test.info$width.in*nrow(max.dt), height=test.info$height.in, units="in", res=100)
     print(gg)
     grDevices::dev.off()
