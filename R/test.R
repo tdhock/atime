@@ -284,11 +284,11 @@ get_test_args <- function(){
   test.args
 }
 
-atime_test <- function(N, setup, expr, times, seconds.limit, verbose, pkg.edit.fun, result){
+atime_test <- function(N, setup, expr, times, seconds.limit, verbose, pkg.edit.fun, result, ...){
   get_test_args()
 }
 
-atime_test_list <- function(..., N, setup, expr, times, seconds.limit, verbose, pkg.edit.fun, result, tests=NULL){
+atime_test_list <- function(N, setup, expr, times, seconds.limit, verbose, pkg.edit.fun, result, tests=NULL, ...){
   common.args <- get_test_args()
   L <- c(tests, list(...))
   inherit_args(L, common.args)

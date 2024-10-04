@@ -12,10 +12,9 @@
 }
 \usage{
 atime_test_list(
-  ...,
   N, setup, expr, times, seconds.limit,
   verbose, pkg.edit.fun, result,
-  tests = NULL)
+  tests = NULL, ...)
 }
 \arguments{
   \item{\dots}{
