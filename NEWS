@@ -1,6 +1,7 @@
 Changes in version 2024.10.3
 
 - atime_pkg generates files such as _test_name_.png with underscores instead of special characters such as > which are not supported on some file systems, including github actions (https://github.com/tdhock/atime/issues/62).
+- atime and atime_versions gain N.env.parent arg, which is set by atime_pkg to environment created for evaluation of atime/tests.R code. N.env.parent is the parent env of N.env, the environment in which code is run for a given data size N. So now setup in tests can refer to variables defined in atime/tests.R.
 
 Changes in version 2024.9.27
 

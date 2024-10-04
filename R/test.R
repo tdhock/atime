@@ -253,10 +253,11 @@ atime_pkg_test_info <- function(pkg.path=".", tests.dir=NULL){
     names(test.env$version.colors) %in% names(abbrev2name),
     abbrev2name[names(test.env$version.colors)],
     names(test.env$version.colors))
-  pkg.sha.args <- list(
+  common.args <- list(
+    N.env.parent=test.env,
     pkg.path=pkg.path,
     sha.vec=sha.vec)
-  test.env$test.list <- inherit_args(test.env$test.list, pkg.sha.args)
+  test.env$test.list <- inherit_args(test.env$test.list, common.args)
   test.env$test.call <- list()
   for(Test in names(test.env$test.list)){
     test.env$test.call[[Test]] <- as.call(c(
@@ -266,19 +267,29 @@ atime_pkg_test_info <- function(pkg.path=".", tests.dir=NULL){
   test.env
 }
 
-atime_test <- function(...){
-  as.list(match.call()[-1])
-}
-
-atime_test_list <- function(..., N, setup, expr, times, seconds.limit, verbose, pkg.edit.fun, result, tests=NULL){
-  could.copy <- intersect(names(formals(atime_versions)),names(formals()))
-  mc <- as.list(match.call()[-1])
+get_test_args <- function(){
+  s.parent <- sys.parent()
+  pfun <- sys.function(s.parent)
+  two.funs <- list(pfun, atime_versions)
+  name.vecs <- lapply(two.funs, function(f)names(formals(f)))
+  could.copy <- Reduce(intersect, name.vecs)
+  mc <- as.list(match.call(pfun, sys.call(s.parent))[-1])
   common.names <- intersect(names(mc), could.copy)
   possible.uneval <- c("setup","expr")
   uneval.names <- intersect(common.names, possible.uneval)
   eval.names <- setdiff(common.names, possible.uneval)
-  common.args <- mget(eval.names)
-  common.args[uneval.names] <- mc[uneval.names]
+  p.frame <- parent.frame()
+  test.args <- mget(eval.names, p.frame)
+  test.args[uneval.names] <- mc[uneval.names]
+  test.args
+}
+
+atime_test <- function(N, setup, expr, times, seconds.limit, verbose, pkg.edit.fun, result){
+  get_test_args()
+}
+
+atime_test_list <- function(..., N, setup, expr, times, seconds.limit, verbose, pkg.edit.fun, result, tests=NULL){
+  common.args <- get_test_args()
   L <- c(tests, list(...))
   inherit_args(L, common.args)
 }

@@ -8,6 +8,7 @@ atime_versions(
  pkg.path, N, setup, expr, sha.vec=NULL,
  times=10, seconds.limit=0.01, verbose=FALSE,
  pkg.edit.fun=pkg.edit.default, result=FALSE,
+ N.env.parent=NULL,
  ...)
 }
 \arguments{
@@ -38,6 +39,8 @@ atime_versions(
     installation, should typically replace instances of PKG with
     PKG.SHA, default works with Rcpp packages.}
   \item{result}{logical, save results? (default FALSE)}
+  \item{N.env.parent}{environment to use as parent of environment
+  created for each data size N, or NULL to use default parent env.}
   \item{\dots}{named versions.}
 }
 \details{

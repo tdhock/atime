@@ -86,9 +86,12 @@ default_N <- function(){
   as.integer(2^seq(1, 20))
 }
 
-atime <- function(N=default_N(), setup, expr.list=NULL, times=10, seconds.limit=0.01, verbose=FALSE, result=FALSE, ...){
+atime <- function(N=default_N(), setup, expr.list=NULL, times=10, seconds.limit=0.01, verbose=FALSE, result=FALSE, N.env.parent=NULL, ...){
   kilobytes <- mem_alloc <- . <- sizes <- NULL
   ## above for CRAN NOTE.
+  if(is.null(N.env.parent)){
+    N.env.parent <- parent.frame()
+  }
   if(!is.numeric(N)){
     stop("N should be a numeric vector")
   }
@@ -116,7 +119,7 @@ atime <- function(N=default_N(), setup, expr.list=NULL, times=10, seconds.limit=
   for(N.value in N){
     not.done.yet <- names(done.vec)[!done.vec]
     if(length(not.done.yet)){
-      N.env <- new.env(parent=parent.frame())
+      N.env <- new.env(parent=N.env.parent)
       N.env$N <- N.value
       eval(mc.args$setup, N.env)
       m.list <- list(quote(bench::mark), iterations=times,check=FALSE)

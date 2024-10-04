@@ -31,9 +31,11 @@ edit.data.table <- function(old.Package, new.Package, sha, new.pkg.path){
     sprintf('useDynLib\\("?%s"?', Package_regex),
     paste0('useDynLib(', new.Package_))
 }
+gvar <- 5
 test.list <- atime::atime_test_list(
   pkg.edit.fun=edit.data.table,
-  N=9,
-  test_N_expr=atime::atime_test(N=2, expr=rnorm(N)),
-  test_expr=atime::atime_test(expr=rnorm(N))
+  N=c(9,90),
+  test_N_expr=atime::atime_test(N=c(2,20), expr=rnorm(N)),
+  test_expr=atime::atime_test(expr=rnorm(N)),
+  global_var_in_setup=atime::atime_test(setup=rnorm(gvar), expr=atime:::.packageName)
 )

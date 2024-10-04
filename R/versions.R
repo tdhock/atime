@@ -121,14 +121,14 @@ atime_versions_install <- function(Package, pkg.path, new.Package.vec, sha.vec, 
   }#any to install
 }
 
-atime_versions <- function(pkg.path, N=default_N(), setup, expr, sha.vec=NULL, times=10, seconds.limit=0.01, verbose=FALSE, pkg.edit.fun=pkg.edit.default, result=FALSE, ...){
+atime_versions <- function(pkg.path, N=default_N(), setup, expr, sha.vec=NULL, times=10, seconds.limit=0.01, verbose=FALSE, pkg.edit.fun=pkg.edit.default, result=FALSE, N.env.parent=NULL, ...){
   ver.args <- list(
     pkg.path, substitute(expr), sha.vec, verbose, pkg.edit.fun, ...)
   install.seconds <- system.time({
     ver.exprs <- do.call(atime_versions_exprs, ver.args)
   })[["elapsed"]]
   a.args <- list(
-    N, substitute(setup), ver.exprs, times, seconds.limit, verbose, result)
+    N, substitute(setup), ver.exprs, times, seconds.limit, verbose, result, N.env.parent)
   bench.seconds <- system.time({
     out.list <- do.call(atime, a.args)
   })[["elapsed"]]

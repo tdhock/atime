@@ -95,10 +95,12 @@ test_that("pkg.edit.fun is a function", {
   test.env <- atime::atime_pkg_test_info(pkg.dir)
   test_N_expr <- test.env$test.list$test_N_expr
   expect_identical(test_N_expr$pkg.edit.fun, test.env$edit.data.table)
-  expect_identical(test_N_expr$N, 2)
+  expect_identical(test_N_expr$N, c(2,20))
   expect_identical(test_N_expr$expr, quote(rnorm(N)))
   test_expr <- test.env$test.list$test_expr
   expect_identical(test_expr$pkg.edit.fun, test.env$edit.data.table)
-  expect_identical(test_expr$N, 9)
+  expect_identical(test_expr$N, c(9,90))
   expect_identical(test_expr$expr, quote(rnorm(N)))
+  e.res <- eval(test.env$test.call[["global_var_in_setup"]])
+  expect_is(e.res, "atime")
 })

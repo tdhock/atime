@@ -6,7 +6,7 @@
 
 \usage{atime(
 N, setup, expr.list=NULL, times=10, seconds.limit=0.01, verbose=FALSE,
-result=FALSE, ...)}
+result=FALSE, N.env.parent=NULL...)}
 
 \arguments{
   \item{N}{numeric vector of at least two data sizes, default is \code{2^seq(2,20)}.}
@@ -18,7 +18,10 @@ result=FALSE, ...)}
   \item{verbose}{logical, print messages after every data size?}
   \item{result}{logical, save each result? If \code{TRUE}, and result is
   a data frame with one row, then the numeric column names will be
-  saved as more units to analyze (in addition to kilobytes and seconds).}
+  saved as more units to analyze (in addition to kilobytes and
+  seconds).}
+  \item{N.env.parent}{environment to use as parent of environment
+  created for each data size N, or NULL to use default parent env.}
   \item{\dots}{named expressions to time.}
 }
 
