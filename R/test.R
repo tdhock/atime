@@ -285,7 +285,7 @@ get_test_args <- function(){
 }
 
 atime_test <- function(N, setup, expr, times, seconds.limit, verbose, pkg.edit.fun, result, ...){
-  get_test_args()
+  c(get_test_args(), ...)
 }
 
 atime_test_list <- function(N, setup, expr, times, seconds.limit, verbose, pkg.edit.fun, result, tests=NULL, ...){

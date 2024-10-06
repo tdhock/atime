@@ -414,3 +414,18 @@ test_that("error for new unit name conflicting with existing", {
   }, "result is 1 row data frame with column(s) named median, kilobytes (reserved for internal use); please fix by changing the column name(s) in your results", fixed=TRUE)
 })
 
+test_that("atime_test outputs historical versions", {
+  atest <- atime::atime_test(
+    setup = {
+      DT <- as.data.table(as.list(1:N))
+      measure.vars <- lapply(1:N, function(i) {
+        x = rep(NA, N)
+        x[i] = i
+        x
+      })
+    },
+    expr = data.table:::melt(DT, measure.vars = measure.vars),
+    Slow = "fd24a3105953f7785ea7414678ed8e04524e6955", # Parent of the merge commit (https://github.com/Rdatatable/data.table/commit/ed72e398df76a0fcfd134a4ad92356690e4210ea) of the PR (https://github.com/Rdatatable/data.table/pull/5054) that fixes the issue
+    Fast = "ed72e398df76a0fcfd134a4ad92356690e4210ea") # Merge commit of the PR (https://github.com/Rdatatable/data.table/pull/5054) that fixes the issue
+  expect_identical(names(atest), c("setup", "expr", "Slow", "Fast"))
+})
