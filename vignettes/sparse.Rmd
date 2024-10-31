@@ -8,80 +8,72 @@ knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
 )
+options(width=120)
 ```
 
+In this vignette, we compare the computation time/memory usage of
+dense `matrix` and sparse `Matrix`. We begin with an analysis of the
+time/memory it takes to create these objects, along with a `vector`
+for comparison:
+
 ```{r}
+library(Matrix)
+len <- function(x)data.frame(length=length(x))
 vec.mat.result <- atime::atime(
-  N=10^seq(1,7,by=0.5),
-  vector=numeric(N),
-  matrix=matrix(0, N, N),
-  Matrix=Matrix(0, N, N))
+  N=10^seq(1,7,by=0.25),
+  vector=len(numeric(N)),
+  matrix=len(matrix(0, N, N)),
+  Matrix=len(Matrix(0, N, N)),
+  result=TRUE)
+plot(vec.mat.result)
+```
+
+The plot above shows three panels, one for each unit.
+
+* `kilobytes` is the amount of memory used. We see that `Matrix` and
+  `vector` use the same amount of memory asymptotically, whereas
+  `matrix` uses more (larger slope on the log-log plot implies larger
+  asymptotic complexity class).
+* `length` is the value returned by the `length` function. We see that
+  `matrix` and `Matrix` have the same value, whereas `vector` has
+  asymptotically smaller length (smaller slope on log-log plot).
+* `seconds` is the amount of time taken. We see that `Matrix` is
+  slower than `vector` and `matrix` by a small constant overhead,
+  which can be seen for small `N`. We also see that for large `N`,
+  `Matrix` and `vector` have the same asymptotic time complexity,
+  which is much faster than `matrix`.
+  
+Below we estimate the best asymptotic complexity classes:
+
+```{r}
 vec.mat.best <- atime::references_best(vec.mat.result)
 plot(vec.mat.best)
 ```
 
-The plot above shows that ICU/PCRE/TRE are all exponential in N
-(subject/pattern size) when the pattern contains backreferences.
+The plot above shows that
+
+* `matrix` has time, memory, and `length` which are all quadratic `O(N^2)`.
+* `Matrix` has linear `O(N)` time and memory, but `O(N^2)` values for
+  `length`.
+* `vector` has time, memory, and `length` which are all linear `O(N)`.
+
+Below we estimate the throughput for some given limits:
 
 ```{r}
-all.exprs <- c(
-  if(requireNamespace("re2"))atime::atime_grid(
-    RE2=re2::re2_match(subject, pattern)),
-  backtrackers)
-all.result <- atime::atime(
-  N=subject.size.vec,
-  setup={
-    subject <- paste(rep("a", N), collapse="")
-    pattern <- paste(rep(c("a?", "a"), each=N), collapse="")
-  },
-  expr.list=all.exprs)
-all.best <- atime::references_best(all.result)
-plot(all.best)
+vec.mat.pred <- predict(vec.mat.best, seconds=vec.mat.result$seconds.limit, kilobytes=1000, length=1e6)
+plot(vec.mat.pred)
 ```
 
-The plot above shows that ICU/PCRE are exponential time whereas
-RE2/TRE are polynomial time. Exercise for the reader: modify the above
-code to use the `seconds.limit` argument so that you can see what
-happens to ICU/PCRE for larger N (hint: you should see a difference at
-larger sizes).
-
-## Interpolate at seconds.limit using predict method
+In the plot above we can see the throughput `N` for a given limit of
+`kilobytes`, `length` or `seconds`. Below we use `Matrix` as a
+reference, and compute the throughput ratio, `Matrix` to other.
 
 ```{r}
-(all.pred <- predict(all.best))
-summary(all.pred)
+library(data.table)
+dcast(vec.mat.pred$prediction[
+, ratio := N[expr.name=="Matrix"]/N, by=unit
+], unit + unit.value ~ expr.name, value.var="ratio")
 ```
 
-The `predict` method above returns a list with a new element named
-`prediction`, which shows the data sizes that can be computed with a
-given time budget. The `plot` method is used below,
-
-```{r}
-plot(all.pred)
-```
-
-## `atime_grid` to compare different engines
-
-In the `nc` package there is an `engine` argument which controls which
-C regex library is used:
-
-```{r}
-nc.exprs <- atime::atime_grid(
-  list(ENGINE=c(
-    if(requireNamespace("re2"))"RE2",
-    "PCRE",
-    if(requireNamespace("stringi"))"ICU")),
-  nc=nc::capture_first_vec(subject, pattern, engine=ENGINE))
-nc.result <- atime::atime(
-  N=subject.size.vec,
-  setup={
-    rep.collapse <- function(chr)paste(rep(chr, N), collapse="")
-    subject <- rep.collapse("a")
-    pattern <- list(maybe=rep.collapse("a?"), rep.collapse("a"))
-  },
-  expr.list=nc.exprs)
-nc.best <- atime::references_best(nc.result)
-plot(nc.best)
-```
-
-The result/plot above is consistent with the previous result.
+From the table above (`matrix` column), we can see that the throughput
+of `Matrix` is 100-1000x larger than `matrix`, for the given limits.
