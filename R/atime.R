@@ -220,6 +220,7 @@ plot.atime <- function(x, ...){
   expr.name <- N <- kilobytes <- NULL
   ## Above to avoid CRAN NOTE.
   meas <- x[["measurements"]]
+  by.dt <- meas[, x$by.vec, with=FALSE]
   if(requireNamespace("ggplot2")){
     tall.list <- list()
     for(unit.i in seq_along(x$unit.col.vec)){
@@ -227,7 +228,7 @@ plot.atime <- function(x, ...){
       unit <- names(x$unit.col.vec)[[unit.i]]
       if(is.null(unit)||unit=="")unit <- col.name
       tall.list[[unit.i]] <- meas[, data.table(
-        N, expr.name, unit, median=get(col.name))]
+        N, by.dt, unit, median=get(col.name))]
     }
     tall <- rbindlist(tall.list)
     gg <- ggplot2::ggplot()+
