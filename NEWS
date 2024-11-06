@@ -1,3 +1,11 @@
+Changes in version 2024.11.5
+
+- new feature: atime_grid() stores a data table of parameters that were specified as input, with corresponding new column names in
+- atime() measurements table,
+- references_best() measurements and plot.references tables,
+- predict() tables: measurements and predictions tables.
+- new sparse vignette which shows how to make a custom plot with facets defined by variables that were used in atime_grid().
+
 Changes in version 2024.10.5
 
 - bugfix: atime_test again outputs historical versions which were specified in ...

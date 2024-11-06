@@ -78,21 +78,21 @@ references_best <- function(L, fun.list=NULL){
       all.refs <- DT[
         ,
         references(N, .SD[[col.name]], lower.limit, fun.list),
-        by=expr.name]
-      all.refs[, rank := rank(-N), by=.(expr.name, fun.name)]
+        by=c(L$by.vec)]
+      all.refs[, rank := rank(-N), by=c(L$by.vec, "fun.name")]
       second <- all.refs[rank==2]
       second[, dist := log10(empirical/reference) ]
       second[, sign := sign(dist)]
-      l.cols <- list(overall="expr.name", each.sign=c("expr.name","sign"))
+      l.cols <- list(overall=L$by.vec, each.sign=c(L$by.vec,"sign"))
       for(best.type in names(l.cols)){
         by <- l.cols[[best.type]]
         second[
         , paste0(best.type,".rank") := rank(abs(dist))
-        , by=by]
+        , by=c(by)]
       }
       ref.dt.list[[unit]] <- data.table(unit, all.refs[
         second,
-        on=.(expr.name, fun.name, fun.latex)])
+        on=c(L$by.vec, "fun.name", "fun.latex")])
       best <- second[overall.rank==1, .(expr.name, fun.name, fun.latex)]
       metric.dt.list[[unit]] <- data.table(unit, best[
         DT, on=.(expr.name)
@@ -108,7 +108,8 @@ references_best <- function(L, fun.list=NULL){
     seconds.limit=L[["seconds.limit"]],
     references=ref.dt,
     plot.references=ref.dt[each.sign.rank==1],
-    measurements=do.call(rbind, metric.dt.list)),
+    measurements=do.call(rbind, metric.dt.list),
+    by.vec=L[["by.vec"]]),
     class="references_best")
 }
 
@@ -133,17 +134,17 @@ plot.references_best <- function(x, ...){
     }
     gg <- gg+
       ggplot2::geom_ribbon(ggplot2::aes(
-        N, ymin=min, ymax=max),
+        N, ymin=min, ymax=max, group=expr.name),
         data=meas[unit=="seconds"],
         fill=emp.color,
         alpha=0.5)+
       ggplot2::geom_line(ggplot2::aes(
-        N, empirical),
+        N, empirical, group=expr.name),
         size=2,
         color=emp.color,
         data=meas)+
       ggplot2::geom_line(ggplot2::aes(
-        N, reference, group=fun.name),
+        N, reference, group=paste(expr.name, fun.name)),
         color=ref.color,
         size=1,
         data=ref.dt)+

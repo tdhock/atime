@@ -1,0 +1,251 @@
+<!--
+%\VignetteEngine{knitr::knitr}
+%\VignetteIndexEntry{Example: sparse matrices}
+-->
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+options(width=120)
+```
+
+In this vignette, we compare the computation time/memory usage of
+dense `matrix` and sparse `Matrix`. We begin with an analysis of the
+time/memory it takes to create these objects, along with a `vector`
+for comparison:
+
+```{r}
+library(Matrix)
+len <- function(x)data.frame(length=length(x))
+vec.mat.result <- atime::atime(
+  N=10^seq(1,7,by=0.25),
+  vector=len(numeric(N)),
+  matrix=len(matrix(0, N, N)),
+  Matrix=len(Matrix(0, N, N)),
+  result=TRUE)
+plot(vec.mat.result)
+```
+
+The plot above shows three panels, one for each unit.
+
+* `kilobytes` is the amount of memory used. We see that `Matrix` and
+  `vector` use the same amount of memory asymptotically, whereas
+  `matrix` uses more (larger slope on the log-log plot implies larger
+  asymptotic complexity class).
+* `length` is the value returned by the `length` function. We see that
+  `matrix` and `Matrix` have the same value, whereas `vector` has
+  asymptotically smaller length (smaller slope on log-log plot).
+* `seconds` is the amount of time taken. We see that `Matrix` is
+  slower than `vector` and `matrix` by a small constant overhead,
+  which can be seen for small `N`. We also see that for large `N`,
+  `Matrix` and `vector` have the same asymptotic time complexity,
+  which is much faster than `matrix`.
+  
+Below we estimate the best asymptotic complexity classes:
+
+```{r}
+vec.mat.best <- atime::references_best(vec.mat.result)
+plot(vec.mat.best)
+```
+
+The plot above shows that
+
+* `matrix` has time, memory, and `length` which are all quadratic `O(N^2)`.
+* `Matrix` has linear `O(N)` time and memory, but `O(N^2)` values for
+  `length`.
+* `vector` has time, memory, and `length` which are all linear `O(N)`.
+
+Below we estimate the throughput for some given limits:
+
+```{r}
+vec.mat.pred <- predict(vec.mat.best, seconds=vec.mat.result$seconds.limit, kilobytes=1000, length=1e6)
+plot(vec.mat.pred)
+```
+
+In the plot above we can see the throughput `N` for a given limit of
+`kilobytes`, `length` or `seconds`. Below we use `Matrix` as a
+reference, and compute the throughput ratio, `Matrix` to other.
+
+```{r}
+library(data.table)
+dcast(vec.mat.pred$prediction[
+, ratio := N[expr.name=="Matrix"]/N, by=unit
+], unit + unit.value ~ expr.name, value.var="ratio")
+```
+
+From the table above (`matrix` column), we can see that the throughput
+of `Matrix` is 100-1000x larger than `matrix`, for the given limits.
+
+## Matrix Multiplication, 90% sparsity
+
+First we show the difference between sparse and dense matrix
+multiplication, when the matrix has 90% zeros (10% non-zeros).
+
+```{r}
+library(Matrix)
+sparse.prop <- 0.9
+dense.prop <- 1-sparse.prop
+mult.result <- atime::atime(
+  N=as.integer(10^seq(1,4,by=0.25)),
+  setup={
+    m <- matrix(0, N, N)
+    set.seed(1)
+    w <- rnorm(N)
+    N.not.zero <- as.integer(dense.prop*N^2)
+    m[sample(N^2, N.not.zero)] <- rnorm(N.not.zero)
+    M <- Matrix(m)
+  },
+  sparse = M %*% w,
+  dense = m %*% w,
+  result=TRUE)
+plot(mult.result)
+```
+
+Above we see that `sparse` is faster than `dense`, but by constant
+factors.
+Below we estimate the best asymptotic complexity classes:
+
+```{r}
+mult.best <- atime::references_best(mult.result)
+plot(mult.best)
+```
+
+Above we see that both `sparse` and `dense` matrix multiplication are
+quadratic `O(N^2)` time (for a quadratic number of non-zero entries).
+
+Finally, we verify below that both methods yield the same result:
+
+```{r}
+library(data.table)
+mult.compare <- dcast(
+  mult.result$measurements, N ~ expr.name, value.var="result"
+)[
+, equal := paste(all.equal(as.numeric(dense[[1]]), as.numeric(sparse[[1]])))
+, by=N
+][]
+tibble::tibble(mult.compare)
+```
+
+## Matrix multiplication, linear number of non-zeros
+
+Next we show the difference between sparse and dense matrix
+multiplication, when the matrix has a linear number of non-zeros
+(asymptotically fewer than in the previous section).
+
+```{r}
+library(Matrix)
+mult.result <- atime::atime(
+  N=as.integer(10^seq(1,4,by=0.25)),
+  setup={
+    m <- matrix(0, N, N)
+    set.seed(1)
+    w <- rnorm(N)
+    N.not.zero <- N
+    m[sample(N^2, N.not.zero)] <- rnorm(N.not.zero)
+    M <- Matrix(m)
+  },
+  sparse = M %*% w,
+  dense = m %*% w,
+  result=TRUE)
+plot(mult.result)
+```
+
+Above we see that `sparse` is asymptotically faster than `dense` (different asymptotic slopes).
+Below we estimate the best asymptotic complexity classes:
+
+```{r}
+mult.best <- atime::references_best(mult.result)
+plot(mult.best)
+```
+
+Above we see that `sparse` is linear `O(N)` time whereas `dense` is
+quadratic `O(N^2)` time (for a linear number of non-zero entries).
+
+Finally, we verify below that both methods yield the same result:
+
+```{r}
+library(data.table)
+mult.compare <- dcast(
+  mult.result$measurements, N ~ expr.name, value.var="result"
+)[
+, equal := paste(all.equal(as.numeric(dense[[1]]), as.numeric(sparse[[1]])))
+, by=N
+][]
+tibble::tibble(mult.compare)
+```
+
+## Matrix multiplication, linear and quadratic number of non-zeros
+
+In this section we show how you can code both comparisons at the same
+time, without repetition. The trick is to first define a list of parameters to vary:
+
+```{r}
+param.list <- list(
+  non_zeros=c("N","N^2/10"),
+  fun=c("matrix","Matrix")
+)
+```
+
+After that we create a grid of expressions to evaluate, by expanding the parameter grid:
+
+```{r}
+(expr.list <- atime::atime_grid(
+  param.list,
+  Mw=L[[fun]][[non_zeros]]%*%w,
+  collapse="\n"))
+```
+
+Finally we pass the list of expressions to `atime`, along with a
+`setup` argument which creates the required list `L` of input data,
+based on the parameters:
+
+```{r}
+mult.result <- atime::atime(
+  N=as.integer(10^seq(1,3.5,by=0.25)),
+  setup={
+    L <- list()
+    set.seed(1)
+    w <- rnorm(N)
+    for(non_zeros in param.list$non_zeros){
+      N.not.zero <- as.integer(eval(str2lang(non_zeros)))
+      m <- matrix(0, N, N)
+      m[sample(N^2, N.not.zero)] <- rnorm(N.not.zero)
+      for(fun in param.list$fun){
+        L[[fun]][[non_zeros]] <- get(fun)(as.numeric(m), N, N)
+      }
+    }
+  },
+  expr.list=expr.list)
+plot(mult.result)
+```
+
+Below we estimate the best asymptotic complexity classes:
+
+```{r}
+mult.best <- atime::references_best(mult.result)
+plot(mult.best)
+```
+
+Below we show an alternative visualization:
+
+```{r}
+only.seconds <- mult.best
+only.seconds$measurements <- mult.best$measurements[unit=="seconds"]
+only.seconds$plot.references <- mult.best$plot.references[unit=="seconds"]
+library(ggplot2)
+plot(only.seconds)+
+  facet_grid(non_zeros ~ fun, labeller=label_both)
+```
+
+## Conclusion
+
+Overall in this vignette we have shown how `atime` can be used to
+demonstrate when sparse matrices can be used for efficient
+computations.
+
+* sparse matrices have linear rather than quadratic time/memory for creation.
+* sparse matrix-vector multiply is asymptotically faster (linear
+  rather than quadratic time) if there are a linear number of non-zero
+  elements.

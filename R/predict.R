@@ -43,7 +43,7 @@ predict.references_best <- function(object, ...){
           unit.value,
           N=10^approx(log10.empirical, log10.N, log10(unit.value))$y)]
       }
-    }, by=expr.name]
+    }, by=c(object$by.vec)]
     not.NA <- pred.dt[!is.na(N)]
     if(nrow(not.NA)==0){
       stop(unit, "=", unit.value, " is outside range of data, please change to a value that intersects at least one of the empirical curves")
