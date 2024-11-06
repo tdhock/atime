@@ -85,6 +85,7 @@ plot(sub.atime.list)
 
 ## Customize ggplot, which shows expr.name column as direct labels.
 sub.atime.edited <- sub.atime.list
+library(data.table)
 sub.atime.edited$measurements <- data.table(sub.atime.list$measurements)[
 , expr.name := paste0("PERL=",PERL)]
 library(ggplot2)
