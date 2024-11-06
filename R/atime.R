@@ -67,18 +67,25 @@ atime_grid <- function
     nrow(value.mat), ncol(value.mat))
   name.value.vec <- apply(name.value.mat, 1, paste, collapse=collapse)
   out.list <- list()
+  out.param.list <- list()
   for(expr.name in names(elist)){
     for(row.i in 1:nrow(param.dt)){
       param.name.value <- name.value.vec[[row.i]]
       out.name <- paste0(expr.name, expr.param.sep, param.name.value)
-      param.row.list <- as.list(param.dt[row.i])
+      param.row <- param.dt[row.i]
+      param.row.list <- as.list(param.row)
       param.row.list[symbol.params] <- lapply(
         param.row.list[symbol.params], as.symbol)
       out.list[[out.name]] <- eval(substitute(
         substitute(EXPR, param.row.list), 
         list(EXPR=elist[[expr.name]])))
+      out.param.list[[paste(expr.name, row.i)]] <- data.table(
+        expr.name=out.name,
+        expr.grid=expr.name,
+        param.row)
     }
   }
+  attr(out.list, "parameters") <- rbindlist(out.param.list)
   out.list
 }
 
@@ -190,6 +197,12 @@ atime <- function(N=default_N(), setup, expr.list=NULL, times=10, seconds.limit=
     seconds="median",
     more.units)
   measurements <- rbindlist(metric.dt.list)
+  expr.list.params <- attr(expr.list,"parameters")
+  by.vec <- "expr.name"
+  if(is.data.table(expr.list.params)){
+    measurements <- expr.list.params[measurements, on="expr.name"]
+    by.vec <- names(expr.list.params)
+  }
   only.one <- measurements[, .(sizes=.N), by=expr.name][sizes==1]
   if(nrow(only.one)){
     warning("please increase max N or seconds.limit, because only one N was evaluated for expr.name: ", paste(only.one[["expr.name"]], collapse=", "))
@@ -198,7 +211,8 @@ atime <- function(N=default_N(), setup, expr.list=NULL, times=10, seconds.limit=
     list(
       unit.col.vec=unit.col.vec,
       seconds.limit=seconds.limit,
-      measurements=measurements),
+      measurements=measurements,
+      by.vec=by.vec),
     class="atime")
 }
 
