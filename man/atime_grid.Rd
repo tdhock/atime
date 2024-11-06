@@ -81,13 +81,13 @@ sub.atime.list <- atime::atime(
     subject <- paste(rep("a",N),collapse="")
   }, 
   expr.list=sub.expr.list)
-library(ggplot2)
 plot(sub.atime.list)
 
 ## Customize ggplot, which shows expr.name column as direct labels.
 sub.atime.edited <- sub.atime.list
 sub.atime.edited$measurements <- data.table(sub.atime.list$measurements)[
 , expr.name := paste0("PERL=",PERL)]
+library(ggplot2)
 plot(sub.atime.edited)+
   facet_grid(unit ~ FUN, labeller=label_both)
 
