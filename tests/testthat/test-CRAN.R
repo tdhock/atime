@@ -366,7 +366,7 @@ if(requireNamespace("nc")){
   })
 }
 
-test_that("references for non-NA unit, with NA unit",{
+if(requireNamespace("ggplot2"))test_that("references for non-NA unit, with NA unit",{
   atime.list <- atime::atime(
     missing=data.frame(my_unit=NA),
     constant=data.frame(my_unit=1),
