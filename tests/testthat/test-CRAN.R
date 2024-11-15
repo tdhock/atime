@@ -438,8 +438,7 @@ test_that("atime_test outputs historical versions", {
   expect_identical(names(atest), c("setup", "expr", "Slow", "Fast"))
 })
 
-test_that("atime_grid parameters attribute", {
-  library(Matrix)
+if(require(Matrix))test_that("atime_grid parameters attribute", {
   param.list <- list(
     non_zeros=c("N","N^2/10"),
     fun=c("matrix","Matrix")
@@ -485,4 +484,15 @@ test_that("atime_grid parameters attribute", {
   mult.pred <- predict(mult.refs, in_size=50)
   expect_in(expected.names, names(mult.pred$measurements))
   expect_in(expected.names, names(mult.pred$prediction))
+})
+
+if(require(Matrix))test_that("result=fun works", {
+  len <- function(x)data.frame(length=length(x))
+  vec.mat.result <- atime::atime(
+    N=10^seq(1,7,by=0.25),
+    vector=numeric(N),
+    matrix=matrix(0, N, N),
+    Matrix=Matrix(0, N, N),
+    result=len)
+  expect_is(vec.mat.result, "atime")
 })
