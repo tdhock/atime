@@ -12,20 +12,33 @@ options(width=120)
 ```
 
 In this vignette, we compare the computation time/memory usage of
-dense `matrix` and sparse `Matrix`. We begin with an analysis of the
-time/memory it takes to create these objects, along with a `vector`
-for comparison:
+dense `matrix` and sparse `Matrix`.
+
+## Allocation and length
+
+We begin with an analysis of the time/memory it takes to create these
+objects.  In the `atime` code below, we allocate a `vector` for
+comparison, and we specify a `result` function which computes the
+`length` of the object `x` created by each expression. This means
+`atime` will save `length` as a function of data size `N` (in addition
+to time and memory).
 
 ```{r}
 library(Matrix)
-len <- function(x)data.frame(length=length(x))
+N_seq <- as.integer(10^seq(1,7,by=0.25))
 vec.mat.result <- atime::atime(
-  N=10^seq(1,7,by=0.25),
-  vector=len(numeric(N)),
-  matrix=len(matrix(0, N, N)),
-  Matrix=len(Matrix(0, N, N)),
-  result=TRUE)
-plot(vec.mat.result)
+  N=N_seq,
+  vector=numeric(N),
+  matrix=matrix(0, N, N),
+  Matrix=Matrix(0, N, N),
+  result=function(x)data.frame(length=length(x)))
+vec.mat.colors <- c(
+  matrix="black",
+  Matrix="red",
+  vector="deepskyblue")
+sc.fill <- scale_fill_manual(values=vec.mat.colors)
+sc.color <- scale_color_manual(values=vec.mat.colors)
+plot(vec.mat.result)+sc.color+sc.fill
 ```
 
 The plot above shows three panels, one for each unit.
@@ -43,6 +56,92 @@ The plot above shows three panels, one for each unit.
   `Matrix` and `vector` have the same asymptotic time complexity,
   which is much faster than `matrix`.
   
+### Comparison with `bench::press`
+
+An alternative method to compute asymptotic timings is via
+`bench::press`, which provides functionality for parameterized
+benchmarking (similar to `atime_grid`). Because `atime()` has special
+treatment of the `N` parameter, the code required for asymptotic
+measurement is relatively simple; compare the `atime` code above to
+the `bench::press` code below, which measures the same asymptotic
+quantities (seconds, kilobytes, length).
+
+```{r}
+seconds.limit <- 0.01
+done.vec <- NULL
+measure.vars <- c("seconds","kilobytes","length")
+press_result <- bench::press(
+  N = N_seq,
+  {
+    exprs <- function(...){
+      as.list(match.call()[-1])
+    }
+    elist <- exprs(
+      vector=numeric(N),
+      matrix=matrix(0, N, N),
+      Matrix=Matrix(0, N, N))
+    elist[names(done.vec)] <- NA #Don't run exprs which already exceeded limit.
+    mark.args <- c(elist, list(iterations=10, check=FALSE))
+    mark.result <- do.call(bench::mark, mark.args)
+    ## Rename some columns for easier interpretation.
+    desc.vec <- attr(mark.result$expression, "description")
+    mark.result$description <- desc.vec
+    mark.result$seconds <- as.numeric(mark.result$median)
+    mark.result$kilobytes <- as.numeric(mark.result$mem_alloc/1024)
+    ## Compute length column to measure in addition to time/memory.
+    mark.result$length <- NA
+    for(desc.i in seq_along(desc.vec)){
+      description <- desc.vec[[desc.i]]
+      result <- eval(elist[[description]])
+      mark.result$length[desc.i] <- length(result)
+    }
+    ## Set NA time/memory/length for exprs which were not run.
+    mark.result[desc.vec %in% names(done.vec), measure.vars] <- NA
+    ## If expr went over time limit, indicate it is done.
+    over.limit <- mark.result$seconds > seconds.limit
+    over.desc <- desc.vec[is.finite(mark.result$seconds) & over.limit]
+    done.vec[over.desc] <<- TRUE
+    mark.result
+  }
+)
+```
+
+The `bench::press` code above is relatively complicated, because it re-implements two functions that are provided by atime:
+
+* If an expression takes longer than the time limit of 0.01 seconds,
+  then it will not be run for any larger `N` values. This keeps overall computation reasonable, even when comparing expressions which have different asymptotic time complexity (such as quadratic for `matrix` and linear for `Matrix` in this example).
+* If you want to measure quantities other than `seconds` and `kilobytes` as a function of `N` (such as `length` in this example), then `atime` makes that easy (just provide a `result` function), whereas it is more complex to implement in `bench::press` (for loop is required).
+
+Below we visualize the results from `bench::press`,
+
+```{r}
+library(data.table)
+(press_long <- melt(
+  data.table(press_result),
+  measure.vars=measure.vars,
+  id.vars=c("N","description"),
+  na.rm=TRUE))
+if(require(ggplot2)){
+  gg <- ggplot()+
+    ggtitle("bench::press results for comparison")+
+    facet_grid(variable ~ ., labeller=label_both, scales="free")+
+    geom_line(aes(
+      N, value,
+      color=description),
+      data=press_long)+
+    sc.color+
+    scale_x_log10(limits=c(NA, max(press_long$N*2)))+
+    scale_y_log10("")
+  if(requireNamespace("directlabels")){
+    directlabels::direct.label(gg,"right.polygons")
+  }else gg
+}
+```
+
+We can see that the plot from `atime` and `bench::press` are consistent.
+
+### Complexity class estimation with atime
+
 Below we estimate the best asymptotic complexity classes:
 
 ```{r}
@@ -60,8 +159,12 @@ The plot above shows that
 Below we estimate the throughput for some given limits:
 
 ```{r}
-vec.mat.pred <- predict(vec.mat.best, seconds=vec.mat.result$seconds.limit, kilobytes=1000, length=1e6)
-plot(vec.mat.pred)
+vec.mat.pred <- predict(
+  vec.mat.best,
+  seconds=vec.mat.result$seconds.limit,
+  kilobytes=1000,
+  length=1e6)
+plot(vec.mat.pred)+sc.fill+sc.color
 ```
 
 In the plot above we can see the throughput `N` for a given limit of
@@ -240,75 +343,6 @@ if(require(ggplot2)){
 }
 ```
 
-## `bench::press` comparison
-
-```{r}
-seconds.limit <- 0.01
-done.vec <- NULL
-measure.vars <- c("seconds","kilobytes","length")
-press_result <- bench::press(
-  N = as.integer(10^seq(2,7,by=0.25)),
-  {
-    exprs <- function(...){
-      as.list(match.call()[-1])
-    }
-    elist <- exprs(
-      vector=numeric(N),
-      matrix=matrix(0, N, N),
-      Matrix=Matrix(0, N, N))
-    elist[names(done.vec)] <- NA
-    mark.args <- c(elist, list(iterations=10, check=FALSE))
-    mark.result <- do.call(bench::mark, mark.args)
-    desc.vec <- attr(mark.result$expression, "description")
-    mark.result$description <- desc.vec
-    mark.result$seconds <- as.numeric(mark.result$median)
-    mark.result$kilobytes <- as.numeric(mark.result$mem_alloc/1024)
-    mark.result$length <- NA
-    for(desc.i in seq_along(desc.vec)){
-      description <- desc.vec[[desc.i]]
-      result <- eval(elist[[description]])
-      mark.result$length[desc.i] <- length(result)
-    }
-    mark.result[desc.vec %in% names(done.vec), measure.vars] <- NA
-    over.limit <- mark.result$seconds > seconds.limit
-    over.desc <- desc.vec[is.finite(mark.result$seconds) & over.limit]
-    done.vec[over.desc] <<- TRUE
-    mark.result
-  }
-)
-
-library(data.table)
-(press_long <- melt(
-  data.table(press_result),
-  measure.vars=measure.vars,
-  id.vars=c("N","description"),
-  na.rm=TRUE))
-if(require(ggplot2)){
-  gg <- ggplot()+
-    facet_grid(variable ~ ., labeller=label_both, scales="free")+
-    geom_line(aes(
-      N, value,
-      size=description,
-      color=description),
-      data=press_long)+
-    scale_size_manual(
-      values=c(
-        matrix=4,
-        Matrix=2,
-        vector=1))+
-    scale_color_manual(
-      values=c(
-        matrix="black",
-        Matrix="red",
-        vector="deepskyblue"))+
-    scale_x_log10(limits=c(NA, max(press_long$N*2)))+
-    scale_y_log10("")
-  if(requireNamespace("directlabels")){
-    directlabels::direct.label(gg,"right.polygons")
-  }else gg
-}
-```
-
 ## Conclusion
 
 Overall in this vignette we have shown how `atime` can be used to
@@ -319,3 +353,8 @@ computations.
 * sparse matrix-vector multiply is asymptotically faster (linear
   rather than quadratic time) if there are a linear number of non-zero
   elements.
+
+We also showed a comparison between `atime` and `bench::press`, which
+highlighted two areas where `atime` is more convenient (stopping after
+exceeding a time limit, and measuring quantities other than
+time/memory as a function of data size `N`).

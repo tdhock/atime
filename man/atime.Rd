@@ -16,10 +16,14 @@ result=FALSE, N.env.parent=NULL, ...)}
   \item{seconds.limit}{if the median timing of any expression exceeds
     this many seconds, then no timings for larger N are computed.}
   \item{verbose}{logical, print messages after every data size?}
-  \item{result}{logical, save each result? If \code{TRUE}, and result is
-  a data frame with one row, then the numeric column names will be
-  saved as more units to analyze (in addition to kilobytes and
-  seconds).}
+  \item{result}{
+    logical: save the result of evaluating each expression?
+    Or a function to compute a result, given the value obtained after
+    evaluating each expression.
+    If each result is a data frame with one row, then the numeric column
+    names will be saved as more units to analyze (in addition to kilobytes
+    and seconds).
+  }
   \item{N.env.parent}{environment to use as parent of environment
   created for each data size N, or NULL to use default parent env.}
   \item{\dots}{named expressions to time.}
