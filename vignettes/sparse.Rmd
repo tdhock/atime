@@ -234,9 +234,79 @@ Below we show an alternative visualization:
 only.seconds <- mult.best
 only.seconds$measurements <- mult.best$measurements[unit=="seconds"]
 only.seconds$plot.references <- mult.best$plot.references[unit=="seconds"]
-library(ggplot2)
-plot(only.seconds)+
-  facet_grid(non_zeros ~ fun, labeller=label_both)
+if(require(ggplot2)){
+  plot(only.seconds)+
+    facet_grid(non_zeros ~ fun, labeller=label_both)
+}
+```
+
+## `bench::press` comparison
+
+```{r}
+seconds.limit <- 0.01
+done.vec <- NULL
+measure.vars <- c("seconds","kilobytes","length")
+press_result <- bench::press(
+  N = as.integer(10^seq(2,7,by=0.25)),
+  {
+    exprs <- function(...){
+      as.list(match.call()[-1])
+    }
+    elist <- exprs(
+      vector=numeric(N),
+      matrix=matrix(0, N, N),
+      Matrix=Matrix(0, N, N))
+    elist[names(done.vec)] <- NA
+    mark.args <- c(elist, list(iterations=10, check=FALSE))
+    mark.result <- do.call(bench::mark, mark.args)
+    desc.vec <- attr(mark.result$expression, "description")
+    mark.result$description <- desc.vec
+    mark.result$seconds <- as.numeric(mark.result$median)
+    mark.result$kilobytes <- as.numeric(mark.result$mem_alloc/1024)
+    mark.result$length <- NA
+    for(desc.i in seq_along(desc.vec)){
+      description <- desc.vec[[desc.i]]
+      result <- eval(elist[[description]])
+      mark.result$length[desc.i] <- length(result)
+    }
+    mark.result[desc.vec %in% names(done.vec), measure.vars] <- NA
+    over.limit <- mark.result$seconds > seconds.limit
+    over.desc <- desc.vec[is.finite(mark.result$seconds) & over.limit]
+    done.vec[over.desc] <<- TRUE
+    mark.result
+  }
+)
+
+library(data.table)
+(press_long <- melt(
+  data.table(press_result),
+  measure.vars=measure.vars,
+  id.vars=c("N","description"),
+  na.rm=TRUE))
+if(require(ggplot2)){
+  gg <- ggplot()+
+    facet_grid(variable ~ ., labeller=label_both, scales="free")+
+    geom_line(aes(
+      N, value,
+      size=description,
+      color=description),
+      data=press_long)+
+    scale_size_manual(
+      values=c(
+        matrix=4,
+        Matrix=2,
+        vector=1))+
+    scale_color_manual(
+      values=c(
+        matrix="black",
+        Matrix="red",
+        vector="deepskyblue"))+
+    scale_x_log10(limits=c(NA, max(press_long$N*2)))+
+    scale_y_log10("")
+  if(requireNamespace("directlabels")){
+    directlabels::direct.label(gg,"right.polygons")
+  }else gg
+}
 ```
 
 ## Conclusion
