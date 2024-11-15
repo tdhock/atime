@@ -487,11 +487,21 @@ if(require(Matrix))test_that("atime_grid parameters attribute", {
 })
 
 if(require(Matrix))test_that("result=fun works", {
+  pred.len <- 100
+  sqrt.len <- sqrt(pred.len)
   vec.mat.result <- atime::atime(
-    N=10^seq(1,2,by=0.25),
+    N=2^seq(1,ceiling(log2(pred.len))),
     vector=numeric(N),
     matrix=matrix(0, N, N),
     Matrix=Matrix(0, N, N),
     result=function(x)data.frame(length=length(x)))
   expect_is(vec.mat.result$measurements$length, "integer")
+  vec.mat.refs <- atime::references_best(vec.mat.result)
+  vec.mat.pred <- predict(vec.mat.refs, length=pred.len)
+  ## precise estimation of length:
+  expect_equal(vec.mat.pred$prediction, data.table(
+    unit="length",
+    expr.name=c("vector","matrix","Matrix"),
+    unit.value=pred.len,
+    N=c(pred.len,sqrt.len,sqrt.len)))
 })
