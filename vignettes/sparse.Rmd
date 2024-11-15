@@ -32,13 +32,7 @@ vec.mat.result <- atime::atime(
   matrix=matrix(0, N, N),
   Matrix=Matrix(0, N, N),
   result=function(x)data.frame(length=length(x)))
-vec.mat.colors <- c(
-  matrix="black",
-  Matrix="red",
-  vector="deepskyblue")
-sc.fill <- scale_fill_manual(values=vec.mat.colors)
-sc.color <- scale_color_manual(values=vec.mat.colors)
-plot(vec.mat.result)+sc.color+sc.fill
+plot(vec.mat.result)
 ```
 
 The plot above shows three panels, one for each unit.
@@ -129,7 +123,6 @@ if(require(ggplot2)){
       N, value,
       color=description),
       data=press_long)+
-    sc.color+
     scale_x_log10(limits=c(NA, max(press_long$N*2)))+
     scale_y_log10("")
   if(requireNamespace("directlabels")){
@@ -164,7 +157,7 @@ vec.mat.pred <- predict(
   seconds=vec.mat.result$seconds.limit,
   kilobytes=1000,
   length=1e6)
-plot(vec.mat.pred)+sc.fill+sc.color
+plot(vec.mat.pred)
 ```
 
 In the plot above we can see the throughput `N` for a given limit of
