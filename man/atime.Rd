@@ -45,7 +45,7 @@ result=FALSE, N.env.parent=NULL, ...)}
 ## Example 1: polynomial and exponential time string functions.
 atime_result_string <- atime::atime(
   seconds.limit=0.001,
-  N=unique(as.integer(10^seq(0,3.5,l=100))),
+  N=unique(as.integer(10^seq(0,4,l=100))),
   setup={
     subject <- paste(rep("a", N), collapse="")
     pattern <- paste(rep(c("a?", "a"), each=N), collapse="")
@@ -57,26 +57,14 @@ atime_result_string <- atime::atime(
   linear.replacement=gsub("a",linear_size_replacement,subject))
 plot(atime_result_string)
 
-## Example 2: combine using rbind inside or outside for loop.
-atime_result_rbind <- atime::atime(
+## Example 2: dense matrix versus sparse Matrix, additional unit, length.
+vec_mat_result <- atime::atime(
   seconds.limit=0.001,
-  setup={
-    DF <- data.frame(i=1:100)
-  },
-  inside={
-    big.frame <- data.frame()
-    for(table.i in 1:N){
-      big.frame <- rbind(big.frame, DF)
-    }
-  },
-  outside={
-    big.frame.list <- list()
-    for(table.i in 1:N){
-      big.frame.list[[table.i]] <- DF
-    }
-    big.frame <- do.call(rbind, big.frame.list)
-  }
-)
-plot(atime_result_rbind)
+  N=as.integer(10^seq(1,7,by=0.25)),
+  vector=numeric(N),
+  matrix=matrix(0, N, N),
+  Matrix=if(require(Matrix))Matrix(0, N, N),
+  result=function(x)data.frame(length=length(x)))
+plot(vec_mat_result)
 
 }

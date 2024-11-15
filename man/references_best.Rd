@@ -49,31 +49,20 @@ plot(refs_best_string)
 (pred_string <- predict(refs_best_string))
 plot(pred_string)
 
-## Example 2: combine using rbind inside or outside for loop.
-atime_result_rbind <- atime::atime(
+## Example 2: dense matrix versus sparse Matrix, additional unit, length.
+vec_mat_result <- atime::atime(
   seconds.limit=0.001,
-  setup={
-    DF <- data.frame(i=1:100)
-  },
-  inside={
-    big.frame <- data.frame()
-    for(table.i in 1:N){
-      big.frame <- rbind(big.frame, DF)
-    }
-  },
-  outside={
-    big.frame.list <- list()
-    for(table.i in 1:N){
-      big.frame.list[[table.i]] <- DF
-    }
-    big.frame <- do.call(rbind, big.frame.list)
-  }
-)
-(refs_best_rbind <- atime::references_best(atime_result_rbind))
-plot(refs_best_rbind)
-refs_best_rbind$plot.references <- refs_best_rbind$ref[c("N","N^2"),on="fun.name"]
-plot(refs_best_rbind)
-(pred_rbind <- predict(refs_best_rbind))
-plot(pred_rbind)
+  N=as.integer(10^seq(1,7,by=0.25)),
+  vector=numeric(N),
+  matrix=matrix(0, N, N),
+  Matrix=if(require(Matrix))Matrix(0, N, N),
+  result=function(x)data.frame(length=length(x)))
+plot(vec_mat_result)
+(vec_mat_refs <- atime::references_best(vec_mat_result))
+plot(vec_mat_refs)
+vec_mat_refs$plot.references <- vec_mat_refs$ref[c("N","N^2"),on="fun.name"]
+plot(vec_mat_refs)
+(vec_mat_pred <- predict(vec_mat_refs, length=1e3))
+plot(vec_mat_pred)
 
 }
