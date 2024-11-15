@@ -90,8 +90,9 @@ sub.atime.edited <- sub.atime.list
 library(data.table)
 sub.atime.edited$measurements <- data.table(sub.atime.list$measurements)[
 , expr.name := paste0("PERL=",PERL)]
-library(ggplot2)
-plot(sub.atime.edited)+
-  facet_grid(unit ~ FUN, labeller=label_both)
+if(require(ggplot2)){
+  plot(sub.atime.edited)+
+    facet_grid(unit ~ FUN, labeller=label_both)
+}
 
 }

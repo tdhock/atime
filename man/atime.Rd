@@ -34,6 +34,9 @@ result=FALSE, N.env.parent=NULL, ...)}
   convenience, expressions may be specified either via code (\dots) or
   data (\code{expr.list} arg).}
 
+\seealso{\code{\link{atime_grid}} for avoiding repetition when measuring
+  asymptotic properties of several similar expressions.}
+
 \value{list of class atime with elements \code{unit.col.vec} (character
   vector of column names to analyze), \code{seconds.limit} (numeric
   input param), \code{measurements} (data table of results).}
@@ -42,10 +45,10 @@ result=FALSE, N.env.parent=NULL, ...)}
 
 \examples{
 
-## Example 1: polynomial and exponential time string functions.
+## Polynomial and exponential time string functions.
 atime_result_string <- atime::atime(
   seconds.limit=0.001,
-  N=unique(as.integer(10^seq(0,4,l=100))),
+  N=unique(as.integer(10^seq(0,3,l=100))),
   setup={
     subject <- paste(rep("a", N), collapse="")
     pattern <- paste(rep(c("a?", "a"), each=N), collapse="")
@@ -56,15 +59,5 @@ atime_result_string <- atime::atime(
   constant.replacement=gsub("a","constant size replacement",subject),
   linear.replacement=gsub("a",linear_size_replacement,subject))
 plot(atime_result_string)
-
-## Example 2: dense matrix versus sparse Matrix, additional unit, length.
-vec_mat_result <- atime::atime(
-  seconds.limit=0.001,
-  N=as.integer(10^seq(1,7,by=0.25)),
-  vector=numeric(N),
-  matrix=matrix(0, N, N),
-  Matrix=if(require(Matrix))Matrix(0, N, N),
-  result=function(x)data.frame(length=length(x)))
-plot(vec_mat_result)
 
 }
