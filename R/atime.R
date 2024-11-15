@@ -159,7 +159,7 @@ atime <- function(N=default_N(), setup, expr.list=NULL, times=10, seconds.limit=
         names.list <- lapply(N.env$result.list, names)
         for(result.i in seq_along(names.list)){
           if(!identical(names.list[[1]], names.list[[result.i]])){
-            stop(sprintf("results are all 1 row data frames, but some have different names (%s, %s); please fix by making row names of results identical", names(names.list)[[1]], names(names.list)[[result.i]]))
+            stop(sprintf("results are all 1 row data frames, but some have different names (%s, %s); please fix by making column names of results identical", names(names.list)[[1]], names(names.list)[[result.i]]))
           }
         }
         result.rows <- do.call(rbind, N.env$result.list)

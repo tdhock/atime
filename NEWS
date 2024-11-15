@@ -1,3 +1,9 @@
+Changes in version 2024.11.15
+
+- only run tests that involve Matrix if it is available.
+- row -> column names in error message for custom units.
+- New feature: atime(result=fun) means that fun will be applied to the output of each expression, and that result will be saved. Useful when you want to specify a custom unit, with a function that returns a 1-row data frame, that can be applied to each expression.
+
 Changes in version 2024.11.8
 
 - only run tests that involve plotting if ggplot2 is available, to fix CRAN noSuggests issue, https://github.com/tdhock/atime/issues/67

@@ -398,7 +398,7 @@ if(requireNamespace("ggplot2"))test_that("references for non-NA unit, with NA un
   expect_identical(sort(names(rtab)), c("linear","quadratic"))
 })
 
-test_that("references for non-NA unit, with NA unit",{
+test_that("error for result data frames with different column names",{
   expect_error({
     atime::atime(
       missing=data.frame(my_unit=NA),
@@ -407,7 +407,7 @@ test_that("references for non-NA unit, with NA unit",{
       quadratic=data.frame(my_unit=N^2),
       seconds.limit=0.001,
       result=TRUE)
-  }, "results are all 1 row data frames, but some have different names (missing, constant); please fix by making row names of results identical", fixed=TRUE)
+  }, "results are all 1 row data frames, but some have different names (missing, constant); please fix by making column names of results identical", fixed=TRUE)
 })
 
 test_that("error for new unit name conflicting with existing", {
@@ -487,12 +487,11 @@ if(require(Matrix))test_that("atime_grid parameters attribute", {
 })
 
 if(require(Matrix))test_that("result=fun works", {
-  len <- function(x)data.frame(length=length(x))
   vec.mat.result <- atime::atime(
     N=10^seq(1,2,by=0.25),
     vector=numeric(N),
     matrix=matrix(0, N, N),
     Matrix=Matrix(0, N, N),
-    result=len)
-  expect_is(vec.mat.result, "atime")
+    result=function(x)data.frame(length=length(x)))
+  expect_is(vec.mat.result$measurements$length, "integer")
 })
