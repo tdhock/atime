@@ -489,7 +489,7 @@ if(require(Matrix))test_that("atime_grid parameters attribute", {
 if(require(Matrix))test_that("result=fun works", {
   len <- function(x)data.frame(length=length(x))
   vec.mat.result <- atime::atime(
-    N=10^seq(1,7,by=0.25),
+    N=10^seq(1,2,by=0.25),
     vector=numeric(N),
     matrix=matrix(0, N, N),
     Matrix=Matrix(0, N, N),

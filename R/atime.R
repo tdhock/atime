@@ -96,6 +96,15 @@ default_N <- function(){
 atime <- function(N=default_N(), setup, expr.list=NULL, times=10, seconds.limit=0.01, verbose=FALSE, result=FALSE, N.env.parent=NULL, ...){
   kilobytes <- mem_alloc <- . <- sizes <- NULL
   ## above for CRAN NOTE.
+  result.fun <- identity
+  result.keep <- if(is.function(result)){
+    result.fun <- result
+    TRUE
+  }else if(isTRUE(result)){
+    TRUE
+  }else{
+    FALSE
+  }
   if(is.null(N.env.parent)){
     N.env.parent <- parent.frame()
   }
@@ -133,10 +142,10 @@ atime <- function(N=default_N(), setup, expr.list=NULL, times=10, seconds.limit=
       N.env$result.list <- list()
       for(expr.name in not.done.yet){
         expr <- elist[[expr.name]]
-        m.list[expr.name] <- list(if(result){
+        m.list[expr.name] <- list(if(result.keep){
           substitute(
-            result.list[NAME] <- list(EXPR),
-            list(NAME=expr.name, EXPR=expr))
+            result.list[NAME] <- list(FUN(EXPR)),
+            list(NAME=expr.name, FUN=result.fun, EXPR=expr))
         }else{
           expr
         })
@@ -159,7 +168,7 @@ atime <- function(N=default_N(), setup, expr.list=NULL, times=10, seconds.limit=
       }else{
         result.rows <- NULL
       }
-      if(result){
+      if(result.keep){
         N.df$result <- N.env$result.list
       }
       N.stats <- data.table(
