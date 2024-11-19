@@ -398,7 +398,7 @@ if(requireNamespace("ggplot2"))test_that("references for non-NA unit, with NA un
   expect_identical(sort(names(rtab)), c("linear","quadratic"))
 })
 
-test_that("references for non-NA unit, with NA unit",{
+test_that("error for result data frames with different column names",{
   expect_error({
     atime::atime(
       missing=data.frame(my_unit=NA),
@@ -407,7 +407,7 @@ test_that("references for non-NA unit, with NA unit",{
       quadratic=data.frame(my_unit=N^2),
       seconds.limit=0.001,
       result=TRUE)
-  }, "results are all 1 row data frames, but some have different names (missing, constant); please fix by making row names of results identical", fixed=TRUE)
+  }, "results are all 1 row data frames, but some have different names (missing, constant); please fix by making column names of results identical", fixed=TRUE)
 })
 
 test_that("error for new unit name conflicting with existing", {
@@ -438,8 +438,7 @@ test_that("atime_test outputs historical versions", {
   expect_identical(names(atest), c("setup", "expr", "Slow", "Fast"))
 })
 
-test_that("atime_grid parameters attribute", {
-  library(Matrix)
+if(require(Matrix))test_that("atime_grid parameters attribute", {
   param.list <- list(
     non_zeros=c("N","N^2/10"),
     fun=c("matrix","Matrix")
@@ -485,4 +484,24 @@ test_that("atime_grid parameters attribute", {
   mult.pred <- predict(mult.refs, in_size=50)
   expect_in(expected.names, names(mult.pred$measurements))
   expect_in(expected.names, names(mult.pred$prediction))
+})
+
+if(require(Matrix))test_that("result=fun works", {
+  pred.len <- 100
+  sqrt.len <- sqrt(pred.len)
+  vec.mat.result <- atime::atime(
+    N=2^seq(1,ceiling(log2(pred.len))),
+    vector=numeric(N),
+    matrix=matrix(0, N, N),
+    Matrix=Matrix(0, N, N),
+    result=function(x)data.frame(length=length(x)))
+  expect_is(vec.mat.result$measurements$length, "integer")
+  vec.mat.refs <- atime::references_best(vec.mat.result)
+  vec.mat.pred <- predict(vec.mat.refs, length=pred.len)
+  ## precise estimation of length:
+  expect_equal(vec.mat.pred$prediction, data.table(
+    unit="length",
+    expr.name=c("vector","matrix","Matrix"),
+    unit.value=pred.len,
+    N=c(pred.len,sqrt.len,sqrt.len)))
 })

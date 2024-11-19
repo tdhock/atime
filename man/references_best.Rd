@@ -25,7 +25,7 @@ references_best(L, fun.list=NULL)
 
 \examples{
 
-## Example 1: polynomial and exponential time string functions.
+## Polynomial and exponential time string functions.
 atime_result_string <- atime::atime(
   seconds.limit=0.001,
   N=unique(as.integer(10^seq(0,4,l=100))),
@@ -48,32 +48,5 @@ plot(refs_best_string)
 ## predict method computes N for given units (default seconds limit).
 (pred_string <- predict(refs_best_string))
 plot(pred_string)
-
-## Example 2: combine using rbind inside or outside for loop.
-atime_result_rbind <- atime::atime(
-  seconds.limit=0.001,
-  setup={
-    DF <- data.frame(i=1:100)
-  },
-  inside={
-    big.frame <- data.frame()
-    for(table.i in 1:N){
-      big.frame <- rbind(big.frame, DF)
-    }
-  },
-  outside={
-    big.frame.list <- list()
-    for(table.i in 1:N){
-      big.frame.list[[table.i]] <- DF
-    }
-    big.frame <- do.call(rbind, big.frame.list)
-  }
-)
-(refs_best_rbind <- atime::references_best(atime_result_rbind))
-plot(refs_best_rbind)
-refs_best_rbind$plot.references <- refs_best_rbind$ref[c("N","N^2"),on="fun.name"]
-plot(refs_best_rbind)
-(pred_rbind <- predict(refs_best_rbind))
-plot(pred_rbind)
 
 }

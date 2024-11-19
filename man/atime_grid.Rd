@@ -59,7 +59,8 @@ list(m=quote(mean(data)), s=quote(sum(data)))
   expr.param.sep="\n",
   regexpr=regexpr(pattern, subject, perl=PERL)))
 atime.list <- atime::atime(
-  N=unique(as.integer(10^seq(0,3.5,l=20))),
+  seconds.limit=0.001,
+  N=unique(as.integer(10^seq(0,2,l=30))),
   setup={
     subject <- paste(rep("a", N), collapse="")
     pattern <- paste(rep(c("a?", "a"), each=N), collapse="")
@@ -77,6 +78,7 @@ sapply(sub.param.list$FUN,function(name)substitute(fun("a","",subject), list(fun
   replace=FUN("a","",subject,perl=PERL),
   symbol.params="FUN"))
 sub.atime.list <- atime::atime(
+  seconds.limit=0.001,
   setup={
     subject <- paste(rep("a",N),collapse="")
   }, 
@@ -88,8 +90,9 @@ sub.atime.edited <- sub.atime.list
 library(data.table)
 sub.atime.edited$measurements <- data.table(sub.atime.list$measurements)[
 , expr.name := paste0("PERL=",PERL)]
-library(ggplot2)
-plot(sub.atime.edited)+
-  facet_grid(unit ~ FUN, labeller=label_both)
+if(require(ggplot2)){
+  plot(sub.atime.edited)+
+    facet_grid(unit ~ FUN, labeller=label_both)
+}
 
 }
