@@ -1,3 +1,7 @@
+Changes in version 2024.11.19
+
+- comment predict(kilobytes) in sparse vignette, for CRAN.
+
 Changes in version 2024.11.15
 
 - only run tests that involve Matrix if it is available.

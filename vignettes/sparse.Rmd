@@ -155,7 +155,7 @@ Below we estimate the throughput for some given limits:
 vec.mat.pred <- predict(
   vec.mat.best,
   seconds=vec.mat.result$seconds.limit,
-  kilobytes=1000,
+  ##kilobytes=1000,#not available on CRAN.
   length=1e6)
 plot(vec.mat.pred)
 ```
