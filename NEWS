@@ -1,3 +1,7 @@
+Changes in version 2024.11.29
+
+- use seconds.limit=Inf in test, for CRAN.
+
 Changes in version 2024.11.19
 
 - comment predict(kilobytes) in sparse vignette, for CRAN.

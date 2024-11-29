@@ -494,7 +494,8 @@ if(require(Matrix))test_that("result=fun works", {
     vector=numeric(N),
     matrix=matrix(0, N, N),
     Matrix=Matrix(0, N, N),
-    result=function(x)data.frame(length=length(x)))
+    result=function(x)data.frame(length=length(x)),
+    seconds.limit=Inf)
   expect_is(vec.mat.result$measurements$length, "integer")
   vec.mat.refs <- atime::references_best(vec.mat.result)
   vec.mat.pred <- predict(vec.mat.refs, length=pred.len)
