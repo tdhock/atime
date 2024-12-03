@@ -25,7 +25,7 @@ to time and memory).
 
 ```{r}
 library(Matrix)
-N_seq <- as.integer(10^seq(1,7,by=0.25))
+N_seq <- unique(as.integer(10^seq(0,7,by=0.25)))
 vec.mat.result <- atime::atime(
   N=N_seq,
   vector=numeric(N),
@@ -64,40 +64,35 @@ quantities (seconds, kilobytes, length).
 seconds.limit <- 0.01
 done.vec <- NULL
 measure.vars <- c("seconds","kilobytes","length")
-press_result <- bench::press(
-  N = N_seq,
-  {
-    exprs <- function(...){
-      as.list(match.call()[-1])
-    }
-    elist <- exprs(
-      vector=numeric(N),
-      matrix=matrix(0, N, N),
-      Matrix=Matrix(0, N, N))
-    elist[names(done.vec)] <- NA #Don't run exprs which already exceeded limit.
-    mark.args <- c(elist, list(iterations=10, check=FALSE))
-    mark.result <- do.call(bench::mark, mark.args)
-    ## Rename some columns for easier interpretation.
-    desc.vec <- attr(mark.result$expression, "description")
-    mark.result$description <- desc.vec
-    mark.result$seconds <- as.numeric(mark.result$median)
-    mark.result$kilobytes <- as.numeric(mark.result$mem_alloc/1024)
-    ## Compute length column to measure in addition to time/memory.
-    mark.result$length <- NA
-    for(desc.i in seq_along(desc.vec)){
-      description <- desc.vec[[desc.i]]
-      result <- eval(elist[[description]])
-      mark.result$length[desc.i] <- length(result)
-    }
-    ## Set NA time/memory/length for exprs which were not run.
-    mark.result[desc.vec %in% names(done.vec), measure.vars] <- NA
-    ## If expr went over time limit, indicate it is done.
-    over.limit <- mark.result$seconds > seconds.limit
-    over.desc <- desc.vec[is.finite(mark.result$seconds) & over.limit]
-    done.vec[over.desc] <<- TRUE
-    mark.result
+press_result <- bench::press(N = N_seq, {
+  exprs <- function(...)as.list(match.call()[-1])
+  elist <- exprs(
+    vector=numeric(N),
+    matrix=matrix(0, N, N),
+    Matrix=Matrix(0, N, N))
+  elist[names(done.vec)] <- NA #Don't run exprs which already exceeded limit.
+  mark.args <- c(elist, list(iterations=10, check=FALSE))
+  mark.result <- do.call(bench::mark, mark.args)
+  ## Rename some columns for easier interpretation.
+  desc.vec <- attr(mark.result$expression, "description")
+  mark.result$description <- desc.vec
+  mark.result$seconds <- as.numeric(mark.result$median)
+  mark.result$kilobytes <- as.numeric(mark.result$mem_alloc/1024)
+  ## Compute length column to measure in addition to time/memory.
+  mark.result$length <- NA
+  for(desc.i in seq_along(desc.vec)){
+    description <- desc.vec[[desc.i]]
+    result <- eval(elist[[description]])
+    mark.result$length[desc.i] <- length(result)
   }
-)
+  ## Set NA time/memory/length for exprs which were not run.
+  mark.result[desc.vec %in% names(done.vec), measure.vars] <- NA
+  ## If expr went over time limit, indicate it is done.
+  over.limit <- mark.result$seconds > seconds.limit
+  over.desc <- desc.vec[is.finite(mark.result$seconds) & over.limit]
+  done.vec[over.desc] <<- TRUE
+  mark.result
+})
 ```
 
 The `bench::press` code above is relatively complicated, because it re-implements two functions that are provided by atime:
@@ -156,7 +151,7 @@ vec.mat.pred <- predict(
   vec.mat.best,
   seconds=vec.mat.result$seconds.limit,
   ##kilobytes=1000,#not available on CRAN.
-  length=1e6)
+  length=100)
 plot(vec.mat.pred)
 ```
 
