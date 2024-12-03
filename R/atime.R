@@ -114,6 +114,11 @@ atime <- function(N=default_N(), setup, expr.list=NULL, times=10, seconds.limit=
   if(length(N)<2){
     stop("length(N) should be at least 2")
   }
+  N.tab <- table(N)
+  N.bad <- N.tab[N.tab>1]
+  if(length(N.bad)){
+    stop("please remove duplicate values from N: ", paste(names(N.bad), collapse=", "))
+  }
   formal.names <- names(formals())
   mc.args <- as.list(match.call()[-1])
   dots.list <- mc.args[!names(mc.args) %in% formal.names]
