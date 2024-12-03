@@ -1,7 +1,15 @@
 library(data.table)
 library(testthat)
 
-test_that("warning for only one N", {
+test_that("error when user provided duplicate N", {
+  expect_error({
+    atime::atime(N=c(1,2,2,3,9,9,9), num=numeric(N))
+  },
+  "please remove duplicate values from N: 2, 9",
+  fixed=TRUE)
+})
+
+test_that("warning when result contains only one N", {
   expect_warning({
     seconds.limit <- 0.001
     atime.list <- atime::atime(

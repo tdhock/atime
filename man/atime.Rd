@@ -9,7 +9,7 @@ N, setup, expr.list=NULL, times=10, seconds.limit=0.01, verbose=FALSE,
 result=FALSE, N.env.parent=NULL, ...)}
 
 \arguments{
-  \item{N}{numeric vector of at least two data sizes, default is \code{2^seq(2,20)}.}
+  \item{N}{numeric vector of at least two unique data sizes, default is \code{2^seq(2,20)}.}
   \item{setup}{expression to evaluate for every data size, before timings.}
   \item{expr.list}{named list of expressions to time.}
   \item{times}{number of times to evaluate each timed expression.}
