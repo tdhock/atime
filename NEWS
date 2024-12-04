@@ -1,3 +1,7 @@
+Changes in version 2024.12.4
+
+- fixes #73, seconds.limit=Inf in test, for CRAN.
+
 Changes in version 2024.12.3
 
 - atime errors if user provides duplicate N values.

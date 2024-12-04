@@ -376,11 +376,12 @@ if(requireNamespace("nc")){
 
 if(requireNamespace("ggplot2"))test_that("references for non-NA unit, with NA unit",{
   atime.list <- atime::atime(
+    N=2^seq(0,4),
     missing=data.frame(my_unit=NA),
     constant=data.frame(my_unit=1),
     linear=data.frame(my_unit=N),
     quadratic=data.frame(my_unit=N^2),
-    seconds.limit=0.001,
+    seconds.limit=Inf,
     result=TRUE)
   (atab <- table(atime.list$meas$expr.name))
   ref.list <- atime::references_best(atime.list)
