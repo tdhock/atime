@@ -45,6 +45,8 @@ result=FALSE, N.env.parent=NULL, ...)}
 
 \examples{
 
+data.table::setDTthreads(1) # for CRAN.
+
 ## Polynomial and exponential time string functions.
 atime_result_string <- atime::atime(
   seconds.limit=0.001,

@@ -49,6 +49,8 @@ atime_grid(
 }
 \examples{
 
+data.table::setDTthreads(1) # for CRAN.
+
 ## Example 0: with no param.list, same as quote inside named list.
 atime::atime_grid(m=mean(data), s=sum(data))
 list(m=quote(mean(data)), s=quote(sum(data)))

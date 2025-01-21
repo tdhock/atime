@@ -1,3 +1,21 @@
+Changes in version 2025.1.21
+
+- add setDTthreads to examples and tests to hopefully eliminate these on CRAN Debian:
+
+* checking examples ... [20s/7s] NOTE
+Examples with CPU (user + system) or elapsed time > 5s
+                 user system elapsed
+atime_grid      7.543   0.28   1.829
+references_best 5.923   0.16   2.623
+Examples with CPU time > 2.5 times elapsed time
+            user system elapsed ratio
+atime_grid 7.543  0.280   1.829 4.277
+atime      4.716  0.172   1.889 2.588
+* checking for unstated dependencies in ‘tests’ ... OK
+* checking tests ... [26s/7s] NOTE
+  Running ‘testthat.R’ [26s/7s]
+Running R code in ‘testthat.R’ had CPU time 3.6 times elapsed time
+
 Changes in version 2024.12.4
 
 - fixes #73, seconds.limit=Inf in test, for CRAN.
