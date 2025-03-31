@@ -49,7 +49,12 @@ predict.references_best <- function(object, ...){
       stop(unit, "=", unit.value, " is outside range of data, please change to a value that intersects at least one of the empirical curves")
     }
     not.NA
-  }, by=unit]
+  }, by=unit][
+  , label := paste0(
+    expr.name,
+    "\nN=",
+    format(N, big.mark=",", scientific=FALSE, trim=TRUE)
+  )][]
   class(object) <- c("atime_prediction", class(object))
   object
 }
@@ -94,7 +99,7 @@ plot.atime_prediction <- function(x, ...){
       gg+
         directlabels::geom_dl(ggplot2::aes(
           N, unit.value, 
-          label=paste0(expr.name, "\nN=", round(N)),
+          label=label,
           color=expr.name),
           data=pred,
           method="top.polygons")+
