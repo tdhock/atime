@@ -31,6 +31,9 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      - name: install git2r
+        run: R -e 'install.packages("git2r")'
+
       - name: git config user.name
         run: git config --global user.name "atime GitHub Actions"
 
