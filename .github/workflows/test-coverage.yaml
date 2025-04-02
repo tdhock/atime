@@ -16,9 +16,10 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-# user name and email required for committing in git2r tests.
-      - name: git config user.name
+
+      - name: git config user.name # user name and email required for committing in git2r tests.
         run: git config --global user.name "atime GitHub Actions"
+
       - name: git config user.email
         run: git config --global user.email toby.hocking@r-project.org
 
