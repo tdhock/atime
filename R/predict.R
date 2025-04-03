@@ -1,6 +1,6 @@
 predict.references_best <- function(object, ...){
   . <- N <- expr.name <- unit <- empirical <- log10.empirical <-
-    log10.N <- NULL
+    log10.N <- label <- NULL
   ## Above for CRAN NOTEs.
   L <- list(...)
   if(length(L)==0){
@@ -49,13 +49,18 @@ predict.references_best <- function(object, ...){
       stop(unit, "=", unit.value, " is outside range of data, please change to a value that intersects at least one of the empirical curves")
     }
     not.NA
-  }, by=unit]
+  }, by=unit][
+  , label := paste0(
+    expr.name,
+    "\nN=",
+    format(N, big.mark=",", scientific=FALSE, trim=TRUE)
+  )][]
   class(object) <- c("atime_prediction", class(object))
   object
 }
 
 plot.atime_prediction <- function(x, ...){
-  expr.name <- N <- empirical <- unit <- unit.value <- NULL
+  expr.name <- N <- empirical <- unit <- unit.value <- label <- NULL
   meas <- x[["measurements"]][unit %in% x$prediction$unit]
   if(requireNamespace("ggplot2")){
     pred <- x[["prediction"]]
@@ -94,7 +99,7 @@ plot.atime_prediction <- function(x, ...){
       gg+
         directlabels::geom_dl(ggplot2::aes(
           N, unit.value, 
-          label=paste0(expr.name, "\nN=", round(N)),
+          label=label,
           color=expr.name),
           data=pred,
           method="top.polygons")+

@@ -1,3 +1,7 @@
+Changes in version 2025.4.1
+
+- add label column to predictions table, with commas for thousands, etc.
+
 Changes in version 2025.1.21
 
 - add setDTthreads to examples and tests to hopefully eliminate these on CRAN Debian:

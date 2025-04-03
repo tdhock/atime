@@ -15,9 +15,9 @@ jobs:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      - name: git config user.name
+      - name: git config user.name # user name and email required for committing in git2r tests.
         run: git config --global user.name "atime GitHub Actions"
 
       - name: git config user.email
@@ -50,7 +50,7 @@ jobs:
 
       - name: Upload test results
         if: failure()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: coverage-test-failures
           path: ${{ runner.temp }}/package

@@ -496,7 +496,7 @@ if(require(Matrix))test_that("atime_grid parameters attribute", {
 })
 
 if(require(Matrix))test_that("result=fun works", {
-  pred.len <- 100
+  pred.len <- 32^2
   sqrt.len <- sqrt(pred.len)
   vec.mat.result <- atime::atime(
     N=2^seq(1,ceiling(log2(pred.len))),
@@ -513,5 +513,6 @@ if(require(Matrix))test_that("result=fun works", {
     unit="length",
     expr.name=c("vector","matrix","Matrix"),
     unit.value=pred.len,
-    N=c(pred.len,sqrt.len,sqrt.len)))
+    N=c(pred.len,sqrt.len,sqrt.len),
+    label=c("vector\nN=1,024", "matrix\nN=32", "Matrix\nN=32")))
 })
