@@ -52,7 +52,7 @@ jobs:
 
       - name: install git2r
         shell: bash
-        run: R -e 'install.packages("git2r",type="source")'
+        run: R -e 'system("sudo apt install libgit2-dev");install.packages("git2r",type="source",repos="http://cloud.r-project.org")'
 
       - uses: r-lib/actions/check-r-package@v2
         with:
