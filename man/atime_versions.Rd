@@ -17,14 +17,14 @@ atime_versions(
   \item{setup}{
     expression to evaluate for every data size, before timings.
     In contrast to \code{expr},
-    no replacement of \code{Package:} is performed.
+    no replacement of \code{Package::} is performed.
   }
   \item{expr}{
     code with package double-colon prefix, for example
     \code{PKG::fun(argA, argB)}, where PKG is the name of the
     package specified by \code{pkg.path}. This code will be
     evaluated for each different package version, by replacing
-    \code{PKG:} by \code{PKG.SHA:}.
+    \code{PKG::} by \code{PKG.SHA::}.
     To run different versions of implicitly-called functions
     like \code{DT[i,j]}, you need
     to call them explicitly, as in 
@@ -38,7 +38,7 @@ atime_versions(
   \item{pkg.edit.fun}{function called to edit package before
     installation, should typically replace instances of PKG with
     PKG.SHA, default works with Rcpp packages.}
-  \item{result}{logical, save results? (default FALSE)}
+  \item{result}{logical or function, passed to \code{\link{atime}}.}
   \item{N.env.parent}{environment to use as parent of environment
   created for each data size N, or NULL to use default parent env.}
   \item{\dots}{named versions.}
