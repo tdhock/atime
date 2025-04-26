@@ -7,9 +7,9 @@
   \code{atime_versions_exprs} is more flexible for the case of comparing
   different versions of one expression to another expression.}
 \usage{atime_versions_exprs(
-pkg.path, expr, sha.vec=NULL,
-verbose=FALSE,
-pkg.edit.fun=pkg.edit.default, ...)}
+ pkg.path, expr, sha.vec=NULL,
+ verbose=FALSE,
+ pkg.edit.fun=pkg.edit.default, ...)}
 \arguments{
   \item{pkg.path}{Path to git repo containing R package.}
   \item{expr}{
@@ -17,7 +17,7 @@ pkg.edit.fun=pkg.edit.default, ...)}
     \code{PKG::fun(argA, argB)}, where PKG is the name of the
     package specified by \code{pkg.path}. This code will be
     evaluated for each different package version, by replacing
-    \code{PKG:} by \code{PKG.SHA:}.
+    \code{PKG::} by \code{PKG.SHA::}.
     To run different versions of implicitly-called functions
     like \code{DT[i,j]}, you need
     to call them explicitly, as in 
@@ -35,7 +35,8 @@ pkg.edit.fun=pkg.edit.default, ...)}
 \details{
   For convenience, versions can
   be specified either as code (\dots), data (\code{sha.vec}), or both.
-  Each version should be either \code{""} (to install most recent
+  Each version should be either \code{""} (to use currently installed
+  version of package, or if missing, install most recent
   version from CRAN) or a SHA1 hash, which is passed as branch
   arg to \code{git2r::checkout}; version names used to identify/interpret
   the output/plots.
@@ -45,10 +46,12 @@ pkg.edit.fun=pkg.edit.default, ...)}
 }
 \value{
   A list of expressions, one for
-  each version, created by replacing \code{PKG:}
-  in \code{expr} with \code{PKG.SHA:}, 
+  each version, created by replacing \code{PKG::}
+  in \code{expr} with \code{PKG.SHA::}.
+  This list can be used as \code{expr.list} argument of \code{atime()},
+  instead of writing code like
   \code{atime(name1=Package.SHA1::fun(argA, argB),
-    name2=Package.SHA2::fun(argA,argB))}.
+    name2=Package.SHA2::fun(argA, argB))}.
 }
 
 \author{Toby Dylan Hocking}

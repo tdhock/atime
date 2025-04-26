@@ -73,16 +73,27 @@ atime_pkg_test_info(pkg.path=".", tests.dir=NULL)
 
 if(FALSE){
 
+  ## Clone binsegRcpp, and checkout a branch which has performance tests.
   tdir <- tempfile()
   dir.create(tdir)
   git2r::clone("https://github.com/tdhock/binsegRcpp", tdir)
   repo <- git2r::repository(tdir)
   git2r::checkout(repo, "another-branch")
+
+  ## Run one test.
+  info.env <- atime::atime_pkg_test_info(tdir)
+  test_name <- "binseg(1:N,maxSegs=N/2) DIST=l1"
+  (one.call <- info.env$test.call[[test_name]])
+  one.result <- eval(one.call)
+  plot(one.result) # constant difference for small N should be visible.
+
+  ## Run all tests.
   result.list <- atime::atime_pkg(tdir)
   inst.atime <- file.path(tdir, "inst", "atime")
   dir(inst.atime)
   tests.RData <- file.path(inst.atime, "tests.RData")
   (objs <- load(tests.RData))
+  plot(pkg.results[[test_name]]) # should look similar.
 
   atime::atime_versions_remove("binsegRcpp")
 
