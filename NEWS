@@ -1,3 +1,7 @@
+Changes in version 2025.4.26
+
+- atime_versions() now works for an R package in a sub-directory of a git repo (package no longer needs to be in root of git repo).
+
 Changes in version 2025.4.1
 
 - add label column to predictions table, with commas for thousands, etc.

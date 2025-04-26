@@ -104,3 +104,28 @@ test_that("pkg.edit.fun is a function", {
   e.res <- eval(test.env$test.call[["global_var_in_setup"]])
   expect_is(e.res, "atime")
 })
+
+gdir <- tempfile()
+dir.create(gdir)
+git2r::clone("https://github.com/tdhock/grates", gdir)
+
+test_that("informative error when pkg.path is not a package", {
+  expect_error({
+    atime::atime_versions(
+      gdir,
+      current = "1aae646888dcedb128c9076d9bd53fcb4075dcda",
+      old     = "51056b9c4363797023da4572bde07e345ce57d9c",
+      setup   = date_vec <- rep(Sys.Date(), N),
+      expr    = grates::as_yearmonth(date_vec))
+  }, "pkg.path should be path to an R package, but pkg.path/DESCRIPTION does not exist")
+})
+
+test_that("atime_versions works with grates pkg in sub-dir of git repo", {
+  glist <- atime::atime_versions(
+    file.path(gdir,"pkg"),
+    current = "1aae646888dcedb128c9076d9bd53fcb4075dcda",
+    old     = "51056b9c4363797023da4572bde07e345ce57d9c",
+    setup   = date_vec <- rep(Sys.Date(), N),
+    expr    = grates::as_yearmonth(date_vec))
+  expect_is(glist, "atime")
+})
