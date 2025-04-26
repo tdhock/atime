@@ -121,6 +121,7 @@ test_that("informative error when pkg.path is not a package", {
 })
 
 test_that("atime_versions works with grates pkg in sub-dir of git repo", {
+  install.packages("fastymd")
   glist <- atime::atime_versions(
     file.path(gdir,"pkg"),
     current = "1aae646888dcedb128c9076d9bd53fcb4075dcda",
