@@ -47,14 +47,16 @@ atime_versions_install <- function(Package, pkg.path, new.Package.vec, sha.vec, 
   pkgs.in.lib <- basename(dirname(DESC.in.lib))
   new.not.installed <- !new.Package.vec %in% pkgs.in.lib
   if(any(new.not.installed)){
-    tdir <- tempfile()
+    ## on GH actions windows tempfile() gives C:\Users\RUNNER~1\AppData\Local\Temp\Rtmpc9T5Us/working_dir\Rtmpu23suf\file5d41af35765
+    tdir <- normalizePath(tempfile())
     dir.create(tdir)
     ## pkg.path may be path/to/repo/pkg
-    orig.repo <- git2r::repository(pkg.path)
+    norm.pkg.path <- normalizePath(pkg.path)
+    orig.repo <- git2r::repository(norm.pkg.path)
     ## path/to/repo root without trailing /.git
-    orig.repo.path <- dirname(orig.repo$path)
+    orig.repo.path <- normalizePath(dirname(orig.repo$path))
     ## /pkg
-    pkg.suffix.in.repo <- sub(orig.repo.path, "", normalizePath(pkg.path), fixed=TRUE)
+    pkg.suffix.in.repo <- sub(orig.repo.path, "", norm.pkg.path, fixed=TRUE)
     for(new.i in which(new.not.installed)){
       sha <- sha.vec[[new.i]]
       new.Package <- new.Package.vec[[new.i]]
