@@ -117,7 +117,7 @@ test_that("informative error when pkg.path is not a package", {
       old     = "51056b9c4363797023da4572bde07e345ce57d9c",
       setup   = date_vec <- rep(Sys.Date(), N),
       expr    = grates::as_yearmonth(date_vec))
-  }, "pkg.path should be path to an R package, but pkg.path/DESCRIPTION does not exist")
+  }, sprintf("pkg.path=%s should be path to an R package, but %s/DESCRIPTION does not exist", gdir, gdir), fixed=TRUE)
 })
 
 test_that("atime_versions works with grates pkg in sub-dir of git repo", {

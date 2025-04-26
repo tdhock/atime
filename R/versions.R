@@ -163,6 +163,9 @@ atime_versions_exprs <- function(pkg.path, expr, sha.vec=NULL, verbose=FALSE, pk
   dots.vec <- mc.args[!names(mc.args) %in% formal.names]
   SHA.vec <- get_sha_vec(sha.vec, dots.vec)
   pkg.DESC <- file.path(pkg.path, "DESCRIPTION")
+  if(!file.exists(pkg.DESC)){
+    stop(sprintf("pkg.path=%s should be path to an R package, but %s does not exist", pkg.path, pkg.DESC))
+  }
   DESC.mat <- read.dcf(pkg.DESC)
   Package <- DESC.mat[,"Package"]
   new.Package.vec <- paste0(
