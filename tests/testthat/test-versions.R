@@ -130,3 +130,12 @@ test_that("atime_versions works with grates pkg in sub-dir of git repo", {
     expr    = grates::as_yearmonth(date_vec))
   expect_is(glist, "atime")
 })
+
+test_that("atime_pkg_test_info() works for data.table, run one test case", {
+  dt_dir <- tempfile()
+  dir.create(dt_dir)
+  git2r::clone("https://github.com/Rdatatable/data.table", dt_dir)
+  dt_info <- atime::atime_pkg_test_info(dt_dir)
+  dt_result <- eval(dt_info$test.call[[1]])
+  expect_is(dt_result, "atime")
+})
