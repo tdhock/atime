@@ -104,3 +104,38 @@ test_that("pkg.edit.fun is a function", {
   e.res <- eval(test.env$test.call[["global_var_in_setup"]])
   expect_is(e.res, "atime")
 })
+
+gdir <- tempfile()
+dir.create(gdir)
+git2r::clone("https://github.com/tdhock/grates", gdir)
+
+test_that("informative error when pkg.path is not a package", {
+  expect_error({
+    atime::atime_versions(
+      gdir,
+      current = "1aae646888dcedb128c9076d9bd53fcb4075dcda",
+      old     = "51056b9c4363797023da4572bde07e345ce57d9c",
+      setup   = date_vec <- rep(Sys.Date(), N),
+      expr    = grates::as_yearmonth(date_vec))
+  }, sprintf("pkg.path=%s should be path to an R package, but %s/DESCRIPTION does not exist", gdir, gdir), fixed=TRUE)
+})
+
+test_that("atime_versions works with grates pkg in sub-dir of git repo", {
+  if(!requireNamespace("fastymd"))install.packages("fastymd")
+  glist <- atime::atime_versions(
+    file.path(gdir,"pkg"),
+    current = "1aae646888dcedb128c9076d9bd53fcb4075dcda",
+    old     = "51056b9c4363797023da4572bde07e345ce57d9c",
+    setup   = date_vec <- rep(Sys.Date(), N),
+    expr    = grates::as_yearmonth(date_vec))
+  expect_is(glist, "atime")
+})
+
+test_that("atime_pkg_test_info() works for data.table, run one test case", {
+  dt_dir <- tempfile()
+  dir.create(dt_dir)
+  git2r::clone("https://github.com/Rdatatable/data.table", dt_dir)
+  dt_info <- atime::atime_pkg_test_info(dt_dir)
+  dt_result <- eval(dt_info$test.call[[1]])
+  expect_is(dt_result, "atime")
+})

@@ -1,7 +1,7 @@
 Package: atime
 Type: Package
 Title: Asymptotic Timing
-Version: 2025.4.1
+Version: 2025.4.26
 Authors@R: c(
     person("Toby", "Hocking",
      email="toby.hocking@r-project.org",
@@ -26,6 +26,7 @@ Suggests:
     stringi,
     re2,
     binsegRcpp,
+    grates, fastymd,
     wbs,
     fpop,
     changepoint,

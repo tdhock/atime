@@ -12,7 +12,7 @@ atime_versions(
  ...)
 }
 \arguments{
-  \item{pkg.path}{Path to git repo containing R package.}
+  \item{pkg.path}{Path to R package in a git repo.}
   \item{N}{numeric vector of data sizes to vary.}
   \item{setup}{
     expression to evaluate for every data size, before timings.
@@ -82,6 +82,19 @@ if(FALSE){
   plot(atime.list)
 
   atime::atime_versions_remove("binsegRcpp")
+
+  gdir <- tempfile()
+  dir.create(gdir)
+  git2r::clone("https://github.com/tdhock/grates", gdir)
+  glist <- atime::atime_versions(
+    file.path(gdir,"pkg"),
+    current = "1aae646888dcedb128c9076d9bd53fcb4075dcda",
+    old     = "51056b9c4363797023da4572bde07e345ce57d9c",
+    setup   = date_vec <- rep(Sys.Date(), N),
+    expr    = grates::as_yearmonth(date_vec))
+  plot(glist)
+
+  atime::atime_versions_remove("grates")
 
 }
 

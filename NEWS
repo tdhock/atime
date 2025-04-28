@@ -1,6 +1,11 @@
+Changes in version 2025.4.26
+
+- atime_versions() now works for an R package in a sub-directory of a git repo (package no longer needs to be in root of git repo). Thanks @TimTaylor for the idea in issue#79. (PR#80)
+- PR#81: minor doc fixes, and use round() to avoid display of decimal places in label column of predictions table (bug introduced by PR#75).
+
 Changes in version 2025.4.1
 
-- add label column to predictions table, with commas for thousands, etc.
+- add label column to predictions table, with commas for thousands, etc. (PR#75)
 
 Changes in version 2025.1.21
 
