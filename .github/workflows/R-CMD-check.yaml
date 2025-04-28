@@ -54,6 +54,9 @@ jobs:
         shell: bash
         run: R -e 'install.packages("git2r",type="source",repos="http://cloud.r-project.org")'
 
+      - name: Install gettext so #include <libintl.h> works when compiling data.table, https://stackoverflow.com/questions/11370684 https://docs.github.com/en/actions/using-github-hosted-runners/using-github-hosted-runners/customizing-github-hosted-runners#installing-software-on-macos-runners
+        run: R -e 'system("brew reinstall gettext && brew unlink gettext && brew link gettext --force")'
+
       - uses: r-lib/actions/check-r-package@v2
         with:
           upload-snapshots: true
