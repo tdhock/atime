@@ -225,7 +225,7 @@ which may be irrelevant).
 
 See [[https://bencher.dev/docs/reference/prior-art/][Bencher prior art]] for even more related work, and see [[https://bencher.dev/docs/explanation/continuous-benchmarking/][continuous
 benchmarking]] for a plot that shows how false positives can show up if
-yo use a database of historical timings (perhaps run on different
+you use a database of historical timings (perhaps run on different
 computers). In contrast, =atime_pkg= uses a database of historical
 commits (known Fast and Slow), and runs them alongside commits which
 are relevant to the current PR (HEAD, merge-base, etc), in the same R
