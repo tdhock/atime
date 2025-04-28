@@ -158,8 +158,8 @@ then you should be able to observe the following:
 
 When comparing algorithms in terms of computational resources, we can
 show
-- Latency: the time/memory required for a given data size N, or
-- Throughput: the data size N possible for a given time/memory budget.
+- Latency: the time/memory required for a given data size N (subset rows of measurements for a given value of N);
+- Throughput: the data size N possible for a given time/memory budget (use predict method).
 
 We can do both using the code below,
 
