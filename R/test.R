@@ -37,6 +37,7 @@ atime_pkg <- function(pkg.path=".", tests.dir=NULL){
     compare.name <- largest.common.N[
       expr.name!=test.info$HEAD.name
     ][which.min(median), expr.name]
+    compare.name <- test.info$base.name
     HEAD.compare <- c(test.info$HEAD.name, compare.name)
     largest.common.timings <- largest.common.N[
       expr.name %in% HEAD.compare, .(
@@ -220,9 +221,11 @@ atime_pkg_test_info <- function(pkg.path=".", tests.dir=NULL){
   sha.vec <- c()
   HEAD.name <- paste0("HEAD=",git2r::repository_head(repo)$name)
   sha.vec[[HEAD.name]] <- git2r::sha(HEAD.commit)
-  CRAN.name <- paste0("CRAN=",ap[Package,"Version"])
   if(Package %in% rownames(ap)){
+    CRAN.name <- paste0("CRAN=",ap[Package,"Version"])
     sha.vec[[CRAN.name]] <- ""
+  }else{
+    CRAN.name <- NA_character_
   }
   base.ref <- Sys.getenv("GITHUB_BASE_REF", "master")
   base.commit <- tryCatch({
