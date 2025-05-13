@@ -29,7 +29,7 @@ test_that("atime_versions_exprs error when expr does not contain pkg:", {
   }, "expr should contain at least one instance of binsegRcpp:: to replace with binsegRcpp.be2f72e6f5c90622fe72e1c315ca05769a9dc854:", fixed=TRUE)
 })
 
-if(requireNamespace("ggplot2"))test_that("atime_pkg produces tests_all_facet.png not tests_preview_facet.png", {
+if(requireNamespace("ggplot2"))test_that("atime_pkg produces tests_all_facet.png and tests_preview_facet.png on atime-test-funs", {
   repo <- git2r::repository(tdir)
   ## https://github.com/tdhock/binsegRcpp/tree/atime-test-funs
   git2r::checkout(repo, branch="atime-test-funs")
@@ -55,12 +55,11 @@ if(requireNamespace("ggplot2"))test_that("atime_pkg produces tests_all_facet.png
   ## also test global PNG.
   tests_all_facet.png <- file.path(atime.dir, "tests_all_facet.png")
   expect_true(file.exists(tests_all_facet.png))
-  ##N.tests.preview undefined, default 4 == N.tests=4 so should not make PNG.
   tests_preview_facet.png <- file.path(atime.dir, "tests_preview_facet.png")
-  expect_false(file.exists(tests_preview_facet.png))
+  expect_true(file.exists(tests_preview_facet.png))
 })
 
-if(requireNamespace("ggplot2"))test_that("atime_pkg produces tests_all_facet.png and tests_preview_facet.png", {
+if(requireNamespace("ggplot2"))test_that("atime_pkg produces tests_all_facet.png and tests_preview_facet.png on another-branch", {
   repo <- git2r::repository(tdir)
   ## https://github.com/tdhock/binsegRcpp/tree/another-branch
   git2r::checkout(repo, branch="another-branch")

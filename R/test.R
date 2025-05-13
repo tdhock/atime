@@ -115,10 +115,9 @@ atime_pkg <- function(pkg.path=".", tests.dir=NULL){
     file=file.path(dirname(tests.RData), "install_seconds.txt"))
   ## create all and preview facet PNGs.
   N.tests <- length(test.info$test.list)
-  out_N_list <- list(all=N.tests)
-  if(test.info$N.tests.preview < N.tests){
-    out_N_list$preview <- test.info$N.tests.preview
-  }
+  out_N_list <- list(
+    all=N.tests,
+    preview=min(N.tests, test.info$N.tests.preview))
   for(N_name in names(out_N_list)){
     N_int <- out_N_list[[N_name]]
     N_meta <- meta.dt[1:N_int]
