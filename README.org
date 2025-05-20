@@ -234,13 +234,14 @@ which may be irrelevant).
 | [[https://github.com/ionelmc/pytest-benchmark][pytest-benchmark]]  | Python   |            | [[https://github.com/ionelmc/pytest-benchmark#screenshots][web page]]                       | -                        | yes                 |
 
 See [[https://bencher.dev/docs/reference/prior-art/][Bencher prior art]] for even more related work, and see [[https://bencher.dev/docs/explanation/continuous-benchmarking/][continuous
-benchmarking]] for a plot that shows how false positives can show up if
-you use a database of historical timings (perhaps run on different
-computers). In contrast, =atime_pkg= uses a database of historical
-commits (known Fast and Slow), and runs them alongside commits which
-are relevant to the current PR (HEAD, merge-base, etc), in the same R
-session, so we can be confident that any differences that we see are
-real. In the Bencher framework, a similar idea is presented in
-[[https://bencher.dev/docs/how-to/track-benchmarks/#relative-continuous-benchmarking][Relative Continuous Benchmarking]], which shows how to compare two
-branches, =feature-branch= and =main=.
+benchmarking]] for a plot that shows how false positives can show up
+if you use a database of historical timings (perhaps run on different
+computers, see [[https://github.com/eddelbuettel/lim-chart?tab=readme-ov-file][Dirk's real timings]] to see the typical variability of R
+CI on GitHub Actions). In contrast, =atime_pkg= uses a database of
+historical commits (known Fast and Slow), and runs them alongside
+commits which are relevant to the current PR (HEAD, merge-base, etc),
+in the same R session, so we can be confident that any differences
+that we see are real. In the Bencher framework, a similar idea is
+presented in [[https://bencher.dev/docs/how-to/track-benchmarks/#relative-continuous-benchmarking][Relative Continuous Benchmarking]], which shows how to
+compare two branches, =feature-branch= and =main=.
 
