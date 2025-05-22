@@ -47,11 +47,16 @@ atime_versions_install <- function(Package, pkg.path, new.Package.vec, sha.vec, 
   pkgs.in.lib <- basename(dirname(DESC.in.lib))
   new.not.installed <- !new.Package.vec %in% pkgs.in.lib
   if(any(new.not.installed)){
-    tdir <- tempfile()
+    ## on GH actions windows tempfile() gives C:\Users\RUNNER~1\AppData\Local\Temp\Rtmpc9T5Us/working_dir\Rtmpu23suf\file5d41af35765
+    tdir <- normalizePath(tempfile())
     dir.create(tdir)
-    new.path <- file.path(tdir, basename(pkg.path))
-    unlink(new.path, recursive=TRUE, force=TRUE)
-    file.copy(pkg.path, tdir, recursive=TRUE)
+    ## pkg.path may be path/to/repo/pkg
+    norm.pkg.path <- normalizePath(pkg.path)
+    orig.repo <- git2r::repository(norm.pkg.path)
+    ## path/to/repo root without trailing /.git
+    orig.repo.path <- normalizePath(dirname(orig.repo$path))
+    ## /pkg
+    pkg.suffix.in.repo <- sub(orig.repo.path, "", norm.pkg.path, fixed=TRUE)
     for(new.i in which(new.not.installed)){
       sha <- sha.vec[[new.i]]
       new.Package <- new.Package.vec[[new.i]]
@@ -64,21 +69,22 @@ atime_versions_install <- function(Package, pkg.path, new.Package.vec, sha.vec, 
       }else if(sha == ""){
         install.packages(Package)
       }else{
-        sha.path <- paste0(new.path,".",sha)
-        file.rename(new.path, sha.path)
-        repo <- git2r::repository(sha.path)
+        new.repo.path <- file.path(tdir, new.Package)
+        unlink(new.repo.path, recursive=TRUE, force=TRUE)
+        repo <- git2r::clone(orig.repo.path, new.repo.path, progress=FALSE)
+        new.pkg.path <- paste0(new.repo.path, pkg.suffix.in.repo)
         tryCatch(
           git2r::checkout(repo, branch=sha, force=TRUE),
           error=function(e)stop(
             e, " when trying to checkout ", sha))
         ## before editing and installing, make sure directory has sha
         ## suffix, for windows checks.
-        unlink(file.path(sha.path, "src", "*.o"))
+        unlink(file.path(new.pkg.path, "src", "*.o"))
         pkg.edit.fun(
           old.Package=Package, 
           new.Package=new.Package,
           sha=sha, 
-          new.pkg.path=sha.path)
+          new.pkg.path=new.pkg.path)
         INSTALL.cmd <- paste(
           shQuote(file.path(
             Sys.getenv("R_HOME"),
@@ -86,7 +92,7 @@ atime_versions_install <- function(Package, pkg.path, new.Package.vec, sha.vec, 
             "R")),
           'CMD INSTALL -l',
           shQuote(.libPaths()[1]),
-          sha.path)
+          shQuote(new.pkg.path))
         status.int <- system(INSTALL.cmd)
         if(status.int != 0){
           stop(INSTALL.cmd, " returned error status code ", status.int)
@@ -94,7 +100,7 @@ atime_versions_install <- function(Package, pkg.path, new.Package.vec, sha.vec, 
         if(verbose){
           cat("\nPackage info after editing and installation:\n")
           grep_glob <- function(glob, pattern){
-            some.files <- Sys.glob(file.path(sha.path, glob))
+            some.files <- Sys.glob(file.path(new.pkg.path, glob))
             out <- list()
             for(f in some.files){
               line.vec <- readLines(f)
@@ -110,12 +116,11 @@ atime_versions_install <- function(Package, pkg.path, new.Package.vec, sha.vec, 
             grep_glob("NAMESPACE", "^useDynLib"),
             grep_glob(file.path("src", "*.c"), "R_init_"),
             grep_glob(file.path("src", "*.cpp"), "R_init_"))
-          src.files <- dir(file.path(sha.path, "src"))
+          src.files <- dir(file.path(new.pkg.path, "src"))
           out[["src/*.so|dll"]] <- grep("(so|dll)$", src.files, value=TRUE)
           print(out)
           cat("\n")
         }#if(verbose)
-        file.rename(sha.path, new.path)
       }#if(new package not in lib)
     }#for(new.i
   }#any to install
@@ -160,6 +165,9 @@ atime_versions_exprs <- function(pkg.path, expr, sha.vec=NULL, verbose=FALSE, pk
   dots.vec <- mc.args[!names(mc.args) %in% formal.names]
   SHA.vec <- get_sha_vec(sha.vec, dots.vec)
   pkg.DESC <- file.path(pkg.path, "DESCRIPTION")
+  if(!file.exists(pkg.DESC)){
+    stop(sprintf("pkg.path=%s should be path to an R package, but %s does not exist", pkg.path, pkg.DESC))
+  }
   DESC.mat <- read.dcf(pkg.DESC)
   Package <- DESC.mat[,"Package"]
   new.Package.vec <- paste0(

@@ -157,9 +157,9 @@ then you should be able to observe the following:
 *** Highlight N for given time/memory
 
 When comparing algorithms in terms of computational resources, we can
-either
-- show the time/memory required for a given data size N, or
-- show the data size N possible for a given time/memory budget.
+show
+- Latency: the time/memory required for a given data size N (subset rows of measurements for a given value of N);
+- Throughput: the data size N possible for a given time/memory budget (use predict method).
 
 We can do both using the code below,
 
@@ -184,25 +184,35 @@ We can do both using the code below,
 
 [[file:README-predict.png]]
 
+** Comparing different git versions of an R package
+
+=atime_versions()= runs different versions of your R package code, for
+varying data sizes N, so you can see if there are any asymptotic
+differences in performance, between git versions of your package. See
+[[https://github.com/tdhock/atime/blob/main/man/atime_versions.Rd][?atime::atime_versions]] for documentation and examples ([[https://github.com/tdhock/atime/pull/80][grates example
+and output]]).
+
 ** GitHub action for continuous performance testing
 
-[[https://github.com/marketplace/actions/autocomment-atime-results][autocomment-atime-results]] is a GitHub action which will run atime for
-every pull request, and plot results in a PR comment, so you can see
-if the PR affects performance (examples: [[https://github.com/Anirban166/binsegRcpp/pull/2#issuecomment-1986146565][binsegRcpp]], [[https://github.com/Rdatatable/data.table/pull/5427#issuecomment-2075471806][data.table]]).
-First, you should define a =.ci/atime/tests.R= code file that creates an
-R object called =test.list= which should be a list of performance
-tests, each one is a list of arguments that will be passed to
-=atime_versions=, see [[https://github.com/tdhock/binsegRcpp/blob/atime-test-funs/.ci/atime/tests.R][atime-test-funs branch of binsegRcpp repo]] for an
-example, and see [[https://github.com/tdhock/atime/blob/main/man/atime_pkg.Rd][?atime_pkg]] for documentation.
+If you want to run =atime_versions()= to check R package performance
+in every Pull Request, [[https://github.com/marketplace/actions/autocomment-atime-results][autocomment-atime-results]] is a GitHub action
+which can plot results in a PR comment, so you can see if the PR
+affects performance (example output: [[https://github.com/Anirban166/binsegRcpp/pull/2#issuecomment-1986146565][binsegRcpp]], [[https://github.com/Rdatatable/data.table/pull/5427#issuecomment-2075471806][data.table]]). First,
+you should define a =.ci/atime/tests.R= code file that creates an R
+object called =test.list= which should be a list of performance tests,
+each one is a list of arguments that will be passed to
+=atime_versions=. See [[https://github.com/tdhock/atime/blob/main/man/atime_pkg.Rd][?atime_pkg]] for documentation, and see these repos for code examples:
+- [[https://github.com/tdhock/binsegRcpp/blob/atime-test-funs/.ci/atime/tests.R][atime-test-funs branch of binsegRcpp repo]] has a simple example with 4 test cases.
+- [[https://github.com/Rdatatable/data.table/blob/master/.ci/atime/tests.R][data.table]] has a more complex example with over 10 test cases.
 
 ** Related work
 
-[[https://cloud.r-project.org/web/packages/bench/][bench]]::press does something similar, and is more flexible because it
-can do multi-dimensional grid search (not only over a single size N
-argument as atime does). However it can not store results if
-check=FALSE, results must be equal if check=TRUE, and there is no way
-to easily specify a time limit which stops for larger sizes (like
-seconds.limit argument in atime).
+[[https://cloud.r-project.org/web/packages/bench/][bench]]::press (multi-dimensional search including N) does something
+similar to =atime= (runs different N) and =atime_grid= (search over
+parameters other than N). However it can not
+store results if check=FALSE, results must be equal if check=TRUE, and
+there is no way to easily specify a time limit which stops for larger
+sizes (like seconds.limit argument in atime).
 
 [[https://github.com/Anirban166/testComplexity][testComplexity]]::asymptoticTimings does something similar, but only for
 one expression (not several), and there is no special setup argument
@@ -224,13 +234,14 @@ which may be irrelevant).
 | [[https://github.com/ionelmc/pytest-benchmark][pytest-benchmark]]  | Python   |            | [[https://github.com/ionelmc/pytest-benchmark#screenshots][web page]]                       | -                        | yes                 |
 
 See [[https://bencher.dev/docs/reference/prior-art/][Bencher prior art]] for even more related work, and see [[https://bencher.dev/docs/explanation/continuous-benchmarking/][continuous
-benchmarking]] for a plot that shows how false positives can show up if
-yo use a database of historical timings (perhaps run on different
-computers). In contrast, =atime_pkg= uses a database of historical
-commits (known Fast and Slow), and runs them alongside commits which
-are relevant to the current PR (HEAD, merge-base, etc), in the same R
-session, so we can be confident that any differences that we see are
-real. In the Bencher framework, a similar idea is presented in
-[[https://bencher.dev/docs/how-to/track-benchmarks/#relative-continuous-benchmarking][Relative Continuous Benchmarking]], which shows how to compare two
-branches, =feature-branch= and =main=.
+benchmarking]] for a plot that shows how false positives can show up
+if you use a database of historical timings (perhaps run on different
+computers, see [[https://github.com/eddelbuettel/lim-chart?tab=readme-ov-file][Dirk's real timings]] to see the typical variability of R
+CI on GitHub Actions). In contrast, =atime_pkg= uses a database of
+historical commits (known Fast and Slow), and runs them alongside
+commits which are relevant to the current PR (HEAD, merge-base, etc),
+in the same R session, so we can be confident that any differences
+that we see are real. In the Bencher framework, a similar idea is
+presented in [[https://bencher.dev/docs/how-to/track-benchmarks/#relative-continuous-benchmarking][Relative Continuous Benchmarking]], which shows how to
+compare two branches, =feature-branch= and =main=.
 

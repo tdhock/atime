@@ -12,19 +12,19 @@ atime_versions(
  ...)
 }
 \arguments{
-  \item{pkg.path}{Path to git repo containing R package.}
+  \item{pkg.path}{Path to R package in a git repo.}
   \item{N}{numeric vector of data sizes to vary.}
   \item{setup}{
     expression to evaluate for every data size, before timings.
     In contrast to \code{expr},
-    no replacement of \code{Package:} is performed.
+    no replacement of \code{Package::} is performed.
   }
   \item{expr}{
     code with package double-colon prefix, for example
     \code{PKG::fun(argA, argB)}, where PKG is the name of the
     package specified by \code{pkg.path}. This code will be
     evaluated for each different package version, by replacing
-    \code{PKG:} by \code{PKG.SHA:}.
+    \code{PKG::} by \code{PKG.SHA::}.
     To run different versions of implicitly-called functions
     like \code{DT[i,j]}, you need
     to call them explicitly, as in 
@@ -38,7 +38,7 @@ atime_versions(
   \item{pkg.edit.fun}{function called to edit package before
     installation, should typically replace instances of PKG with
     PKG.SHA, default works with Rcpp packages.}
-  \item{result}{logical, save results? (default FALSE)}
+  \item{result}{logical or function, passed to \code{\link{atime}}.}
   \item{N.env.parent}{environment to use as parent of environment
   created for each data size N, or NULL to use default parent env.}
   \item{\dots}{named versions.}
@@ -71,7 +71,6 @@ if(FALSE){
   git2r::clone("https://github.com/tdhock/binsegRcpp", tdir)
   atime.list <- atime::atime_versions(
     pkg.path=tdir,
-    N=2^seq(2, 20),
     setup={
       max.segs <- as.integer(N/2)
       data.vec <- 1:N
@@ -79,10 +78,23 @@ if(FALSE){
     expr=binsegRcpp::binseg_normal(data.vec, max.segs),
     cv="908b77c411bc7f4fcbcf53759245e738ae724c3e",
     "rm unord map"="dcd0808f52b0b9858352106cc7852e36d7f5b15d",
-    "mvl_construct"="5942af606641428315b0e63c7da331c4cd44c091")      
+    mvl_construct="5942af606641428315b0e63c7da331c4cd44c091")
   plot(atime.list)
 
   atime::atime_versions_remove("binsegRcpp")
+
+  gdir <- tempfile()
+  dir.create(gdir)
+  git2r::clone("https://github.com/tdhock/grates", gdir)
+  glist <- atime::atime_versions(
+    file.path(gdir,"pkg"),
+    current = "1aae646888dcedb128c9076d9bd53fcb4075dcda",
+    old     = "51056b9c4363797023da4572bde07e345ce57d9c",
+    setup   = date_vec <- rep(Sys.Date(), N),
+    expr    = grates::as_yearmonth(date_vec))
+  plot(glist)
+
+  atime::atime_versions_remove("grates")
 
 }
 

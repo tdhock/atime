@@ -53,7 +53,7 @@ predict.references_best <- function(object, ...){
   , label := paste0(
     expr.name,
     "\nN=",
-    format(N, big.mark=",", scientific=FALSE, trim=TRUE)
+    format(round(N), big.mark=",", scientific=FALSE, trim=TRUE)
   )][]
   class(object) <- c("atime_prediction", class(object))
   object

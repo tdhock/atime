@@ -495,7 +495,7 @@ if(require(Matrix))test_that("atime_grid parameters attribute", {
   expect_in(expected.names, names(mult.pred$prediction))
 })
 
-if(require(Matrix))test_that("result=fun works", {
+if(require(Matrix))test_that("result=fun works, N=commas no decimals", {
   pred.len <- 32^2
   sqrt.len <- sqrt(pred.len)
   vec.mat.result <- atime::atime(
@@ -507,12 +507,22 @@ if(require(Matrix))test_that("result=fun works", {
     seconds.limit=Inf)
   expect_is(vec.mat.result$measurements$length, "integer")
   vec.mat.refs <- atime::references_best(vec.mat.result)
+  ## precise estimation of length with comma for thousands:
   vec.mat.pred <- predict(vec.mat.refs, length=pred.len)
-  ## precise estimation of length:
   expect_equal(vec.mat.pred$prediction, data.table(
     unit="length",
     expr.name=c("vector","matrix","Matrix"),
     unit.value=pred.len,
     N=c(pred.len,sqrt.len,sqrt.len),
     label=c("vector\nN=1,024", "matrix\nN=32", "Matrix\nN=32")))
+  ## rounded:
+  r.len <- 10
+  r.sqrt <- sqrt(r.len)
+  round.pred <- predict(vec.mat.refs, length=r.len)
+  expect_equal(round.pred$prediction, data.table(
+    unit="length",
+    expr.name=c("vector","matrix","Matrix"),
+    unit.value=r.len,
+    N=c(r.len, r.sqrt, r.sqrt),
+    label=c("vector\nN=10", "matrix\nN=3", "Matrix\nN=3")))
 })

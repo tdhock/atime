@@ -42,7 +42,9 @@ atime_pkg <- function(pkg.path=".", tests.dir=NULL){
     largest.common.timings <- largest.common.N[
       expr.name %in% HEAD.compare, .(
         seconds=as.numeric(time[[1]])
-      ), by=.(N, unit, expr.name)][, log10.seconds := log10(seconds)][]
+      ), by=.(N, unit, expr.name)][
+      , log10.seconds := log10(seconds)
+      ][]
     compare.dt.list[[Test]] <- data.table(
       Test, largest.common.timings)
     test.args <- list()
@@ -60,9 +62,7 @@ atime_pkg <- function(pkg.path=".", tests.dir=NULL){
     log10.range <- range(log10(atime.list$meas$N))
     expand <- diff(log10.range)*test.info$expand.prop
     xmax <- 10^(log10.range[2]+expand)
-    one.blank <- data.table(Test, best.list$meas[1])
-    one.blank[, N := xmax]
-    blank.dt.list[[Test]] <- one.blank
+    blank.dt.list[[Test]] <- data.table(Test, best.list$meas[1])[, N := xmax]
     gg <- ggplot2::ggplot()+
       ggplot2::ggtitle(Test)+
       ggplot2::theme_bw()+
@@ -104,10 +104,11 @@ atime_pkg <- function(pkg.path=".", tests.dir=NULL){
     print(gg)
     grDevices::dev.off()
   }
-  bench.dt <- rbindlist(bench.dt.list)
-  setkey(bench.dt, p.value)
-  bench.dt[, p.str := sprintf("%.2e", p.value)]
-  bench.dt[, P.value := factor(p.str, unique(p.str))]
+  bench.dt <- setkey(rbindlist(bench.dt.list)[
+  , p.str := sprintf("%.2e", p.value)
+  ][
+  , P.value := factor(p.str, unique(p.str))
+  ], p.value)
   meta.dt <- unique(bench.dt[, .(Test, P.value)])
   tests.RData <- sub("R$", "RData", test.info$tests.R)
   install.seconds <- sapply(pkg.results, "[[", "install.seconds")
@@ -116,10 +117,9 @@ atime_pkg <- function(pkg.path=".", tests.dir=NULL){
     file=file.path(dirname(tests.RData), "install_seconds.txt"))
   ## create all and preview facet PNGs.
   N.tests <- length(test.info$test.list)
-  out_N_list <- list(all=N.tests)
-  if(test.info$N.tests.preview < N.tests){
-    out_N_list$preview <- test.info$N.tests.preview
-  }
+  out_N_list <- list(
+    all=N.tests,
+    preview=min(N.tests, test.info$N.tests.preview))
   for(N_name in names(out_N_list)){
     N_int <- out_N_list[[N_name]]
     N_meta <- meta.dt[1:N_int]

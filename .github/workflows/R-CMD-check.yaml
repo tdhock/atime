@@ -50,6 +50,12 @@ jobs:
           extra-packages: any::rcmdcheck
           needs: check
 
+      - name: Install R Package Build Dependencies on MacOS, from https://github.com/stan-dev/cmdstanr/pull/1072/files
+        if: ${{ runner.os == 'macOS' }}
+        uses: r-hub/actions/setup-r-sysreqs@v1
+        with:
+          type: 'minimal'
+
       - name: install git2r
         shell: bash
         run: R -e 'install.packages("git2r",type="source",repos="http://cloud.r-project.org")'
