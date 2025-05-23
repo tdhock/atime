@@ -14,7 +14,8 @@ atime_pkg <- function(pkg.path=".", tests.dir=NULL){
   ## https://github.com/tdhock/binsegRcpp/blob/another-branch/inst/atime/tests.R
   each.sign.rank <- unit <- . <- N <- expr.name <- reference <- fun.name <- 
     empirical <- q25 <- q75 <- p.str <- p.value <- P.value <- 
-      seconds.limit <- time <- log10.seconds <- seconds <- Test <- NULL
+      seconds.limit <- time <- log10.seconds <- seconds <- Test <-
+        N.factor <- unit.value <- x.str <- NULL
   ## above to avoid CRAN check NOTE.
   pkg.results <- list()
   blank.dt.list <- list()
