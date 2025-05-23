@@ -44,6 +44,10 @@ if(requireNamespace("ggplot2"))test_that("atime_pkg produces tests_all_facet.png
     "binseg(1:N,maxSegs=N/2) DIST=poisson",
     "binseg_normal(1:N,maxSegs=N/2)"
   )
+  expect_identical(sort(unique(bench.dt$Test)), sort(expected.names))
+  expect_identical(sort(limit.dt$Test), sort(expected.names))
+  expect_is(limit.dt$P.value, "factor")
+  expect_is(limit.dt$N.factor, "factor")
   expect_identical(names(pkg.results), expected.names)
   expect_is(bench.dt[["Test"]], "character")
   install.seconds <- sapply(result.list, "[[", "install.seconds")
@@ -57,6 +61,8 @@ if(requireNamespace("ggplot2"))test_that("atime_pkg produces tests_all_facet.png
   expect_true(file.exists(tests_all_facet.png))
   tests_preview_facet.png <- file.path(atime.dir, "tests_preview_facet.png")
   expect_true(file.exists(tests_preview_facet.png))
+  HEAD_issues.md <- file.path(atime.dir, "HEAD_issues.md")
+  expect_true(file.exists(HEAD_issues.md))
 })
 
 if(requireNamespace("ggplot2"))test_that("atime_pkg produces tests_all_facet.png and tests_preview_facet.png on another-branch", {
@@ -66,6 +72,24 @@ if(requireNamespace("ggplot2"))test_that("atime_pkg produces tests_all_facet.png
   inst.atime <- file.path(tdir, "inst", "atime")
   options(repos="http://cloud.r-project.org")#required to check CRAN version.
   result.list <- atime::atime_pkg(tdir)
+  tests_all_facet.png <- file.path(inst.atime, "tests_all_facet.png")
+  expect_true(file.exists(tests_all_facet.png))
+  ##N.tests.preview=2 < N.tests=4 so should make one more PNG with those two.
+  tests_preview_facet.png <- file.path(inst.atime, "tests_preview_facet.png")
+  expect_true(file.exists(tests_preview_facet.png))
+  install_seconds.txt <- file.path(inst.atime, "install_seconds.txt")
+  install.seconds <- scan(install_seconds.txt, n=1, quiet=TRUE)
+  expect_is(install.seconds, "numeric")
+})
+
+if(requireNamespace("ggplot2"))test_that("atime_pkg produces tests_all_facet.png and tests_preview_facet.png on priority_queue", {
+  repo <- git2r::repository(tdir)
+  ## https://github.com/tdhock/binsegRcpp/pull/23
+  git2r::checkout(repo, branch="priority_queue")
+  inst.atime <- file.path(tdir, ".ci", "atime")
+  options(repos="http://cloud.r-project.org")#required to check CRAN version.
+  result.list <- atime::atime_pkg(tdir)
+  TODO
   tests_all_facet.png <- file.path(inst.atime, "tests_all_facet.png")
   expect_true(file.exists(tests_all_facet.png))
   ##N.tests.preview=2 < N.tests=4 so should make one more PNG with those two.

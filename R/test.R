@@ -21,6 +21,7 @@ atime_pkg <- function(pkg.path=".", tests.dir=NULL){
   bench.dt.list <- list()
   limit.dt.list <- list()
   compare.dt.list <- list()
+  issue <- character()
   test.info <- atime_pkg_test_info(pkg.path, tests.dir)
   for(Test in names(test.info$test.list)){
     atv.call <- test.info$test.call[[Test]]
@@ -32,33 +33,59 @@ atime_pkg <- function(pkg.path=".", tests.dir=NULL){
     max.dt <- sec.dt[, .(
       N.values=.N, max.N=max(N)
     ), by=.(expr.name)]
-    largest.common.N <- sec.dt[N==min(max.dt$max.N)]
-    ## TODO: fixed comparison?
-    compare.name <- largest.common.N[
-      expr.name!=test.info$HEAD.name
-    ][which.min(median), expr.name]
-    compare.name <- test.info$base.name
+    compare.name <- if('merge-base' %in% test.info$sha.vec){
+      'merge-base'
+    }else{
+      test.info$base.name
+    }
     HEAD.compare <- c(test.info$HEAD.name, compare.name)
-    largest.common.timings <- largest.common.N[
-      expr.name %in% HEAD.compare, .(
+    sec.HEAD.compare <- sec.dt[expr.name %in% HEAD.compare]
+    max.HEAD.compare <- sec.HEAD.compare[N==max(N)]
+    if(nrow(max.HEAD.compare)==1){
+      max.name <- max.HEAD.compare$expr.name
+      missing.name <- setdiff(HEAD.compare, max.name)
+      missing.max <- sec.HEAD.compare[expr.name==missing.name, max(N)]
+      issue[[Test]] <- paste0(
+        missing.name,
+        " stopped early at N=",
+        missing.max)
+      pred.obj <- predict(best.list)
+      setkey(pred.obj$pred, expr.name)
+      pred.compare <- pred.obj$pred[HEAD.compare]
+      n.factor <- pred.obj$pred[test.info$HEAD.name, N]/pred.obj$pred[compare.name, N]
+      compare.dt.list[[Test]] <- data.table(
+        Test, pred.compare[, .(N, expr.name, unit, seconds=unit.value)])
+      p.value <- 0
+    }else{
+      n.factor <- 1
+      largest.common.timings <- max.HEAD.compare[
+      , .(
         seconds=as.numeric(time[[1]])
       ), by=.(N, unit, expr.name)][
       , log10.seconds := log10(seconds)
       ][]
-    compare.dt.list[[Test]] <- data.table(
-      Test, largest.common.timings)
-    test.args <- list()
-    for(commit.i in seq_along(HEAD.compare)){
-      commit.name <- HEAD.compare[[commit.i]]
-      test.args[[commit.i]] <- largest.common.timings[
-        expr.name==commit.name, log10.seconds]
+      compare.dt.list[[Test]] <- data.table(
+        Test, largest.common.timings[, .(
+          N, expr.name, unit, seconds)])
+      test.args <- list()
+      for(commit.i in seq_along(HEAD.compare)){
+        commit.name <- HEAD.compare[[commit.i]]
+        test.args[[commit.i]] <- largest.common.timings[
+          expr.name==commit.name, log10.seconds]
+      }
+      test.args$alternative <- "greater"
+      p.value <- do.call(stats::t.test, test.args)$p.value
+      if(p.value < 0.05){
+        issue[[Test]] <- sprintf(
+          "P<0.05 for slower %s at N=%d",
+          test.info$HEAD.name,
+          max.HEAD.compare$N[1])
+      }
     }
-    test.args$alternative <- "greater"
-    p.value <- do.call(stats::t.test, test.args)$p.value
     hline.df <- with(atime.list, data.frame(seconds.limit, unit="seconds"))
     limit.dt.list[[Test]] <- data.table(Test, hline.df)
     bench.dt.list[[Test]] <- data.table(
-      Test, p.value, best.list$meas)
+      Test, p.value, n.factor, best.list$meas)
     log10.range <- range(log10(atime.list$meas$N))
     expand <- diff(log10.range)*test.info$expand.prop
     xmax <- 10^(log10.range[2]+expand)
@@ -104,18 +131,22 @@ atime_pkg <- function(pkg.path=".", tests.dir=NULL){
     print(gg)
     grDevices::dev.off()
   }
-  bench.dt <- setkey(rbindlist(bench.dt.list)[
-  , p.str := sprintf("%.2e", p.value)
-  ][
-  , P.value := factor(p.str, unique(p.str))
-  ], p.value)
-  meta.dt <- unique(bench.dt[, .(Test, P.value)])
+  num2fac <- function(x.num){
+    x.dt <- data.table(x.num, x.str=sprintf("%.2e", x.num))
+    levs <- x.dt[order(x.num), unique(x.str)]
+    factor(x.dt$x.str, levs)
+  }
+  bench.dt <- setkey(rbindlist(bench.dt.list)[, let(
+    P.value = num2fac(p.value),
+    N.factor = num2fac(n.factor)
+  )], N.factor, p.value)
+  meta.dt <- unique(bench.dt[, .(Test, N.factor, P.value)])
   tests.RData <- sub("R$", "RData", test.info$tests.R)
   install.seconds <- sapply(pkg.results, "[[", "install.seconds")
   cat(
     sum(install.seconds),
     file=file.path(dirname(tests.RData), "install_seconds.txt"))
-  ## create all and preview facet PNGs.
+  ## create all and prveiew facet PNGs.
   N.tests <- length(test.info$test.list)
   out_N_list <- list(
     all=N.tests,
@@ -125,14 +156,15 @@ atime_pkg <- function(pkg.path=".", tests.dir=NULL){
     N_meta <- meta.dt[1:N_int]
     limit.dt <- rbindlist(limit.dt.list)[N_meta, on="Test"]
     blank.dt <- rbindlist(blank.dt.list)[N_meta, on="Test"]
-    compare.dt <- rbindlist(compare.dt.list)[N_meta, on="Test"]
+    compare.dt <- rbindlist(compare.dt.list)[N_meta, on="Test", nomatch=0L]
+    issues.dt <- data.table(issue, Test=names(issue))[N_meta, on="Test"]
     N_bench <- bench.dt[N_meta, on="Test"]
     ## Plot only compare.dt
     ##ggplot()+geom_point(aes(seconds, expr.name), shape=1, data=compare.dt)+facet_grid(. ~ P.value + Test, labeller=label_both, scales="free")+scale_x_log10()
     gg <- ggplot2::ggplot()+
       ggplot2::ggtitle(sprintf(
-        "%d test cases (%s), ordered by p-value (T-test, HEAD>min, dots show data tested)",
-        N_int, N_name))+
+        "%d test cases (%s), ordered by p-value (T-test, HEAD>%s, dots show data tested)",
+        N_int, N_name, compare.name))+
       ggplot2::theme_bw()+
       ggplot2::geom_hline(ggplot2::aes(
         yintercept=seconds.limit),
@@ -141,7 +173,7 @@ atime_pkg <- function(pkg.path=".", tests.dir=NULL){
       ggplot2::scale_color_manual(values=test.info$version.colors)+
       ggplot2::scale_fill_manual(values=test.info$version.colors)+
       ggplot2::facet_grid(
-        unit ~ P.value + Test, scales="free", labeller="label_both")+
+        unit ~ N.factor + P.value + Test, scales="free", labeller="label_both")+
       ggplot2::geom_line(ggplot2::aes(
         N, empirical, color=expr.name),
         data=N_bench)+
@@ -163,6 +195,15 @@ atime_pkg <- function(pkg.path=".", tests.dir=NULL){
         method="right.polygons",
         data=N_bench)+
       ggplot2::theme(legend.position="none")
+    if(nrow(issues.dt)){
+      gg <- gg+ggplot2::geom_label(ggplot2::aes(
+        0, 0,
+        label=issue),
+        hjust=0,
+        vjust=0,
+        alpha=0.5,
+        data=issues.dt)
+    }
     out.png <- file.path(
       dirname(test.info$tests.R),
       sprintf("tests_%s_facet.png", N_name))
@@ -178,6 +219,18 @@ atime_pkg <- function(pkg.path=".", tests.dir=NULL){
       save(
         pkg.results, bench.dt, limit.dt, test.info, blank.dt, 
         file=tests.RData)
+      if(nrow(issues.dt)){
+        markdown <- issues.dt[, sprintf(
+          "* %s for `%s`",
+          issue,
+          Test)]
+        markdown_text <- paste(markdown, collapse="\n")
+      }else{
+        markdown_text <- paste0("No obvious timing issues in ", test.info$HEAD.name)
+      }
+      cat(
+        markdown_text,
+        file=file.path(dirname(tests.RData), "HEAD_issues.md"))
     }
   }
   pkg.results
@@ -260,6 +313,7 @@ atime_pkg_test_info <- function(pkg.path=".", tests.dir=NULL){
     N.env.parent=test.env,
     pkg.path=pkg.path,
     sha.vec=sha.vec)
+  test.env$sha.vec <- sha.vec
   test.env$test.list <- inherit_args(test.env$test.list, common.args)
   test.env$test.call <- list()
   for(Test in names(test.env$test.list)){
