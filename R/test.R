@@ -47,8 +47,7 @@ atime_pkg <- function(pkg.path=".", tests.dir=NULL){
       missing.max <- sec.HEAD.compare[expr.name==missing.name, max(N)]
       issue[[Test]] <- paste0(
         missing.name,
-        " stopped early at N=",
-        missing.max)
+        " stopped early")
       pred.obj <- predict(best.list)
       setkey(pred.obj$pred, expr.name)
       pred.compare <- pred.obj$pred[HEAD.compare]
@@ -77,9 +76,8 @@ atime_pkg <- function(pkg.path=".", tests.dir=NULL){
       p.value <- do.call(stats::t.test, test.args)$p.value
       if(p.value < 0.05){
         issue[[Test]] <- sprintf(
-          "P<0.05 for slower %s at N=%d",
-          test.info$HEAD.name,
-          max.HEAD.compare$N[1])
+          "%s slower P<0.05",
+          test.info$HEAD.name)
       }
     }
     hline.df <- with(atime.list, data.frame(seconds.limit, unit="seconds"))
@@ -157,7 +155,7 @@ atime_pkg <- function(pkg.path=".", tests.dir=NULL){
     limit.dt <- rbindlist(limit.dt.list)[N_meta, on="Test"]
     blank.dt <- rbindlist(blank.dt.list)[N_meta, on="Test"]
     compare.dt <- rbindlist(compare.dt.list)[N_meta, on="Test", nomatch=0L]
-    issues.dt <- data.table(issue, Test=names(issue))[N_meta, on="Test"]
+    issues.dt <- if(length(issue))data.table(issue, Test=names(issue))[N_meta, on="Test"]
     N_bench <- bench.dt[N_meta, on="Test"]
     ## Plot only compare.dt
     ##ggplot()+geom_point(aes(seconds, expr.name), shape=1, data=compare.dt)+facet_grid(. ~ P.value + Test, labeller=label_both, scales="free")+scale_x_log10()
@@ -195,7 +193,7 @@ atime_pkg <- function(pkg.path=".", tests.dir=NULL){
         method="right.polygons",
         data=N_bench)+
       ggplot2::theme(legend.position="none")
-    if(nrow(issues.dt)){
+    if(length(issue)){
       gg <- gg+ggplot2::geom_label(ggplot2::aes(
         0, 0,
         label=issue),
@@ -219,7 +217,7 @@ atime_pkg <- function(pkg.path=".", tests.dir=NULL){
       save(
         pkg.results, bench.dt, limit.dt, test.info, blank.dt, 
         file=tests.RData)
-      if(nrow(issues.dt)){
+      if(length(issue)){
         markdown <- issues.dt[, sprintf(
           "* %s for `%s`",
           issue,

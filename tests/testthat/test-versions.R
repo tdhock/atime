@@ -89,10 +89,8 @@ if(requireNamespace("ggplot2"))test_that("atime_pkg produces tests_all_facet.png
   inst.atime <- file.path(tdir, ".ci", "atime")
   options(repos="http://cloud.r-project.org")#required to check CRAN version.
   result.list <- atime::atime_pkg(tdir)
-  TODO
   tests_all_facet.png <- file.path(inst.atime, "tests_all_facet.png")
   expect_true(file.exists(tests_all_facet.png))
-  ##N.tests.preview=2 < N.tests=4 so should make one more PNG with those two.
   tests_preview_facet.png <- file.path(inst.atime, "tests_preview_facet.png")
   expect_true(file.exists(tests_preview_facet.png))
   install_seconds.txt <- file.path(inst.atime, "install_seconds.txt")
