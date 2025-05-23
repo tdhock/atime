@@ -32,8 +32,9 @@ test_that("atime_versions_exprs error when expr does not contain pkg:", {
 if(requireNamespace("ggplot2"))test_that("atime_pkg produces tests_all_facet.png and tests_preview_facet.png on atime-test-funs", {
   repo <- git2r::repository(tdir)
   ## https://github.com/tdhock/binsegRcpp/tree/atime-test-funs
-  git2r::checkout(repo, branch="atime-test-funs")
   atime.dir <- file.path(tdir, ".ci", "atime")
+  unlink(file.path(atime.dir, "*"))
+  git2r::checkout(repo, branch="atime-test-funs", force=TRUE)
   options(repos="http://cloud.r-project.org")#required to check CRAN version.
   result.list <- atime::atime_pkg(tdir, ".ci")
   tests.RData <- file.path(atime.dir, "tests.RData")
@@ -68,8 +69,9 @@ if(requireNamespace("ggplot2"))test_that("atime_pkg produces tests_all_facet.png
 if(requireNamespace("ggplot2"))test_that("atime_pkg produces tests_all_facet.png and tests_preview_facet.png on another-branch", {
   repo <- git2r::repository(tdir)
   ## https://github.com/tdhock/binsegRcpp/tree/another-branch
-  git2r::checkout(repo, branch="another-branch")
   inst.atime <- file.path(tdir, "inst", "atime")
+  unlink(file.path(inst.atime, "*"))
+  git2r::checkout(repo, branch="another-branch", force=TRUE)
   options(repos="http://cloud.r-project.org")#required to check CRAN version.
   result.list <- atime::atime_pkg(tdir)
   tests_all_facet.png <- file.path(inst.atime, "tests_all_facet.png")
@@ -82,11 +84,28 @@ if(requireNamespace("ggplot2"))test_that("atime_pkg produces tests_all_facet.png
   expect_is(install.seconds, "numeric")
 })
 
+if(requireNamespace("ggplot2"))test_that("atime_pkg produces tests_all_facet.png and tests_preview_facet.png on master", {
+  repo <- git2r::repository(tdir)
+  inst.atime <- file.path(tdir, ".ci", "atime")
+  unlink(file.path(inst.atime, "*"))
+  git2r::checkout(repo, branch="master", force=TRUE)
+  options(repos="http://cloud.r-project.org")#required to check CRAN version.
+  result.list <- atime::atime_pkg(tdir)
+  tests_all_facet.png <- file.path(inst.atime, "tests_all_facet.png")
+  expect_true(file.exists(tests_all_facet.png))
+  tests_preview_facet.png <- file.path(inst.atime, "tests_preview_facet.png")
+  expect_true(file.exists(tests_preview_facet.png))
+  install_seconds.txt <- file.path(inst.atime, "install_seconds.txt")
+  install.seconds <- scan(install_seconds.txt, n=1, quiet=TRUE)
+  expect_is(install.seconds, "numeric")
+})
+
 if(requireNamespace("ggplot2"))test_that("atime_pkg produces tests_all_facet.png and tests_preview_facet.png on priority_queue", {
   repo <- git2r::repository(tdir)
   ## https://github.com/tdhock/binsegRcpp/pull/23
-  git2r::checkout(repo, branch="priority_queue")
   inst.atime <- file.path(tdir, ".ci", "atime")
+  unlink(file.path(inst.atime, "*"))
+  git2r::checkout(repo, branch="priority_queue", force=TRUE)
   options(repos="http://cloud.r-project.org")#required to check CRAN version.
   result.list <- atime::atime_pkg(tdir)
   tests_all_facet.png <- file.path(inst.atime, "tests_all_facet.png")

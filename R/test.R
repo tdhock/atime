@@ -33,15 +33,17 @@ atime_pkg <- function(pkg.path=".", tests.dir=NULL){
     max.dt <- sec.dt[, .(
       N.values=.N, max.N=max(N)
     ), by=.(expr.name)]
-    compare.name <- if('merge-base' %in% test.info$sha.vec){
-      'merge-base'
-    }else{
-      test.info$base.name
-    }
+    compare.name <- intersect(
+      c('merge-base', test.info$base.name, test.info$CRAN.name),
+      names(test.info$sha.vec)
+    )[1]
     HEAD.compare <- c(test.info$HEAD.name, compare.name)
     sec.HEAD.compare <- sec.dt[expr.name %in% HEAD.compare]
     max.HEAD.compare <- sec.HEAD.compare[N==max(N)]
-    if(nrow(max.HEAD.compare)==1){
+    if(is.na(compare.name)){
+      p.value <- 0
+      n.factor <- 1
+    }else if(nrow(max.HEAD.compare)==1){
       max.name <- max.HEAD.compare$expr.name
       missing.name <- setdiff(HEAD.compare, max.name)
       missing.max <- sec.HEAD.compare[expr.name==missing.name, max(N)]
@@ -144,7 +146,7 @@ atime_pkg <- function(pkg.path=".", tests.dir=NULL){
   cat(
     sum(install.seconds),
     file=file.path(dirname(tests.RData), "install_seconds.txt"))
-  ## create all and prveiew facet PNGs.
+  ## create all and preview facet PNGs.
   N.tests <- length(test.info$test.list)
   out_N_list <- list(
     all=N.tests,
@@ -154,7 +156,7 @@ atime_pkg <- function(pkg.path=".", tests.dir=NULL){
     N_meta <- meta.dt[1:N_int]
     limit.dt <- rbindlist(limit.dt.list)[N_meta, on="Test"]
     blank.dt <- rbindlist(blank.dt.list)[N_meta, on="Test"]
-    compare.dt <- rbindlist(compare.dt.list)[N_meta, on="Test", nomatch=0L]
+    compare.dt <- if(length(compare.dt.list))rbindlist(compare.dt.list)[N_meta, on="Test", nomatch=0L]
     issues.dt <- if(length(issue))data.table(issue, Test=names(issue))[N_meta, on="Test"]
     N_bench <- bench.dt[N_meta, on="Test"]
     ## Plot only compare.dt
@@ -182,17 +184,15 @@ atime_pkg <- function(pkg.path=".", tests.dir=NULL){
         N, ymin=q25, ymax=q75, fill=expr.name),
         data=N_bench[unit=="seconds"],
         alpha=0.5)+
-      ggplot2::geom_point(ggplot2::aes(
-        N, seconds, color=expr.name),
-        shape=1,
-        data=compare.dt)+
       ggplot2::scale_x_log10()+
       ggplot2::scale_y_log10("median line, quartiles band")+
-      directlabels::geom_dl(ggplot2::aes(
-        N, empirical, color=expr.name, label=expr.name),
-        method="right.polygons",
-        data=N_bench)+
       ggplot2::theme(legend.position="none")
+    if(length(compare.dt.list)){
+      gg <- gg+ggplot2::geom_point(ggplot2::aes(
+        N, seconds, color=expr.name),
+        shape=1,
+        data=compare.dt)
+    }
     if(length(issue)){
       gg <- gg+ggplot2::geom_label(ggplot2::aes(
         0, 0,
@@ -202,6 +202,10 @@ atime_pkg <- function(pkg.path=".", tests.dir=NULL){
         alpha=0.5,
         data=issues.dt)
     }
+    gg <- gg+directlabels::geom_dl(ggplot2::aes(
+      N, empirical, color=expr.name, label=expr.name),
+      method="right.polygons",
+      data=N_bench)
     out.png <- file.path(
       dirname(test.info$tests.R),
       sprintf("tests_%s_facet.png", N_name))
