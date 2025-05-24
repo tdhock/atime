@@ -1,5 +1,5 @@
 importFrom("utils", "capture.output", "install.packages")
-importFrom("stats", "median", "quantile", "sd", "approx")
+importFrom("stats", "median", "quantile", "sd", "approx", "predict")
 import(data.table)
 import(lattice)
 export(atime)

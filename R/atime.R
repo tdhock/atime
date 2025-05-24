@@ -156,7 +156,7 @@ atime <- function(N=default_N(), setup, expr.list=NULL, times=10, seconds.limit=
         })
       }
       m.call <- as.call(m.list)
-      N.df <- eval(m.call, N.env)
+      N.df <- suppressWarnings(eval(m.call, N.env))
       if(
         all(sapply(N.env$result.list, is.data.frame)) &&
           all(sapply(N.env$result.list, nrow)==1)
