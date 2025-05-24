@@ -77,10 +77,11 @@ atime_pkg <- function(pkg.path=".", tests.dir=NULL){
       }
       test.args$alternative <- "greater"
       p.value <- do.call(stats::t.test, test.args)$p.value
-      if(p.value < 0.05){
+      if(p.value < test.info$pval.thresh){
         issue[[Test]] <- sprintf(
-          "%s slower P<0.05",
-          test.info$HEAD.name)
+          "%s slower P<%s",
+          test.info$HEAD.name,
+          paste(test.info$pval.thresh))
       }
     }
     hline.df <- with(atime.list, data.frame(seconds.limit, unit="seconds"))
@@ -258,6 +259,7 @@ atime_pkg_test_info <- function(pkg.path=".", tests.dir=NULL){
   tests.parsed <- parse(test.env$tests.R)
   eval(tests.parsed, test.env)
   default.list <- list(
+    pval.thresh=0.01,
     N.tests.preview=4,
     width.in=4,
     height.in=8,

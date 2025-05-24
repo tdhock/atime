@@ -42,7 +42,10 @@ atime_pkg_test_info(pkg.path=".", tests.dir=NULL)
   the default colors.
   If \code{tests.R} defines a variable named \code{version.colors}, then
   it should be a character vector of colors to be used instead of the
-  default (names for versions, values for colors). 
+  default (names for versions, values for colors).
+  If \code{tests.R} defines a variable named \code{pval.thresh}, then
+  it should be a positive numeric value between 0 and 1 (any smaller p-values
+  will generate messages about slowdowns in HEAD_issues.md).
 }
 \value{
   \code{atime_pkg_test_info} returns an environment in which the code of
