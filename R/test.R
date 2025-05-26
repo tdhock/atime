@@ -171,7 +171,7 @@ atime_pkg <- function(pkg.path=".", tests.dir=NULL){
     ##ggplot()+geom_point(aes(seconds, expr.name), shape=1, data=compare.dt)+facet_grid(. ~ P.value + Test, labeller=label_both, scales="free")+scale_x_log10()
     gg <- ggplot2::ggplot()+
       ggplot2::ggtitle(sprintf(
-        "%d test cases (%s), ordered by p-value (T-test, HEAD>%s, dots show data tested)",
+        "%d test cases (%s), ordered by N.factor (max_N_HEAD/max_N_%s) and P.value (T-test)",
         N_int, N_name, compare.name))+
       ggplot2::theme_bw()+
       ggplot2::geom_hline(ggplot2::aes(
