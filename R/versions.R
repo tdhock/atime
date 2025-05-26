@@ -48,7 +48,7 @@ atime_versions_install <- function(Package, pkg.path, new.Package.vec, sha.vec, 
   new.not.installed <- !new.Package.vec %in% pkgs.in.lib
   if(any(new.not.installed)){
     ## on GH actions windows tempfile() gives C:\Users\RUNNER~1\AppData\Local\Temp\Rtmpc9T5Us/working_dir\Rtmpu23suf\file5d41af35765
-    tdir <- normalizePath(tempfile())
+    tdir <- normalizePath(tempfile(), mustWork=FALSE)
     dir.create(tdir)
     ## pkg.path may be path/to/repo/pkg
     norm.pkg.path <- normalizePath(pkg.path)

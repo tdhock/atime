@@ -42,7 +42,10 @@ atime_pkg_test_info(pkg.path=".", tests.dir=NULL)
   the default colors.
   If \code{tests.R} defines a variable named \code{version.colors}, then
   it should be a character vector of colors to be used instead of the
-  default (names for versions, values for colors). 
+  default (names for versions, values for colors).
+  If \code{tests.R} defines a variable named \code{pval.thresh}, then
+  it should be a positive numeric value between 0 and 1 (any smaller p-values
+  will generate messages about slowdowns in HEAD_issues.md).
 }
 \value{
   \code{atime_pkg_test_info} returns an environment in which the code of
@@ -59,7 +62,18 @@ atime_pkg_test_info(pkg.path=".", tests.dir=NULL)
   summarizing all test results), tests_preview_facet.png (plot
   summarizing only most significant results), and install_seconds.txt
   (total number of seconds used to install different package versions).
-  }
+  Plots emphasize differences between \code{HEAD} and a comparison
+  version, which is defined as the first of
+  these versions which is available: \code{merge-base}, \code{base}, \code{CRAN}.
+  Plots show test cases, first sorted by \code{N.factor}, which is the
+  ratio of N values at the time limit, \code{HEAD} versus comparison
+  version. If \code{N.factor<1} then \code{HEAD} is much slower than
+  comparison version (the smaller N value for \code{HEAD} went over the
+  time limit). \code{N.factor=1} means \code{HEAD} and comparison version
+  had same value for largest N (so have nearly the same speed); ties
+  are broken using \code{P.value}, un-paired two-sample T-test for
+  \code{HEAD} time greater than comparison time at largest N.
+}
 
 \author{Toby Dylan Hocking}
 

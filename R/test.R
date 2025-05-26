@@ -14,13 +14,15 @@ atime_pkg <- function(pkg.path=".", tests.dir=NULL){
   ## https://github.com/tdhock/binsegRcpp/blob/another-branch/inst/atime/tests.R
   each.sign.rank <- unit <- . <- N <- expr.name <- reference <- fun.name <- 
     empirical <- q25 <- q75 <- p.str <- p.value <- P.value <- 
-      seconds.limit <- time <- log10.seconds <- seconds <- Test <- NULL
+      seconds.limit <- time <- log10.seconds <- seconds <- Test <-
+        N.factor <- unit.value <- x.str <- NULL
   ## above to avoid CRAN check NOTE.
   pkg.results <- list()
   blank.dt.list <- list()
   bench.dt.list <- list()
   limit.dt.list <- list()
   compare.dt.list <- list()
+  issue <- character()
   test.info <- atime_pkg_test_info(pkg.path, tests.dir)
   for(Test in names(test.info$test.list)){
     atv.call <- test.info$test.call[[Test]]
@@ -32,32 +34,71 @@ atime_pkg <- function(pkg.path=".", tests.dir=NULL){
     max.dt <- sec.dt[, .(
       N.values=.N, max.N=max(N)
     ), by=.(expr.name)]
-    largest.common.N <- sec.dt[N==min(max.dt$max.N)]
-    ## TODO: fixed comparison?
-    compare.name <- largest.common.N[
-      expr.name!=test.info$HEAD.name
-    ][which.min(median), expr.name]
+    compare.name <- intersect(
+      c('merge-base', test.info$base.name, test.info$CRAN.name),
+      names(test.info$sha.vec)
+    )[1]
     HEAD.compare <- c(test.info$HEAD.name, compare.name)
-    largest.common.timings <- largest.common.N[
-      expr.name %in% HEAD.compare, .(
+    sec.HEAD.compare <- sec.dt[expr.name %in% HEAD.compare]
+    max.HEAD.compare <- sec.HEAD.compare[N==max(N)]
+    if(is.na(compare.name)){
+      p.value <- 0
+      n.factor <- 1
+    }else if(nrow(max.HEAD.compare)==1){
+      max.name <- max.HEAD.compare$expr.name
+      missing.name <- setdiff(HEAD.compare, max.name)
+      missing.max <- sec.HEAD.compare[expr.name==missing.name, max(N)]
+      if(missing.name==test.info$HEAD.name){
+        issue[[Test]] <- paste0(
+          missing.name,
+          " stopped early")
+      }
+      pred.obj <- predict(best.list)
+      setkey(pred.obj$pred, expr.name)
+      pred.compare <- pred.obj$pred[HEAD.compare]
+      n.factor <- pred.obj$pred[test.info$HEAD.name, N]/pred.obj$pred[compare.name, N]
+      compare.dt.list[[Test]] <- data.table(
+        Test, pred.compare[, .(N, expr.name, unit, seconds=unit.value)])
+      if(is.na(n.factor)){ # can't interpolate, only one data point.
+        n.factor <- missing.max/max.HEAD.compare$N
+        compare.dt.list[[Test]] <- sec.HEAD.compare[
+        , .SD[which.max(N), .(seconds=unlist(time), N)]
+        , by=expr.name
+        ][
+        , data.table(Test, N, expr.name, unit="seconds", seconds)
+        ]
+      }
+      p.value <- 0
+    }else{
+      n.factor <- 1
+      largest.common.timings <- max.HEAD.compare[
+      , .(
         seconds=as.numeric(time[[1]])
       ), by=.(N, unit, expr.name)][
       , log10.seconds := log10(seconds)
       ][]
-    compare.dt.list[[Test]] <- data.table(
-      Test, largest.common.timings)
-    test.args <- list()
-    for(commit.i in seq_along(HEAD.compare)){
-      commit.name <- HEAD.compare[[commit.i]]
-      test.args[[commit.i]] <- largest.common.timings[
-        expr.name==commit.name, log10.seconds]
+      compare.dt.list[[Test]] <- data.table(
+        Test, largest.common.timings[, .(
+          N, expr.name, unit, seconds)])
+      test.args <- list()
+      for(commit.i in seq_along(HEAD.compare)){
+        commit.name <- HEAD.compare[[commit.i]]
+        test.args[[commit.i]] <- largest.common.timings[
+          expr.name==commit.name, log10.seconds]
+      }
+      test.args$alternative <- "greater"
+      p.value <- do.call(stats::t.test, test.args)$p.value
+      if(p.value < test.info$pval.thresh){
+        issue[[Test]] <- sprintf(
+          "%s slower P<%s",
+          test.info$HEAD.name,
+          paste(test.info$pval.thresh))
+      }
     }
-    test.args$alternative <- "greater"
-    p.value <- do.call(stats::t.test, test.args)$p.value
     hline.df <- with(atime.list, data.frame(seconds.limit, unit="seconds"))
     limit.dt.list[[Test]] <- data.table(Test, hline.df)
     bench.dt.list[[Test]] <- data.table(
-      Test, p.value, best.list$meas)
+      Test, p.value, n.factor, best.list$meas)
     log10.range <- range(log10(atime.list$meas$N))
     expand <- diff(log10.range)*test.info$expand.prop
     xmax <- 10^(log10.range[2]+expand)
@@ -100,15 +141,19 @@ atime_pkg <- function(pkg.path=".", tests.dir=NULL){
       dirname(test.info$tests.R), 
       paste0(gsub('[\':\\ /*|<>"?\n\r]', "_", Test), ".png"))
     grDevices::png(out.png, width=test.info$width.in*nrow(max.dt), height=test.info$height.in, units="in", res=100)
-    print(gg)
+    suppressWarnings(print(gg))
     grDevices::dev.off()
   }
-  bench.dt <- setkey(rbindlist(bench.dt.list)[
-  , p.str := sprintf("%.2e", p.value)
-  ][
-  , P.value := factor(p.str, unique(p.str))
-  ], p.value)
-  meta.dt <- unique(bench.dt[, .(Test, P.value)])
+  num2fac <- function(x.num){
+    x.dt <- data.table(x.num, x.str=sprintf("%.2e", x.num))
+    levs <- x.dt[order(x.num), unique(x.str)]
+    factor(x.dt$x.str, levs)
+  }
+  bench.dt <- setkey(rbindlist(bench.dt.list)[, let(
+    P.value = num2fac(p.value),
+    N.factor = num2fac(n.factor)
+  )], N.factor, p.value)
+  meta.dt <- unique(bench.dt[, .(Test, N.factor, P.value)])
   tests.RData <- sub("R$", "RData", test.info$tests.R)
   install.seconds <- sapply(pkg.results, "[[", "install.seconds")
   cat(
@@ -122,16 +167,17 @@ atime_pkg <- function(pkg.path=".", tests.dir=NULL){
   for(N_name in names(out_N_list)){
     N_int <- out_N_list[[N_name]]
     N_meta <- meta.dt[1:N_int]
-    limit.dt <- rbindlist(limit.dt.list)[N_meta, on="Test"]
-    blank.dt <- rbindlist(blank.dt.list)[N_meta, on="Test"]
-    compare.dt <- rbindlist(compare.dt.list)[N_meta, on="Test"]
-    N_bench <- bench.dt[N_meta, on="Test"]
+    limit.dt <- rbindlist(limit.dt.list)[N_meta, on="Test", nomatch=0L]
+    blank.dt <- rbindlist(blank.dt.list)[N_meta, on="Test", nomatch=0L]
+    compare.dt <- if(length(compare.dt.list))rbindlist(compare.dt.list)[N_meta, on="Test", nomatch=0L]
+    issues.dt <- if(length(issue))data.table(issue, Test=names(issue))[N_meta, on="Test", nomatch=0L]
+    N_bench <- bench.dt[N_meta, on="Test", nomatch=0L]
     ## Plot only compare.dt
     ##ggplot()+geom_point(aes(seconds, expr.name), shape=1, data=compare.dt)+facet_grid(. ~ P.value + Test, labeller=label_both, scales="free")+scale_x_log10()
     gg <- ggplot2::ggplot()+
       ggplot2::ggtitle(sprintf(
-        "%d test cases (%s), ordered by p-value (T-test, HEAD>min, dots show data tested)",
-        N_int, N_name))+
+        "%d test cases (%s), ordered by N.factor (max_N_HEAD/max_N_%s) and P.value (T-test)",
+        N_int, N_name, compare.name))+
       ggplot2::theme_bw()+
       ggplot2::geom_hline(ggplot2::aes(
         yintercept=seconds.limit),
@@ -140,7 +186,7 @@ atime_pkg <- function(pkg.path=".", tests.dir=NULL){
       ggplot2::scale_color_manual(values=test.info$version.colors)+
       ggplot2::scale_fill_manual(values=test.info$version.colors)+
       ggplot2::facet_grid(
-        unit ~ P.value + Test, scales="free", labeller="label_both")+
+        unit ~ N.factor + P.value + Test, scales="free", labeller="label_both")+
       ggplot2::geom_line(ggplot2::aes(
         N, empirical, color=expr.name),
         data=N_bench)+
@@ -151,17 +197,28 @@ atime_pkg <- function(pkg.path=".", tests.dir=NULL){
         N, ymin=q25, ymax=q75, fill=expr.name),
         data=N_bench[unit=="seconds"],
         alpha=0.5)+
-      ggplot2::geom_point(ggplot2::aes(
-        N, seconds, color=expr.name),
-        shape=1,
-        data=compare.dt)+
       ggplot2::scale_x_log10()+
       ggplot2::scale_y_log10("median line, quartiles band")+
-      directlabels::geom_dl(ggplot2::aes(
-        N, empirical, color=expr.name, label=expr.name),
-        method="right.polygons",
-        data=N_bench)+
       ggplot2::theme(legend.position="none")
+    if(length(compare.dt.list)){
+      gg <- gg+ggplot2::geom_point(ggplot2::aes(
+        N, seconds, color=expr.name),
+        shape=1,
+        data=compare.dt)
+    }
+    if(length(issue)){
+      gg <- gg+ggplot2::geom_label(ggplot2::aes(
+        0, 0,
+        label=issue),
+        hjust=0,
+        vjust=0,
+        alpha=0.5,
+        data=data.table(issues.dt, unit="seconds"))
+    }
+    gg <- gg+directlabels::geom_dl(ggplot2::aes(
+      N, empirical, color=expr.name, label=expr.name),
+      method="right.polygons",
+      data=N_bench)
     out.png <- file.path(
       dirname(test.info$tests.R),
       sprintf("tests_%s_facet.png", N_name))
@@ -171,12 +228,24 @@ atime_pkg <- function(pkg.path=".", tests.dir=NULL){
       height=test.info$height.in,
       units="in",
       res=100)
-    print(gg)
+    suppressWarnings(print(gg))
     grDevices::dev.off()
     if(N_name=="all"){
       save(
         pkg.results, bench.dt, limit.dt, test.info, blank.dt, 
         file=tests.RData)
+      if(length(issue)){
+        markdown <- issues.dt[, sprintf(
+          "* %s for `%s`",
+          issue,
+          Test)]
+        markdown_text <- paste(markdown, collapse="\n")
+      }else{
+        markdown_text <- paste0("No obvious timing issues in ", test.info$HEAD.name)
+      }
+      cat(
+        markdown_text,
+        file=file.path(dirname(tests.RData), "HEAD_issues.md"))
     }
   }
   pkg.results
@@ -201,6 +270,7 @@ atime_pkg_test_info <- function(pkg.path=".", tests.dir=NULL){
   tests.parsed <- parse(test.env$tests.R)
   eval(tests.parsed, test.env)
   default.list <- list(
+    pval.thresh=0.01,
     N.tests.preview=4,
     width.in=4,
     height.in=8,
@@ -220,9 +290,11 @@ atime_pkg_test_info <- function(pkg.path=".", tests.dir=NULL){
   sha.vec <- c()
   HEAD.name <- paste0("HEAD=",git2r::repository_head(repo)$name)
   sha.vec[[HEAD.name]] <- git2r::sha(HEAD.commit)
-  CRAN.name <- paste0("CRAN=",ap[Package,"Version"])
   if(Package %in% rownames(ap)){
+    CRAN.name <- paste0("CRAN=",ap[Package,"Version"])
     sha.vec[[CRAN.name]] <- ""
+  }else{
+    CRAN.name <- NA_character_
   }
   base.ref <- Sys.getenv("GITHUB_BASE_REF", "master")
   base.commit <- tryCatch({
@@ -257,6 +329,7 @@ atime_pkg_test_info <- function(pkg.path=".", tests.dir=NULL){
     N.env.parent=test.env,
     pkg.path=pkg.path,
     sha.vec=sha.vec)
+  test.env$sha.vec <- sha.vec
   test.env$test.list <- inherit_args(test.env$test.list, common.args)
   test.env$test.call <- list()
   for(Test in names(test.env$test.list)){
