@@ -61,9 +61,12 @@ atime_pkg <- function(pkg.path=".", tests.dir=NULL){
         Test, pred.compare[, .(N, expr.name, unit, seconds=unit.value)])
       if(is.na(n.factor)){ # can't interpolate, only one data point.
         n.factor <- missing.max/max.HEAD.compare$N
-        compare.dt.list[[Test]] <- sec.HEAD.compare[, .SD[which.max(N), .(
-          seconds=unlist(time), N
-          )], by=expr.name][, data.table(Test, N, expr.name, unit="seconds", seconds)]
+        compare.dt.list[[Test]] <- sec.HEAD.compare[
+        , .SD[which.max(N), .(seconds=unlist(time), N)]
+        , by=expr.name
+        ][
+        , data.table(Test, N, expr.name, unit="seconds", seconds)
+        ]
       }
       p.value <- 0
     }else{
