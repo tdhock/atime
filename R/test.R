@@ -136,7 +136,7 @@ atime_pkg <- function(pkg.path=".", tests.dir=NULL){
       dirname(test.info$tests.R), 
       paste0(gsub('[\':\\ /*|<>"?\n\r]', "_", Test), ".png"))
     grDevices::png(out.png, width=test.info$width.in*nrow(max.dt), height=test.info$height.in, units="in", res=100)
-    print(gg)
+    suppressWarnings(print(gg))
     grDevices::dev.off()
   }
   num2fac <- function(x.num){
@@ -223,7 +223,7 @@ atime_pkg <- function(pkg.path=".", tests.dir=NULL){
       height=test.info$height.in,
       units="in",
       res=100)
-    print(gg)
+    suppressWarnings(print(gg))
     grDevices::dev.off()
     if(N_name=="all"){
       save(
