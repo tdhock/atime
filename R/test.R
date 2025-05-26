@@ -208,7 +208,7 @@ atime_pkg <- function(pkg.path=".", tests.dir=NULL){
         hjust=0,
         vjust=0,
         alpha=0.5,
-        data=issues.dt)
+        data=data.table(issues.dt, unit="seconds"))
     }
     gg <- gg+directlabels::geom_dl(ggplot2::aes(
       N, empirical, color=expr.name, label=expr.name),
