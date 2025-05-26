@@ -57,6 +57,12 @@ atime_pkg <- function(pkg.path=".", tests.dir=NULL){
       n.factor <- pred.obj$pred[test.info$HEAD.name, N]/pred.obj$pred[compare.name, N]
       compare.dt.list[[Test]] <- data.table(
         Test, pred.compare[, .(N, expr.name, unit, seconds=unit.value)])
+      if(is.na(n.factor)){ # can't interpolate, only one data point.
+        n.factor <- missing.max/max.HEAD.compare$N
+        compare.dt.list[[Test]] <- sec.HEAD.compare[, .SD[which.max(N), .(
+          seconds=unlist(time), N
+          )], by=expr.name][, data.table(Test, N, expr.name, unit="seconds", seconds)]
+      }
       p.value <- 0
     }else{
       n.factor <- 1
@@ -156,11 +162,11 @@ atime_pkg <- function(pkg.path=".", tests.dir=NULL){
   for(N_name in names(out_N_list)){
     N_int <- out_N_list[[N_name]]
     N_meta <- meta.dt[1:N_int]
-    limit.dt <- rbindlist(limit.dt.list)[N_meta, on="Test"]
-    blank.dt <- rbindlist(blank.dt.list)[N_meta, on="Test"]
+    limit.dt <- rbindlist(limit.dt.list)[N_meta, on="Test", nomatch=0L]
+    blank.dt <- rbindlist(blank.dt.list)[N_meta, on="Test", nomatch=0L]
     compare.dt <- if(length(compare.dt.list))rbindlist(compare.dt.list)[N_meta, on="Test", nomatch=0L]
-    issues.dt <- if(length(issue))data.table(issue, Test=names(issue))[N_meta, on="Test"]
-    N_bench <- bench.dt[N_meta, on="Test"]
+    issues.dt <- if(length(issue))data.table(issue, Test=names(issue))[N_meta, on="Test", nomatch=0L]
+    N_bench <- bench.dt[N_meta, on="Test", nomatch=0L]
     ## Plot only compare.dt
     ##ggplot()+geom_point(aes(seconds, expr.name), shape=1, data=compare.dt)+facet_grid(. ~ P.value + Test, labeller=label_both, scales="free")+scale_x_log10()
     gg <- ggplot2::ggplot()+
