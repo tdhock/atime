@@ -48,7 +48,7 @@ atime_pkg <- function(pkg.path=".", tests.dir=NULL){
       max.name <- max.HEAD.compare$expr.name
       missing.name <- setdiff(HEAD.compare, max.name)
       missing.max <- sec.HEAD.compare[expr.name==missing.name, max(N)]
-      if(missing.name==HEAD.name){
+      if(missing.name==test.info$HEAD.name){
         issue[[Test]] <- paste0(
           missing.name,
           " stopped early")
