@@ -48,9 +48,11 @@ atime_pkg <- function(pkg.path=".", tests.dir=NULL){
       max.name <- max.HEAD.compare$expr.name
       missing.name <- setdiff(HEAD.compare, max.name)
       missing.max <- sec.HEAD.compare[expr.name==missing.name, max(N)]
-      issue[[Test]] <- paste0(
-        missing.name,
-        " stopped early")
+      if(missing.name==HEAD.name){
+        issue[[Test]] <- paste0(
+          missing.name,
+          " stopped early")
+      }
       pred.obj <- predict(best.list)
       setkey(pred.obj$pred, expr.name)
       pred.compare <- pred.obj$pred[HEAD.compare]
