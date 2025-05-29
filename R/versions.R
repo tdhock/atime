@@ -41,89 +41,123 @@ atime_versions_remove <- function(Package){
   code
 }
 
-atime_versions_install <- function(Package, pkg.path, new.Package.vec, sha.vec, verbose, pkg.edit.fun=pkg.edit.default){
-  first.lib <- .libPaths()[1]
-  DESC.in.lib <- Sys.glob(file.path(first.lib, "*", "DESCRIPTION"))
-  pkgs.in.lib <- basename(dirname(DESC.in.lib))
-  new.not.installed <- !new.Package.vec %in% pkgs.in.lib
-  if(any(new.not.installed)){
-    ## on GH actions windows tempfile() gives C:\Users\RUNNER~1\AppData\Local\Temp\Rtmpc9T5Us/working_dir\Rtmpu23suf\file5d41af35765
-    tdir <- normalizePath(tempfile(), mustWork=FALSE)
-    dir.create(tdir)
-    ## pkg.path may be path/to/repo/pkg
-    norm.pkg.path <- normalizePath(pkg.path)
-    orig.repo <- git2r::repository(norm.pkg.path)
-    ## path/to/repo root without trailing /.git
-    orig.repo.path <- normalizePath(dirname(orig.repo$path))
-    ## /pkg
-    pkg.suffix.in.repo <- sub(orig.repo.path, "", norm.pkg.path, fixed=TRUE)
-    for(new.i in which(new.not.installed)){
-      sha <- sha.vec[[new.i]]
-      new.Package <- new.Package.vec[[new.i]]
-      if(new.Package %in% pkgs.in.lib){
-        if(verbose){
-          message(sprintf(
-            "not installing %s because it already exists in %s",
-            new.Package, first.lib))
-        }
-      }else if(sha == ""){
-        install.packages(Package)
-      }else{
-        new.repo.path <- file.path(tdir, new.Package)
-        unlink(new.repo.path, recursive=TRUE, force=TRUE)
-        repo <- git2r::clone(orig.repo.path, new.repo.path, progress=FALSE)
-        new.pkg.path <- paste0(new.repo.path, pkg.suffix.in.repo)
-        tryCatch(
-          git2r::checkout(repo, branch=sha, force=TRUE),
-          error=function(e)stop(
-            e, " when trying to checkout ", sha))
-        ## before editing and installing, make sure directory has sha
-        ## suffix, for windows checks.
-        unlink(file.path(new.pkg.path, "src", "*.o"))
-        pkg.edit.fun(
-          old.Package=Package, 
-          new.Package=new.Package,
-          sha=sha, 
-          new.pkg.path=new.pkg.path)
-        INSTALL.cmd <- paste(
-          shQuote(file.path(
-            Sys.getenv("R_HOME"),
-            "bin",
-            "R")),
-          'CMD INSTALL -l',
-          shQuote(.libPaths()[1]),
-          shQuote(new.pkg.path))
-        status.int <- system(INSTALL.cmd)
-        if(status.int != 0){
-          stop(INSTALL.cmd, " returned error status code ", status.int)
-        }
-        if(verbose){
-          cat("\nPackage info after editing and installation:\n")
-          grep_glob <- function(glob, pattern){
-            some.files <- Sys.glob(file.path(new.pkg.path, glob))
-            out <- list()
-            for(f in some.files){
-              line.vec <- readLines(f)
-              match.vec <- grep(pattern, line.vec, value=TRUE)
-              if(length(match.vec)){
-                out[[f]] <- match.vec
-              }
-            }
-            out
-          }#grep_glob
-          out <- c(
-            grep_glob("DESCRIPTION", "^Package"),
-            grep_glob("NAMESPACE", "^useDynLib"),
-            grep_glob(file.path("src", "*.c"), "R_init_"),
-            grep_glob(file.path("src", "*.cpp"), "R_init_"))
-          src.files <- dir(file.path(new.pkg.path, "src"))
-          out[["src/*.so|dll"]] <- grep("(so|dll)$", src.files, value=TRUE)
-          print(out)
-          cat("\n")
-        }#if(verbose)
-      }#if(new package not in lib)
-    }#for(new.i
-  }#any to install
+get_repo_info <- function(pkg.path) {
+  norm_path <- normalizePath(pkg.path)
+  repo <- tryCatch(
+    git2r::repository(norm_path, discover = TRUE),
+    error = function(e) stop("Not a git repository: ", e$message)
+  )
+  repo_root <- normalizePath(git2r::workdir(repo))
+  pkg_suffix <- sub(paste0(repo_root, "/?"), "", norm_path)
+  
+  list(
+    root = repo_root,
+    pkg_suffix = pkg_suffix,
+    original_pkg = read.dcf(file.path(norm_path, "DESCRIPTION"))[1, "Package"]
+  )
+}
+
+create_temp_dir <- function(prefix, verbose) {
+  temp_dir <- normalizePath(tempfile(prefix))
+  dir.create(temp_dir, showWarnings = FALSE)
+  if (verbose) message("Created temp directory: ", temp_dir)
+  temp_dir
+}
+
+check_installed <- function(path, pkg, verbose) {
+  if (dir.exists(path)) {
+    if (verbose) message(pkg, " already installed")
+    return(TRUE)
+  }
+  FALSE
+}
+
+prepare_source <- function(repo, sha, temp_dir, new_pkg, verbose) {
+  clone_dir <- file.path(temp_dir, paste0("clone_", new_pkg))
+  unlink(clone_dir, recursive = TRUE, force = TRUE)
+  dir.create(clone_dir)
+
+  if (verbose) message("Cloning ", repo$root, " to ", clone_dir)
+  repo_clone <- git2r::clone(repo$root, clone_dir, progress = FALSE)
+  git2r::checkout(repo_clone, sha, force = TRUE)
+
+  src_dir <- file.path(temp_dir, new_pkg)
+  pkg_src <- file.path(clone_dir, repo$pkg_suffix)
+  file.copy(list.files(pkg_src, full.names = TRUE), src_dir, recursive = TRUE)
+  unlink(clone_dir, recursive = TRUE, force = TRUE)
+
+  src_dir
+}
+
+try_edit_package <- function(src_dir, old_pkg, new_pkg, sha, edit_fun, verbose) {
+  tryCatch({
+    if (verbose) message("Modifying package: ", old_pkg, " -> ", new_pkg)
+    edit_fun(
+      old.Package = old_pkg,
+      new.Package = new_pkg,
+      sha = sha,
+      new.pkg.path = src_dir
+    )
+    TRUE
+  }, error = function(e) {
+    message("Package modification failed: ", e$message)
+    FALSE
+  })
+}
+
+clean_build_artifacts <- function(path) {
+  unlink(file.path(path, "src", c("*.o", "*.so", "*.dll")), force = TRUE)
+}
+
+install_package <- function(src_dir, target, verbose) {
+  clean_build_artifacts(src_dir)
+  cmd <- paste(
+    shQuote(file.path(Sys.getenv("R_HOME"), "bin", "R")),
+    "CMD INSTALL --preclean --no-lock -l",
+    shQuote(dirname(target)),
+    shQuote(src_dir)
+  )
+  if (verbose) message("Installing: ", cmd)
+  if (system(cmd) != 0) stop("Installation failed")
+}
+
+atime_versions_install <- function(
+    Package,
+    pkg.path,
+    new.Package.vec,
+    sha.vec,
+    verbose,
+    pkg.edit.fun = pkg.edit.default,
+    installed_cache_root = NULL
+) {
+  lib_path <- .libPaths()[1]
+  repo_info <- get_repo_info(pkg.path)
+  cache_root <- setup_cache(installed_cache_root, verbose)
+  temp_dir <- create_temp_dir("atime_tmp_src_prep_", verbose)
+
+  for (i in seq_along(new.Package.vec)) {
+    new_pkg <- new.Package.vec[i]
+    current_sha <- sha.vec[[i]]
+    target_path <- file.path(lib_path, new_pkg)
+    cache_path <- file.path(cache_root, new_pkg)
+    
+    if (check_installed(target_path, new_pkg, verbose)) next
+    if (try_cache_restore(target_path, cache_path, verbose)) next
+
+    # Build from source
+    src_dir <- prepare_source(repo_info, current_sha, temp_dir, new_pkg, verbose)
+    on.exit(unlink(src_dir, recursive = TRUE, force = TRUE), add = TRUE, after = FALSE)
+    
+    modified <- try_edit_package(src_dir, repo_info$original_pkg, new_pkg, current_sha, pkg.edit.fun, verbose)
+    if (!modified) next
+    
+    install_package(src_dir, target_path, verbose)
+    update_cache(target_path, cache_path, verbose)
+  }
+  
+  unlink(temp_dir, recursive = TRUE, force = TRUE)
+  if (verbose) message("Cleaned up temporary directory: ", temp_dir)
+  invisible(NULL)
 }
 
 atime_versions <- function(pkg.path, N=default_N(), setup, expr, sha.vec=NULL, times=10, seconds.limit=0.01, verbose=FALSE, pkg.edit.fun=pkg.edit.default, result=FALSE, N.env.parent=NULL, ...){
