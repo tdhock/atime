@@ -31,7 +31,6 @@ Suggests:
     fpop,
     changepoint,
     LOPART,
-    cumstats,
     PeakSegDisk,
     callr,
     readr,
