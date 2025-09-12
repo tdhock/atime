@@ -140,13 +140,13 @@ plot.references_best <- function(x, ...){
         alpha=0.5)+
       ggplot2::geom_line(ggplot2::aes(
         N, empirical, group=expr.name),
-        size=2,
+        linewidth=2,
         color=emp.color,
         data=meas)+
       ggplot2::geom_line(ggplot2::aes(
         N, reference, group=paste(expr.name, fun.name)),
         color=ref.color,
-        size=1,
+        linewidth=1,
         data=ref.dt)+
       ggplot2::scale_y_log10("")+
       ggplot2::scale_x_log10()
