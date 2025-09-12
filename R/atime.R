@@ -1,3 +1,26 @@
+error_if_param_not_in_expr <- function(param.dt, elist){
+  one.param.list <- as.list(param.dt[1])
+  problem.list <- list()
+  for(expr.name in names(elist)){
+    before.sub <- elist[[expr.name]]
+    for(param.name in names(one.param.list)){
+      param.sub.list <- one.param.list[param.name]
+      after.sub <- eval(substitute(
+        substitute(EXPR, param.sub.list),
+        list(EXPR=before.sub)))
+      if(identical(paste(before.sub), paste(after.sub))){
+        problem.list[[paste(expr.name, param.name)]] <- paste(
+          param.name, "not in", expr.name)
+      }
+    }
+  }
+  if(length(problem.list)){
+    stop(
+      "each param should be present in each expr, problems: ",
+      paste(problem.list, collapse=", "))
+  }
+}
+
 atime_grid <- function
 (param.list=list(),
   ...,
@@ -39,27 +62,7 @@ atime_grid <- function
     stop("param.list elements must be atomic, but some are not: ", paste(bad.names, collapse=", "))
   }
   param.dt <- do.call(CJ, param.list)
-  ## check to make sure each param is in each expr.
-  one.param.list <- as.list(param.dt[1])
-  problem.list <- list()
-  for(expr.name in names(elist)){
-    before.sub <- elist[[expr.name]]
-    for(param.name in names(one.param.list)){
-      param.sub.list <- one.param.list[param.name]
-      after.sub <- eval(substitute(
-        substitute(EXPR, param.sub.list), 
-        list(EXPR=before.sub)))
-      if(identical(paste(before.sub), paste(after.sub))){
-        problem.list[[paste(expr.name, param.name)]] <- paste(
-          param.name, "not in", expr.name)
-      }
-    }
-  }
-  if(length(problem.list)){
-    stop(
-      "each param should be present in each expr, problems: ",
-      paste(problem.list, collapse=", "))
-  }
+  error_if_param_not_in_expr(param.dt, elist)
   value.mat <- do.call(cbind, lapply(param.dt, paste))
   name.vec <- colnames(value.mat)[col(value.mat)]
   name.value.mat <- matrix(
@@ -91,6 +94,46 @@ atime_grid <- function
 
 default_N <- function(){
   as.integer(2^seq(1, 20))
+}
+
+get_result_rows <- function(result.list){
+  if(
+    all(sapply(result.list, is.data.frame)) &&
+      all(sapply(result.list, nrow)==1)
+  ){
+    names.list <- lapply(result.list, names)
+    for(result.i in seq_along(names.list)){
+      if(!identical(names.list[[1]], names.list[[result.i]])){
+        stop(sprintf("results are all 1 row data frames, but some have different names (%s, %s); please fix by making column names of results identical", names(names.list)[[1]], names(names.list)[[result.i]]))
+      }
+    }
+    result.rows <- do.call(rbind, result.list)
+    is.more <- sapply(result.rows, is.numeric)
+    list(
+      result.rows=result.rows,
+      more.units=names(result.rows)[is.more])
+  }
+}
+
+run_bench_mark <- function(times, sub.elist, N.env, result.keep, result.fun){
+  m.list <- list(quote(bench::mark), iterations=times, check=FALSE)
+  N.env$result.list <- list()
+  for(expr.name in names(sub.elist)){
+    expr <- sub.elist[[expr.name]]
+    m.list[expr.name] <- list(if(result.keep){
+      substitute(
+        result.list[NAME] <- list(FUN(EXPR)),
+        list(NAME=expr.name, FUN=result.fun, EXPR=expr))
+    }else{
+      expr
+    })
+  }
+  m.call <- as.call(m.list)
+  N.df <- suppressWarnings(eval(m.call, N.env))
+  if(result.keep){
+    N.df$result <- N.env$result.list
+  }
+  N.df
 }
 
 atime <- function(N=default_N(), setup, expr.list=NULL, times=10, seconds.limit=0.01, verbose=FALSE, result=FALSE, N.env.parent=NULL, ...){
@@ -131,7 +174,6 @@ atime <- function(N=default_N(), setup, expr.list=NULL, times=10, seconds.limit=
   }
   name.tab <- table(names(elist))
   bad.names <- names(name.tab)[name.tab>1]
-  more.units <- character()
   if(length(bad.names))stop(
     "each expression must have a unique name, problems: ", 
     paste(bad.names, collapse=", "))
@@ -139,77 +181,45 @@ atime <- function(N=default_N(), setup, expr.list=NULL, times=10, seconds.limit=
   metric.dt.list <- list()
   for(N.value in N){
     not.done.yet <- names(done.vec)[!done.vec]
-    if(length(not.done.yet)){
-      N.env <- new.env(parent=N.env.parent)
-      N.env$N <- N.value
-      eval(mc.args$setup, N.env)
-      m.list <- list(quote(bench::mark), iterations=times,check=FALSE)
-      N.env$result.list <- list()
-      for(expr.name in not.done.yet){
-        expr <- elist[[expr.name]]
-        m.list[expr.name] <- list(if(result.keep){
-          substitute(
-            result.list[NAME] <- list(FUN(EXPR)),
-            list(NAME=expr.name, FUN=result.fun, EXPR=expr))
-        }else{
-          expr
-        })
-      }
-      m.call <- as.call(m.list)
-      N.df <- suppressWarnings(eval(m.call, N.env))
-      if(
-        all(sapply(N.env$result.list, is.data.frame)) &&
-          all(sapply(N.env$result.list, nrow)==1)
-      ){
-        names.list <- lapply(N.env$result.list, names)
-        for(result.i in seq_along(names.list)){
-          if(!identical(names.list[[1]], names.list[[result.i]])){
-            stop(sprintf("results are all 1 row data frames, but some have different names (%s, %s); please fix by making column names of results identical", names(names.list)[[1]], names(names.list)[[result.i]]))
-          }
-        }
-        result.rows <- do.call(rbind, N.env$result.list)
-        is.more <- sapply(result.rows, is.numeric)
-        more.units <- names(result.rows)[is.more]
-      }else{
-        result.rows <- NULL
-      }
-      if(result.keep){
-        N.df$result <- N.env$result.list
-      }
-      N.stats <- data.table(
-        N=N.value, expr.name=not.done.yet, N.df
-      )[, `:=`(
-        kilobytes=as.numeric(mem_alloc)/1024,
-        memory=NULL,
-        mem_alloc=NULL,
-        total_time=NULL,
-        expression=NULL
-      )][]
-      summary.funs <- list(
-        median=median, min=min,
-        q25=function(x)quantile(x,0.25),
-        q75=function(x)quantile(x,0.75),
-        max=max, mean=mean, sd=sd)
-      for(fun.name in names(summary.funs)){
-        N.stats[[fun.name]] <- sapply(N.df[["time"]], summary.funs[[fun.name]])
-      }
-      done.pkgs <- N.stats[median > seconds.limit, paste(expr.name)]
-      done.vec[done.pkgs] <- TRUE
-      new.bad <- intersect(names(result.rows), names(N.stats))
-      if(length(new.bad)){
-        stop(sprintf("result is 1 row data frame with column(s) named %s (reserved for internal use); please fix by changing the column name(s) in your results", paste(new.bad, collapse=", ")))
-      }
-      N.out <- data.table(N.stats, result.rows)
-      if(verbose)print(N.out[, data.table(
-        N, expr.name, seconds.median=median, kilobytes)],
-        class=FALSE)
-      metric.dt.list[[paste(N.value)]] <- N.out
+    if(length(not.done.yet)==0)break
+    N.env <- new.env(parent=N.env.parent)
+    N.env$N <- N.value
+    eval(mc.args$setup, N.env)
+    N.df <- run_bench_mark(times, elist[not.done.yet], N.env, result.keep, result.fun)
+    result.row.list <- get_result_rows(N.env$result.list)
+    N.stats <- data.table(
+      N=N.value, expr.name=not.done.yet, N.df
+    )[, `:=`(
+      kilobytes=as.numeric(mem_alloc)/1024,
+      memory=NULL,
+      mem_alloc=NULL,
+      total_time=NULL,
+      expression=NULL
+    )][]
+    summary.funs <- list(
+      median=median, min=min,
+      q25=function(x)quantile(x,0.25),
+      q75=function(x)quantile(x,0.75),
+      max=max, mean=mean, sd=sd)
+    for(fun.name in names(summary.funs)){
+      N.stats[[fun.name]] <- sapply(N.df[["time"]], summary.funs[[fun.name]])
     }
+    done.pkgs <- N.stats[median > seconds.limit, paste(expr.name)]
+    done.vec[done.pkgs] <- TRUE
+    new.bad <- intersect(names(result.row.list$result.rows), names(N.stats))
+    if(length(new.bad)){
+      stop(sprintf("result is 1 row data frame with column(s) named %s (reserved for internal use); please fix by changing the column name(s) in your results", paste(new.bad, collapse=", ")))
+    }
+    N.out <- data.table(N.stats, result.row.list$result.rows)
+    if(verbose)print(N.out[, data.table(
+      N, expr.name, seconds.median=median, kilobytes)],
+      class=FALSE)
+    metric.dt.list[[paste(N.value)]] <- N.out
   }
   unit.col.vec <- c(
     "kilobytes",
     seconds="median",
-    more.units)
+    result.row.list$more.units)
   measurements <- rbindlist(metric.dt.list)
   expr.list.params <- attr(expr.list,"parameters")
   by.vec <- "expr.name"
