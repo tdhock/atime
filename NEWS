@@ -1,6 +1,10 @@
 Changes in version 2025.9.12
 
-- Internal functions introduced so that atime() and atime_grid() definitions require less than 100 lines of code (thanks to an anonymous R Journal reviewer for the suggestion).
+- Internal functions introduced so that atime() and atime_grid() definitions require less than 100 lines of code (thanks to an anonymous R Journal reviewer for the suggestion, PR#93).
+
+Changes in version 2025.8.26
+
+- Remove cumstats from Suggests (PR#90).
 
 Changes in version 2025.5.24
 
