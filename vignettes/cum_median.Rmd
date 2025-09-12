@@ -21,12 +21,14 @@ Trees by Alexandre Drouin, Toby Hocking, Francois
 Laviolette](https://proceedings.neurips.cc/paper/2017/hash/2288f691b58edecadcc9a8691762b4fd-Abstract.html).
 
 ```{r}
+## copied from library(cumstats), thanks @TimTaylor, https://github.com/tdhock/atime/issues/89
+cummedian <- function(x) sapply(seq_along(x), function(k, z) median(z[1:k]), z = x)
 expr.list <- c(
-  if(requireNamespace("cumstats"))atime::atime_grid(
-    "cumstats::cummedian"=cumstats::cummedian(data.vec)),
   if(requireNamespace("binsegRcpp"))atime::atime_grid(
     "binsegRcpp::cum_median"=binsegRcpp::cum_median(data.vec)),
-  atime::atime_grid(cumsum=cumsum(data.vec)))
+  atime::atime_grid(
+    cumsum=cumsum(data.vec),
+    cummedian=cummedian(data.vec)))
 atime.list <- atime::atime(
   N=2^seq(1, 20),
   setup={
