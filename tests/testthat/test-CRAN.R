@@ -428,7 +428,7 @@ test_that("error for new unit name conflicting with existing", {
       quadratic=data.frame(median=N^2, kilobytes=1, ok=2),
       seconds.limit=0.001,
       result=TRUE)
-  }, "result is 1 row data frame with column(s) named median, kilobytes (reserved for internal use); please fix by changing the column name(s) in your results", fixed=TRUE)
+  }, "value of expression is 1 row data frame with column(s) named median, kilobytes (reserved for internal use); please fix by changing the column name(s) in your results", fixed=TRUE)
 })
 
 test_that("atime_test outputs historical versions", {

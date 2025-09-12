@@ -1,3 +1,7 @@
+Changes in version 2025.9.12
+
+- Internal functions introduced so that atime() and atime_grid() definitions require less than 100 lines of code (thanks to an anonymous R Journal reviewer for the suggestion).
+
 Changes in version 2025.5.24
 
 - atime_pkg() sorts tests by N.factor in addition to P.value (PR#78).
