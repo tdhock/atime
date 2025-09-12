@@ -417,6 +417,18 @@ test_that("error for result data frames with different column names",{
       seconds.limit=0.001,
       result=TRUE)
   }, "results are all 1 row data frames, but some have different names (missing, constant); please fix by making column names of results identical", fixed=TRUE)
+  expect_error({
+    atime:::get_result_rows(list(
+      missing=data.frame(my_unit=NA),
+      linear=data.frame(my_unit=5),
+      quadratic=data.frame(my_unit=1, other=2)))
+  }, "results are all 1 row data frames, but some have different names (missing, quadratic); please fix by making column names of results identical", fixed=TRUE)
+  expect_null(
+    atime:::get_result_rows(list(
+      missing=data.frame(my_unit=NA),
+      linear=data.frame(my_unit=5),
+      quadratic=data.frame(my_unit=1, other=2:3)))
+  )
 })
 
 test_that("error for new unit name conflicting with existing", {
