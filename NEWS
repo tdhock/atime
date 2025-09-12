@@ -1,3 +1,7 @@
+Changes in version 2025.8.26
+
+- Remove cumstats from Suggests (PR#90).
+
 Changes in version 2025.5.24
 
 - atime_pkg() sorts tests by N.factor in addition to P.value (PR#78).
