@@ -289,12 +289,19 @@ atime_pkg_test_info <- function(pkg.path=".", tests.dir=NULL){
   sha.vec <- c()
   HEAD.name <- paste0("HEAD=",git2r::repository_head(repo)$name)
   sha.vec[[HEAD.name]] <- git2r::sha(HEAD.commit)
-  installed_version <- tryCatch(packageVersion(Package), error=function(e)NULL)
+  installed_version <- tryCatch(paste(packageVersion(Package)), error=function(e)NULL)
   if(!is.null(installed_version)){
     CRAN.name <- paste0("CRAN=", installed_version)
     sha.vec[[CRAN.name]] <- ""
   }else{
     CRAN.name <- NA_character_
+  }
+  ap <- utils::available.packages()
+  CRAN_version <- ap[Package,"Version"]
+  if(!identical(CRAN_version, installed_version)){
+    warning(sprintf(
+      "CRAN version=%s but installed version=%s fix via install.packages('%s')",
+      CRAN_version, installed_version, Package))
   }
   base.ref <- Sys.getenv("GITHUB_BASE_REF", "master")
   base.commit <- tryCatch({
