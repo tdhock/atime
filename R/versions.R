@@ -95,6 +95,7 @@ atime_versions_install <- function(Package, pkg.path, new.Package.vec, sha.vec, 
           shQuote(new.pkg.path))
         status.int <- system(INSTALL.cmd)
         if(status.int != 0){
+          system(INSTALL.cmd)
           stop(INSTALL.cmd, " returned error status code ", status.int)
         }
         if(verbose){
