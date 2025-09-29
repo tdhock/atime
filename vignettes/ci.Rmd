@@ -42,11 +42,7 @@ structure("![atime_pkg result](./images/tests_all_facet.png)", class="knit_asis"
 ```
 
 The figure above shows four columns of panels from left to right, one
-for each test defined in the binsegRcpp package. The column panels are
-sorted so that the first one on the left is the most likely to have a
-speed regression. In detail they are sorted by `P.value` of difference
-between HEAD and min time at the largest `N` which was tested in all
-versions. The differences can be interpreted as follows: (from left to right)
+for each test defined in the `binsegRcpp` package:
 
 * For `DIST=meanvar_norm` we see `HEAD` has a **constant factor slowdown**,
   which you can see as a small difference for small `N`, and a constant
@@ -63,3 +59,12 @@ versions. The differences can be interpreted as follows: (from left to right)
   This small but significant difference is indicated by "slower P<0.01" message.
 * For `DIST=poisson` there is no difference in computational
   requirements between the three versions (neither time nor memory).
+
+The column panels are sorted so that the first one on the left is the
+most likely to have a speed regression. In detail, 
+
+* plots emphasize differences between `HEAD` and a comparison version, which is defined as the first of these versions which is available: `merge-base` (common ancestor of `HEAD` and `base`), `base` (typically `master` or `main`), `CRAN`.
+* Plots show test cases, first sorted by `N.factor`, which is the ratio of `N` values at the time limit, `HEAD` versus comparison version.
+* If `N.factor<1` then `HEAD` is much slower than comparison version (the smaller `N` value for `HEAD` went over the time limit).
+* `N.factor=1` means `HEAD` and comparison version had same value for largest `N` (so have nearly the same speed).
+* Ties are broken using `P.value`, un-paired two-sample T-test for `HEAD` time greater than comparison time at largest `N`.

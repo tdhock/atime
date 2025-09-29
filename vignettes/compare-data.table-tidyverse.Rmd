@@ -28,7 +28,7 @@ library(data.table)
 hostname <- system("hostname",intern=TRUE)
 (max.threads <- as.integer(Sys.getenv("SLURM_JOB_CPUS_PER_NODE", "1")))
 threads.vec <- unique(as.integer(c(1, ceiling(max.threads/2), max.threads)))
-seconds.limit <- 1
+seconds.limit <- if(identical(Sys.getenv("GITHUB_TOKEN"), ""))0.001 else 1
 cache.list <- list()
 cache <- function(symbol, code){
   cache.symb <- substitute(symbol)
@@ -124,19 +124,27 @@ atime_write <- function(make.input.fun, fmt){
     })
   }
   expr.list <- do.call(atime::atime_grid, grid.args)
-  atime::atime(
-    N=as.integer(10^seq(0, 6, by=0.5)),
-    setup={
-      input <- make.input.fun(N)
-      name.list <- list()
-      for(fun in c("fwrite", "write_csv", "write_csv_arrow", "write.csv")){
-        name.list[[fun]] <- file.path(
-          tempdir(), sprintf(fmt, fun, N))
-      }
-    },
-    seconds.limit = seconds.limit,
-    expr.list=expr.list,
-    "utils::write.csv"=utils::write.csv(input, name.list[["write.csv"]]))
+  N.vec <- unique(as.integer(10^seq(0, 6, by=0.2)))
+  write_N <- function(N_vec){
+    atime::atime(
+      N=N_vec,
+      setup={
+        input <- make.input.fun(N)
+        name.list <- list()
+        for(fun in c("fwrite", "write_csv", "write_csv_arrow", "write.csv")){
+          name.list[[fun]] <- file.path(
+            tempdir(), sprintf(fmt, fun, N))
+        }
+      },
+      seconds.limit = seconds.limit,
+      expr.list=expr.list,
+      "utils::write.csv"=utils::write.csv(input, name.list[["write.csv"]]))
+  }
+  result <- write_N(N.vec)
+  if(length(unique(result$meas$N))==1){
+    res2 <- write_N(N.vec[-1]) # run again to get at least 2 N for read benchmarks.
+  }
+  result
 }
 one.thread <- function(DT)DT[grepl("utils|scan|THREADS=1$", expr.name)]
 facetPlot <- function(atime.list, fun.name.vec=c("N^2","N"), N.min=1e2){
