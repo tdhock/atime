@@ -14,7 +14,7 @@ Description: Computing and visualizing comparative
  Also includes functionality for measuring asymptotic memory and other
  quantities.
 License: GPL-3
-URL: https://github.com/tdhock/atime
+URL: https://github.com/tdhock/atime, https://atime-docs.netlify.app
 BugReports: https://github.com/tdhock/atime/issues
 Imports: data.table, bench, lattice, git2r, utils, stats, grDevices
 Suggests: 
