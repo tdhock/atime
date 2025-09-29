@@ -14,3 +14,4 @@ vignettes/ci.Rmd
 vignettes/git.Rmd
 ^doc$
 ^Meta$
+_pkgdown.yml
