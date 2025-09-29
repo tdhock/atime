@@ -35,16 +35,20 @@ We can run the atime CI code in that package via:
 ```{r}
 options(repos="http://cloud.r-project.org")
 result.list <- atime::atime_pkg(tdir)
-tests.png <- file.path(inst.atime, "tests_all_facet.png")
+tests.png <- normalizePath(file.path(
+  inst.atime, "tests_all_facet.png"), mustWork=TRUE)
 knitr::include_graphics(tests.png)
 ```
 
 The figure above shows four columns of panels from left to right, one
 for each test defined in the binsegRcpp package. The column panels are
 sorted so that the first one on the left is the most likely to have a
-speed regression. In detail they are sorted by `P.value` of difference
-between HEAD and min time at the largest `N` which was tested in all
-versions. The differences can be interpreted as follows:
+speed regression. In detail they are sorted by
+
+* `N.factor`, the ratio of `N` values at the time limit (ratio of 1 means nearly the same speed), and
+* `P.value` for un-paired two-sample T-test for HEAD time greater than comparison time (comparison version is first of `merge-base`, `base`, `CRAN`).
+
+The differences can be interpreted as follows:
 
 * For `DIST=poisson` there is no difference in computational
   requirements between the three versions (neither time nor memory).
