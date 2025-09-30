@@ -1,7 +1,7 @@
 \name{atime_test_list}
 \alias{atime_test_list}
 \title{
-  Define an atime performance test list.
+  Define an atime performance test list
 }
 \description{
   Use this to define \code{test.list} in your atime/tests.R

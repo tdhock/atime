@@ -1,7 +1,7 @@
 \name{atime_test}
 \alias{atime_test}
 \title{
-  Define an atime performance test.
+  Define an atime performance test
 }
 \description{
   Use this to define an element of your \code{test.list} in
