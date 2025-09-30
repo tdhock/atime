@@ -3,13 +3,6 @@
 %\VignetteIndexEntry{Custom Plots}
 -->
 
-```{r setup, include = FALSE}
-knitr::opts_chunk$set(
-  collapse = TRUE,
-  comment = "#>"
-)
-```
-
 The goal of this vignette is to demonstrate how to create custom
 ggplots (instead of always using the `plot` method). In particular, we
 would like to display the best fit asymptotic complexity class in the

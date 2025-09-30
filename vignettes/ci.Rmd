@@ -3,13 +3,6 @@
 %\VignetteIndexEntry{Continuous integration testing}
 -->
 
-```{r setup, include = FALSE}
-knitr::opts_chunk$set(
-  collapse = TRUE,
-  comment = "#>"
-)
-```
-
 In this vignette, we show how to use atime for continuous integration
 testing. We begin by cloning a github repository of an R package which
 already has atime CI code.

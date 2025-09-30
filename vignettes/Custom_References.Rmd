@@ -3,13 +3,6 @@
 %\VignetteIndexEntry{Custom References}
 -->
 
-```{r setup, include = FALSE}
-knitr::opts_chunk$set(
-  collapse = TRUE,
-  comment = "#>"
-)
-```
-
 The goal of this vignette is to show how to use custom asymptotic
 references. As an example, we explore the differences in asymptotic
 time complexity between different implementations of binary

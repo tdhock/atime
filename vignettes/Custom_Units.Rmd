@@ -3,13 +3,6 @@
 %\VignetteIndexEntry{Custom Units}
 -->
 
-```{r setup, include = FALSE}
-knitr::opts_chunk$set(
-  collapse = TRUE,
-  comment = "#>"
-)
-```
-
 The goal of this vignette is to explain how to estimate asymptotic
 complexity for custom units (other than the defaults, seconds and
 kilobytes).
