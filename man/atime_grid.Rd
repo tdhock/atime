@@ -94,7 +94,7 @@ sub.atime.edited$measurements <- data.table(sub.atime.list$measurements)[
 , expr.name := paste0("PERL=",PERL)]
 if(require(ggplot2)){
   plot(sub.atime.edited)+
-    facet_grid(unit ~ FUN, labeller=label_both)
+    facet_grid(unit ~ FUN, labeller=label_both, scales="free")
 }
 
 }
