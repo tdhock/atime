@@ -21,8 +21,6 @@ Suggests:
     directlabels,
     ggplot2,
     testthat,
-    knitr,
-    markdown,
     stringi,
     re2,
     binsegRcpp,
@@ -40,5 +38,5 @@ Suggests:
     RColorBrewer,
     tibble,
     Matrix,
-    pkgdown
-VignetteBuilder: knitr
+    litedown
+VignetteBuilder: litedown
