@@ -6,8 +6,10 @@ on:
     branches:
       - main
 
+name: Build docs
+
 jobs:
-  build-docs:
+  litedown:
     runs-on: ubuntu-latest
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
