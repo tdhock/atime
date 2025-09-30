@@ -20,7 +20,7 @@ jobs:
       - name: Install package
         run: R CMD INSTALL .
       - name: Fuse site
-        run: R -e 'litedown::fuse_site("site")'
+        run: R -e 'litedown::fuse_site()'
       - name: netlify deploy
         uses: animint/animint-actions/netlify-deploy-comment@main
         with:
