@@ -417,6 +417,27 @@ test_that("error for result data frames with different column names",{
       seconds.limit=0.001,
       result=TRUE)
   }, "results are all 1 row data frames, but some have different names (missing, constant); please fix by making column names of results identical", fixed=TRUE)
+  expect_error({
+    atime:::get_result_rows(list(
+      missing=data.frame(my_unit=NA),
+      linear=data.frame(my_unit=5),
+      quadratic=data.frame(my_unit=1, other=2)))
+  }, "results are all 1 row data frames, but some have different names (missing, quadratic); please fix by making column names of results identical", fixed=TRUE)
+  expect_null(
+    atime:::get_result_rows(list(
+      missing=data.frame(my_unit=NA),
+      linear=data.frame(my_unit=5),
+      quadratic=data.frame(my_unit=1, other=2:3)))
+  )
+  valid.input.list <- list(
+    missing=data.frame(my_unit=NA, other="a"),
+    linear=data.frame(my_unit=5, other="b"),
+    quadratic=data.frame(my_unit=1, other="c"))
+  computed <- atime:::get_result_rows(valid.input.list)
+  expected <- list(
+    result.rows=do.call(rbind, valid.input.list),
+    more.units="my_unit")
+  expect_identical(computed, expected)
 })
 
 test_that("error for new unit name conflicting with existing", {
@@ -428,7 +449,7 @@ test_that("error for new unit name conflicting with existing", {
       quadratic=data.frame(median=N^2, kilobytes=1, ok=2),
       seconds.limit=0.001,
       result=TRUE)
-  }, "result is 1 row data frame with column(s) named median, kilobytes (reserved for internal use); please fix by changing the column name(s) in your results", fixed=TRUE)
+  }, "value of expression is 1 row data frame with column(s) named median, kilobytes (reserved for internal use); please fix by changing the column name(s) in your results", fixed=TRUE)
 })
 
 test_that("atime_test outputs historical versions", {
