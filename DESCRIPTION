@@ -39,5 +39,6 @@ Suggests:
     nc,
     RColorBrewer,
     tibble,
-    Matrix
+    Matrix,
+    pkgdown
 VignetteBuilder: knitr
