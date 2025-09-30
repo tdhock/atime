@@ -1,7 +1,9 @@
-<!--
-%\VignetteEngine{litedown::vignette}
-%\VignetteIndexEntry{Custom Plots}
--->
+---
+vignette: >
+  %\VignetteIndexEntry{Custom Plots}
+  %\VignetteEngine{litedown::vignette}
+  %\VignetteEncoding{UTF-8}
+---
 
 The goal of this vignette is to demonstrate how to create custom
 ggplots (instead of always using the `plot` method). In particular, we

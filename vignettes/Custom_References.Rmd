@@ -1,7 +1,9 @@
-<!--
-%\VignetteEngine{litedown::vignette}
-%\VignetteIndexEntry{Custom References}
--->
+---
+vignette: >
+  %\VignetteIndexEntry{Custom References}
+  %\VignetteEngine{litedown::vignette}
+  %\VignetteEncoding{UTF-8}
+---
 
 The goal of this vignette is to show how to use custom asymptotic
 references. As an example, we explore the differences in asymptotic

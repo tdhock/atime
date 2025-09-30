@@ -1,7 +1,9 @@
-<!--
-%\VignetteEngine{litedown::vignette}
-%\VignetteIndexEntry{Custom Units}
--->
+---
+vignette: >
+  %\VignetteIndexEntry{Custom Units}
+  %\VignetteEngine{litedown::vignette}
+  %\VignetteEncoding{UTF-8}
+---
 
 The goal of this vignette is to explain how to estimate asymptotic
 complexity for custom units (other than the defaults, seconds and

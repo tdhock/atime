@@ -1,7 +1,9 @@
-<!--
-%\VignetteEngine{litedown::vignette}
-%\VignetteIndexEntry{Continuous integration testing}
--->
+---
+vignette: >
+  %\VignetteIndexEntry{Continuous performance testing}
+  %\VignetteEngine{litedown::vignette}
+  %\VignetteEncoding{UTF-8}
+---
 
 In this vignette, we show how to use atime for continuous integration
 testing. We begin by cloning a github repository of an R package which

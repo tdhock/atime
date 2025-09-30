@@ -1,7 +1,9 @@
-<!--
-%\VignetteEngine{litedown::vignette}
-%\VignetteIndexEntry{Example: regular expressions}
--->
+---
+vignette: >
+  %\VignetteIndexEntry{Example: regular expressions}
+  %\VignetteEngine{litedown::vignette}
+  %\VignetteEncoding{UTF-8}
+---
 
 ```{r}
 (subject.size.vec <- unique(as.integer(10^seq(0,3.5,l=100))))
