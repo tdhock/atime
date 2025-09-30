@@ -1,5 +1,6 @@
-site
 *__files/
+site/doc
+site/manual
 docs
 compare-data.table-tidyverse-patched.Rmd
 vignettes/*.RDS
