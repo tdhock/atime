@@ -1,7 +1,7 @@
 Package: atime
 Type: Package
 Title: Asymptotic Timing
-Version: 2025.9.12
+Version: 2025.9.30
 Authors@R: c(
     person("Toby", "Hocking",
      email="toby.hocking@r-project.org",
@@ -14,15 +14,13 @@ Description: Computing and visualizing comparative
  Also includes functionality for measuring asymptotic memory and other
  quantities.
 License: GPL-3
-URL: https://github.com/tdhock/atime
+URL: https://github.com/tdhock/atime, https://atime-docs.netlify.app
 BugReports: https://github.com/tdhock/atime/issues
 Imports: data.table, bench, lattice, git2r, utils, stats, grDevices
 Suggests: 
     directlabels,
     ggplot2,
     testthat,
-    knitr,
-    markdown,
     stringi,
     re2,
     binsegRcpp,
@@ -39,5 +37,6 @@ Suggests:
     nc,
     RColorBrewer,
     tibble,
-    Matrix
-VignetteBuilder: knitr
+    Matrix,
+    litedown
+VignetteBuilder: litedown

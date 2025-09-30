@@ -1,0 +1,9 @@
+site:
+
+output:
+  html:
+    meta:
+      include_before: "[Home](/) [Articles](/articles.html) [Manual](manual.html)"
+      include_after: "atime package by Toby Dylan Hocking"
+    options:
+      number_sections: true

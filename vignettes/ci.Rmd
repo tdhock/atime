@@ -1,14 +1,9 @@
-<!--
-%\VignetteEngine{knitr::knitr}
-%\VignetteIndexEntry{Continuous integration testing}
--->
-
-```{r setup, include = FALSE}
-knitr::opts_chunk$set(
-  collapse = TRUE,
-  comment = "#>"
-)
-```
+---
+vignette: >
+  %\VignetteIndexEntry{Continuous performance testing}
+  %\VignetteEngine{litedown::vignette}
+  %\VignetteEncoding{UTF-8}
+---
 
 In this vignette, we show how to use atime for continuous integration
 testing. We begin by cloning a github repository of an R package which
@@ -33,29 +28,38 @@ cat(test.lines, sep="\n")
 We can run the atime CI code in that package via:
 
 ```{r}
-options(repos="http://cloud.r-project.org")
-result.list <- atime::atime_pkg(tdir)
-tests.png <- file.path(inst.atime, "tests_all_facet.png")
-knitr::include_graphics(tests.png)
+if(interactive()){
+  options(repos="http://cloud.r-project.org")
+  result.list <- atime::atime_pkg(tdir)
+  file.path(inst.atime, "tests_all_facet.png")
+}
+structure("![atime_pkg result](./images/tests_all_facet.png)", class="knit_asis")
 ```
 
 The figure above shows four columns of panels from left to right, one
-for each test defined in the binsegRcpp package. The column panels are
-sorted so that the first one on the left is the most likely to have a
-speed regression. In detail they are sorted by `P.value` of difference
-between HEAD and min time at the largest `N` which was tested in all
-versions. The differences can be interpreted as follows:
+for each test defined in the `binsegRcpp` package:
 
-* For `DIST=poisson` there is no difference in computational
-  requirements between the three versions (neither time nor memory).
-* For `DIST=l1` there is a constant time slowdown in HEAD, which you
+* For `DIST=meanvar_norm` we see `HEAD` has a **constant factor slowdown**,
+  which you can see as a small difference for small `N`, and a constant
+  amount of separation on the log-log plot for large `N` (slopes about
+  the same, so same asymptotic time complexity class).
+  This large difference is indicated by "stopped early" message.
+* For `binseg_normal` we see `HEAD` has a **larger asymptotic complexity class**, for both time and memory, as can be seen by the larger slope
+  (difference grows with `N`).
+  This large difference is indicated by "stopped early" message.
+* For `DIST=l1` we see `HEAD` has a **constant time slowdown**, which you
   can see because there is some difference for small `N`, but not much
   for larger `N` (timings about the same). In other words, the
   slowdown happens outside of a for loop over `N`.
-* For `DIST=meanvar_norm` there is a constant *factor* slowdown, which
-  you can see as a small difference for small `N`, and a constant
-  amount of separation on the log-log plot for large `N` (slopes about
-  the same).
-* For `binseg_normal` the HEAD code has larger computational
-  requirements, for both time and memory, as can be seen by the larger
-  slope (difference grows with `N`).
+  This small but significant difference is indicated by "slower P<0.01" message.
+* For `DIST=poisson` there is no difference in computational
+  requirements between the three versions (neither time nor memory).
+
+The column panels are sorted so that the first one on the left is the
+most likely to have a speed regression. In detail, 
+
+* plots emphasize differences between `HEAD` and a comparison version, which is defined as the first of these versions which is available: `merge-base` (common ancestor of `HEAD` and `base`), `base` (typically `master` or `main`), `CRAN`.
+* Plots show test cases, first sorted by `N.factor`, which is the ratio of `N` values at the time limit, `HEAD` versus comparison version.
+* If `N.factor<1` then `HEAD` is much slower than comparison version (the smaller `N` value for `HEAD` went over the time limit).
+* `N.factor=1` means `HEAD` and comparison version had same value for largest `N` (so have nearly the same speed).
+* Ties are broken using `P.value`, un-paired two-sample T-test for `HEAD` time greater than comparison time at largest `N`.

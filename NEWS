@@ -1,3 +1,7 @@
+Changes in version 2025.9.30
+
+- Build vignettes and atime-docs.netlify.app using litedown.
+
 Changes in version 2025.9.12
 
 - atime_versions(CRAN="") uses installed version of package code (same as before), displays installed version number as "CRAN" on plots (instead of CRAN version number which was used previously without necessarily using the corresponding code), and now warns if those two versions are different (PR#91).

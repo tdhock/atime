@@ -1,13 +1,9 @@
 <!--
-%\VignetteEngine{knitr::knitr}
+%\VignetteEngine{litedown::vignette}
 %\VignetteIndexEntry{Example: sparse matrices}
 -->
 
 ```{r setup, include = FALSE}
-knitr::opts_chunk$set(
-  collapse = TRUE,
-  comment = "#>"
-)
 options(width=120)
 ```
 
