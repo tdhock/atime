@@ -1,15 +1,9 @@
-<!--
-%\VignetteEngine{knitr::knitr}
-%\VignetteIndexEntry{Comparing git versions}
--->
-
-```{r setup, include = FALSE}
-knitr::opts_chunk$set(
-  collapse = TRUE,
-  comment = "#>",
-  eval = TRUE
-)
-```
+---
+vignette: >
+  %\VignetteIndexEntry{Comparing git versions}
+  %\VignetteEngine{litedown::vignette}
+  %\VignetteEncoding{UTF-8}
+---
 
 In this vignette we explain how to use functions which compute
 asymptotic timings of different git versions of a package (useful for

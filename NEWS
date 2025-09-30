@@ -1,3 +1,7 @@
+Changes in version 2025.9.30
+
+- Build vignettes and atime-docs.netlify.app using litedown.
+
 Changes in version 2025.9.13
 
 - Internal functions introduced so that atime() and atime_grid() definitions require less than 100 lines of code (thanks to an anonymous R Journal reviewer for the suggestion, PR#93).

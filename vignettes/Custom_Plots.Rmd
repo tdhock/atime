@@ -1,14 +1,9 @@
-<!--
-%\VignetteEngine{knitr::knitr}
-%\VignetteIndexEntry{Custom Plots}
--->
-
-```{r setup, include = FALSE}
-knitr::opts_chunk$set(
-  collapse = TRUE,
-  comment = "#>"
-)
-```
+---
+vignette: >
+  %\VignetteIndexEntry{Custom Plots}
+  %\VignetteEngine{litedown::vignette}
+  %\VignetteEncoding{UTF-8}
+---
 
 The goal of this vignette is to demonstrate how to create custom
 ggplots (instead of always using the `plot` method). In particular, we

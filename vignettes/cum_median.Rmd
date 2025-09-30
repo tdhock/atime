@@ -1,14 +1,9 @@
-<!--
-%\VignetteEngine{knitr::knitr}
-%\VignetteIndexEntry{Example: cumulative median}
--->
-
-```{r setup, include = FALSE}
-knitr::opts_chunk$set(
-  collapse = TRUE,
-  comment = "#>"
-)
-```
+---
+vignette: >
+  %\VignetteIndexEntry{Example: cumulative median}
+  %\VignetteEngine{litedown::vignette}
+  %\VignetteEncoding{UTF-8}
+---
 
 In this vignette we compare two different implementations of the
 cumulative median. The cumstats package provides a naive method, which

@@ -1,14 +1,9 @@
-<!--
-%\VignetteEngine{knitr::knitr}
-%\VignetteIndexEntry{Custom Units}
--->
-
-```{r setup, include = FALSE}
-knitr::opts_chunk$set(
-  collapse = TRUE,
-  comment = "#>"
-)
-```
+---
+vignette: >
+  %\VignetteIndexEntry{Custom Units}
+  %\VignetteEngine{litedown::vignette}
+  %\VignetteEncoding{UTF-8}
+---
 
 The goal of this vignette is to explain how to estimate asymptotic
 complexity for custom units (other than the defaults, seconds and
