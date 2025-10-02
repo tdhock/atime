@@ -214,7 +214,7 @@ mult.compare <- dcast(
 , equal := paste(all.equal(as.numeric(dense[[1]]), as.numeric(sparse[[1]])))
 , by=N
 ][]
-mult.compare[equal!="TRUE"]
+mult.compare[,.(N,equal)]
 ```
 
 We see the only difference is for large `N` when `dense` result is `NULL` (benchmark not run because a smaller `N` went over the time limit).
@@ -264,7 +264,7 @@ mult.compare <- dcast(
 , equal := paste(all.equal(as.numeric(dense[[1]]), as.numeric(sparse[[1]])))
 , by=N
 ][]
-mult.compare[equal!=TRUE]
+mult.compare[,.(N,equal)]
 ```
 
 We see the only difference is for large `N` when `dense` result is `NULL` (benchmark not run because a smaller `N` went over the time limit).
