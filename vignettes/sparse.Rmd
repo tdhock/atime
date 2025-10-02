@@ -1,7 +1,9 @@
-<!--
-%\VignetteEngine{litedown::vignette}
-%\VignetteIndexEntry{Example: sparse matrices}
--->
+---
+vignette: >
+  %\VignetteIndexEntry{Example: sparse matrices}
+  %\VignetteEngine{litedown::vignette}
+  %\VignetteEncoding{UTF-8}
+---
 
 ```{r setup, include = FALSE}
 options(width=120)

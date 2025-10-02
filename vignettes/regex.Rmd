@@ -5,14 +5,30 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
+This vignette shows how to measure asymptotic performance of regular expression engines.
+First we define a grid of data sizes.
+
 ```{r}
 (subject.size.vec <- unique(as.integer(10^seq(0,3.5,l=100))))
+```
+
+Then we define a list of R expressions that run the regex `pattern` on `subject`.
+Note that neither `subject` nor `pattern` are defined yet, and that is OK.
+These expressions will be evaluated later, so we can define `subject` and `pattern` to depend on data size.
+The list is called `backtrackers` because these are the regex engines which use backtracking, and are therefore worst case exponential time complexity.
+
+```{r}
 (backtrackers <- c(
   if(requireNamespace("stringi"))atime::atime_grid(
     ICU=stringi::stri_match(subject, regex=pattern)),
   atime::atime_grid(
     PCRE=regexpr(pattern, subject, perl=TRUE),
     TRE=regexpr(pattern, subject, perl=FALSE))))
+```
+
+The code below executes `setup` for every value in `N`, which defines `subject` and `pattern` to be a pathological combination that results in the worst case time complexity.
+
+```{r}
 backtrackers.result <- atime::atime(
   N=subject.size.vec,
   setup={
@@ -27,11 +43,18 @@ plot(backtrackers.best)
 The plot above shows that ICU/PCRE/TRE are all exponential in N
 (subject/pattern size) when the pattern contains backreferences.
 
+The code below creates a list with a fourth regex engine, RE2, that uses a different algorithm (not backtracking, so worst case polynomial time is much faster).
+
 ```{r}
-all.exprs <- c(
+(all.exprs <- c(
   if(requireNamespace("re2"))atime::atime_grid(
     RE2=re2::re2_match(subject, pattern)),
-  backtrackers)
+  backtrackers))
+```
+
+Below we run the same `subject` with a different `pattern`, which does not include the `\1` backreference (that feature is not supported in RE2, which is why is achieves a better worst case time complexity).
+
+```{r}
 all.result <- atime::atime(
   N=subject.size.vec,
   setup={
@@ -51,6 +74,8 @@ larger sizes).
 
 ## Interpolate at seconds.limit using predict method
 
+Typically the best way to present an `atime` benchmark is by plotting the result of the `predict()` method.
+
 ```{r}
 (all.pred <- predict(all.best))
 summary(all.pred)
@@ -58,24 +83,27 @@ summary(all.pred)
 
 The `predict` method above returns a list with a new element named
 `prediction`, which shows the data sizes that can be computed with a
-given time budget. The `plot` method is used below,
+given time budget (throughput). The `plot` method is used below,
 
 ```{r}
 plot(all.pred)
 ```
 
+The figure above shows each expression as a different colored curve, each with a direct label to indicate the throughput at the time limit.
+This representation makes it easy to see which expression is fastest, and it shows numbers that you can cite to explain what data sizes are possible in the given time limit.
+
 ## `atime_grid` to compare different engines
 
-In the `nc` package there is an `engine` argument which controls which
-C regex library is used:
+In the `nc` package there is an `engine` argument which controls which C regex library is used, so the first comparison above can be re-done using the code below.
+Using `atime_grid()` as below can simplify the code required for benchmark comparisons (when possible).
 
 ```{r}
-nc.exprs <- atime::atime_grid(
+(nc.exprs <- atime::atime_grid(
   list(ENGINE=c(
     if(requireNamespace("re2"))"RE2",
     "PCRE",
     if(requireNamespace("stringi"))"ICU")),
-  nc=nc::capture_first_vec(subject, pattern, engine=ENGINE))
+  nc=nc::capture_first_vec(subject, pattern, engine=ENGINE)))
 nc.result <- atime::atime(
   N=subject.size.vec,
   setup={

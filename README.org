@@ -1,9 +1,9 @@
 atime: Asymptotic Timing
 
-- compare time/memory/other quantities of different R codes that depend on N: =atime()=
-- estimate the asymptotic complexity (big-O notation) of any R code that depends on some data size N: =references_best()=
-- compare time/memory of different git versions of R package code: =atime_versions()=
-- continuous performance testing of R packages: =atime_pkg()=
+- compare time/memory/other quantities of different R codes that depend on N: [[https://atime-docs.netlify.app/manual#sec:man-atime][atime().]]
+- estimate the asymptotic complexity (big-O notation) of any R code that depends on some data size N: [[https://atime-docs.netlify.app/manual#sec:man-references_best][references_best()]].
+- compare time/memory of different git versions of R package code: [[https://atime-docs.netlify.app/manual#sec:man-atime_versions][atime_versions()]].
+- continuous performance testing of R packages: [[https://atime-docs.netlify.app/manual#sec:man-atime_pkg][atime_pkg()]].
 
 | [[file:tests/testthat][tests]]    | [[https://github.com/tdhock/atime/actions][https://github.com/tdhock/atime/workflows/R-CMD-check/badge.svg]] |
 | [[https://github.com/jimhester/covr][coverage]] | [[https://app.codecov.io/gh/tdhock/atime?branch=main][https://codecov.io/gh/tdhock/atime/branch/main/graph/badge.svg]]  |
@@ -21,8 +21,9 @@ atime: Asymptotic Timing
 
 ** Usage
 
-The main function is =atime= for which you can specify these
-arguments:
+Get started by reading the [[https://atime-docs.netlify.app/doc/sparse][sparse matrices]] and [[https://atime-docs.netlify.app/doc/regex][regular expressions]] vignettes, and [[https://atime-docs.netlify.app/articles][others]].
+
+The main function is =atime= for which you can specify these arguments:
 - =N= is numeric vector of data sizes to vary.
 - =setup= is an expression to evaluate for every data size, before
   timings.
