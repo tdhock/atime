@@ -214,8 +214,10 @@ mult.compare <- dcast(
 , equal := paste(all.equal(as.numeric(dense[[1]]), as.numeric(sparse[[1]])))
 , by=N
 ][]
-tibble::tibble(mult.compare)
+mult.compare[equal!="TRUE"]
 ```
+
+We see the only difference is for large `N` when `dense` result is `NULL` (benchmark not run because a smaller `N` went over the time limit).
 
 ## Matrix multiplication, linear number of non-zeros
 
@@ -262,8 +264,10 @@ mult.compare <- dcast(
 , equal := paste(all.equal(as.numeric(dense[[1]]), as.numeric(sparse[[1]])))
 , by=N
 ][]
-tibble::tibble(mult.compare)
+mult.compare[equal!=TRUE]
 ```
+
+We see the only difference is for large `N` when `dense` result is `NULL` (benchmark not run because a smaller `N` went over the time limit).
 
 ## Matrix multiplication, linear and quadratic number of non-zeros
 
