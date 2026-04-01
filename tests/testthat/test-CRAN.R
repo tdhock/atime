@@ -1,6 +1,25 @@
 library(data.table)
 library(testthat)
 
+test_that("predict correct N for issue107", {
+  data(issue107, package="atime")
+  refs <- atime::references_best(issue107)
+  wide_dt_list <- list()
+  for(kilobytes in c(1e3, 1e4, 2e4)){
+    pred <- predict(refs, kilobytes=kilobytes)
+    if(interactive())plot(pred)
+    wide_dt_list[[paste(kilobytes)]] <- dcast(
+      data.table(kilobytes, pred$prediction),
+      kilobytes ~ expr.name,
+      value.var="N"
+    )[, ratio := Before/HEAD][]
+  }
+  (wide_dt <- rbindlist(wide_dt_list))
+  hi.N <- wide_dt[kilobytes==1e4, HEAD]
+  lo.N <- wide_dt[kilobytes==1e3, HEAD]
+  expect_lt(lo.N, hi.N)
+})
+
 test_that("error when user provided duplicate N", {
   expect_error({
     atime::atime(N=c(1,2,2,3,9,9,9), num=numeric(N))
