@@ -176,6 +176,11 @@ test_that("atime_pkg_test_info() works for data.table, run one test case", {
   dir.create(dt_dir)
   git2r::clone("https://github.com/Rdatatable/data.table", dt_dir)
   dt_info <- atime::atime_pkg_test_info(dt_dir)
-  dt_result <- eval(dt_info$test.call[[1]])
+  tname <- "melt improved in #5054"
+  tcall <- dt_info$test.call[[tname]]
+  ## old data.table versions have compiler errors with reduced C API
+  ## in R-devel.
+  tcall[c("Slow", "Fast")] <- NULL
+  dt_result <- eval(tcall)
   expect_is(dt_result, "atime")
 })
