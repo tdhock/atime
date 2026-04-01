@@ -33,15 +33,13 @@ predict.references_best <- function(object, ...){
     }
     meas <- object$measurements[is.unit & 0<empirical]
     pred.dt <- meas[, {
-      uniq.dt <- .SD[, .(
-        log10.N=max(log10(N))
-      ), by=.(log10.empirical=log10(empirical))]
+      uniq.dt <- .SD[order(-N)][c(TRUE, diff(cummin(empirical))<0)]
       if(nrow(uniq.dt)<2){
         data.table()
       }else{
         uniq.dt[, data.table(
           unit.value,
-          N=10^approx(log10.empirical, log10.N, log10(unit.value))$y)]
+          N=10^approx(log10(empirical), log10(N), log10(unit.value))$y)]
       }
     }, by=c(object$by.vec)]
     not.NA <- pred.dt[!is.na(N)]
