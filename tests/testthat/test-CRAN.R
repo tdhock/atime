@@ -566,3 +566,12 @@ if(require(Matrix))test_that("result=fun works, N=commas no decimals", {
     N=c(r.len, r.sqrt, r.sqrt),
     label=c("vector\nN=10", "matrix\nN=3", "Matrix\nN=3")))
 })
+
+if(FALSE){
+  (objs <- load("~/Downloads/atime-results-data.table-PR7401/tests.RData"))
+  test.info$test.call <- NULL
+  test.info$test.list <- NULL
+  sapply(ls(test.info), function(name)object.size(get(name,envir=test.info)))
+  issue109=list(pkg.results=pkg.results,bench.dt=bench.dt,limit.dt=limit.dt,test.info=sapply(ls(test.info), function(name)get(name,envir=test.info)),blank.dt=blank.dt)
+  save(issue109, file="~/R/atime/data/issue109.RData", compress="xz")
+}
