@@ -26,7 +26,7 @@ atime_pkg_plot_files <- function(out.dir, test.info, pkg.results){
   each.sign.rank <- unit <- . <- N <- expr.name <- reference <- fun.name <- 
     empirical <- q25 <- q75 <- p.str <- p.value <- P.value <- 
       seconds.limit <- time <- log10.seconds <- seconds <- Test <-
-        N.factor <- unit.value <- x.str <- NULL
+        N.factor <- unit.value <- x.str <- max.Nx <- NULL
   ## above to avoid CRAN check NOTE.
   blank.dt.list <- list()
   bench.dt.list <- list()
