@@ -581,6 +581,9 @@ test_that("issue109 speed improvement shows in issues.dt", {
   tdir <- if(interactive())"~/atest" else tempfile()
   dir.create(tdir)
   pres <- atime:::atime_pkg_plot_files(tdir, issue109$test.info, issue109$pkg.results)
+  expected <- pres$all[order(max.Nx, P.value)][1:nrow(pres$preview)]
+  computed <- pres$preview[order(max.Nx, P.value)]
+  expect_identical(computed, expected)
   tests.RData <- file.path(tdir, "tests.RData")
   load(tests.RData)
   bench.meta <- setkey(unique(bench.dt[, .(max.Nx, P.value, max.N.times, p.value)]))[]
