@@ -587,4 +587,5 @@ test_that("issue109 speed improvement shows in issues.dt", {
   expect_true(all(diff(abs(bench.meta$max.N.times))<=0))
   expect_true(all(diff(bench.meta[max.N.times==0,p.value])>0))
   expect_equal(nrow(issues.dt), 2)
+  expect_match(issues.dt$issue, "faster")
 })
