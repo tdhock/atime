@@ -173,7 +173,6 @@ atime_pkg_plot_files <- function(out.dir, test.info, pkg.results){
     max.Nx = num2fac(max.N.times, "%.1fx", -abs.log10.n.factor)
   )][]
   meta.dt <- setkey(unique(bench.dt[, .(max.Nx, P.value, Test)]))
-  meta.dt <- unique(bench.dt[, .(max.Nx, P.value, Test)])
   tests.RData <- file.path(out.dir, "tests.RData")
   install.seconds <- sapply(pkg.results, "[[", "install.seconds")
   cat(
