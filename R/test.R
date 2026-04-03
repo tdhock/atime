@@ -55,11 +55,14 @@ atime_pkg_plot_files <- function(out.dir, test.info, pkg.results){
       max.name <- max.HEAD.compare$expr.name
       missing.name <- setdiff(HEAD.compare, max.name)
       missing.max <- sec.HEAD.compare[expr.name==missing.name, max(N)]
-      if(missing.name==test.info$HEAD.name){
-        issue[[Test]] <- paste0(
-          missing.name,
-          " stopped early")
-      }
+      issue[[Test]] <- paste0(
+        test.info$HEAD.name,
+        " ",
+        if(missing.name==test.info$HEAD.name){
+          "stopped early"
+        }else{
+          "much faster"
+        })
       pred.obj <- predict(best.list)
       setkey(pred.obj$pred, expr.name)
       pred.compare <- pred.obj$pred[HEAD.compare]
@@ -93,19 +96,27 @@ atime_pkg_plot_files <- function(out.dir, test.info, pkg.results){
         test.args[[commit.i]] <- largest.common.timings[
           expr.name==commit.name, log10.seconds]
       }
-      test.args$alternative <- "greater"
-      p.value <- do.call(stats::t.test, test.args)$p.value
+      test.args$alternative <- "two.sided"
+      t.list <- do.call(stats::t.test, test.args)
+      p.value <- t.list$p.value
       if(p.value < test.info$pval.thresh){
         issue[[Test]] <- sprintf(
-          "%s slower P<%s",
+          "%s %s P<%s",
           test.info$HEAD.name,
+          if(diff(t.list$estimate)>0)"faster" else "slower",
           paste(test.info$pval.thresh))
       }
     }
     hline.df <- with(atime.list, data.frame(seconds.limit, unit="seconds"))
     limit.dt.list[[Test]] <- data.table(Test, hline.df)
+    log10.n.factor <- log10(n.factor)
+    abs.log10.n.factor <- abs(log10.n.factor)
+    max.N.times <- (10^abs.log10.n.factor)*sign(log10.n.factor)
     bench.dt.list[[Test]] <- data.table(
-      Test, p.value, n.factor, best.list$meas)
+      Test, p.value, n.factor,
+      log10.n.factor, abs.log10.n.factor,
+      max.N.times,
+      best.list$meas)
     log10.range <- range(log10(atime.list$meas$N))
     expand <- diff(log10.range)*test.info$expand.prop
     xmax <- 10^(log10.range[2]+expand)
@@ -151,16 +162,17 @@ atime_pkg_plot_files <- function(out.dir, test.info, pkg.results){
     suppressWarnings(print(gg))
     grDevices::dev.off()
   }
-  num2fac <- function(x.num){
-    x.dt <- data.table(x.num, x.str=sprintf("%.2e", x.num))
-    levs <- x.dt[order(x.num), unique(x.str)]
+  num2fac <- function(x.num, pat="%.2e", x.ord=x.num){
+    x.dt <- data.table(x.num, x.str=sprintf(pat, x.num))
+    levs <- x.dt[order(x.ord), unique(x.str)]
     factor(x.dt$x.str, levs)
   }
-  bench.dt <- setkey(rbindlist(bench.dt.list)[, let(
+  bench.dt <- rbindlist(bench.dt.list)[, let(
     P.value = num2fac(p.value),
-    N.factor = num2fac(n.factor)
-  )], N.factor, p.value)
-  meta.dt <- unique(bench.dt[, .(Test, N.factor, P.value)])
+    N.factor = num2fac(n.factor),
+    max.Nx = num2fac(max.N.times, "%.1fx", -abs.log10.n.factor)
+  )][]
+  meta.dt <- unique(bench.dt[, .(Test, max.Nx, P.value)])
   tests.RData <- file.path(out.dir, "tests.RData")
   install.seconds <- sapply(pkg.results, "[[", "install.seconds")
   cat(
@@ -183,7 +195,7 @@ atime_pkg_plot_files <- function(out.dir, test.info, pkg.results){
     ##ggplot()+geom_point(aes(seconds, expr.name), shape=1, data=compare.dt)+facet_grid(. ~ P.value + Test, labeller=label_both, scales="free")+scale_x_log10()
     gg <- ggplot2::ggplot()+
       ggplot2::ggtitle(sprintf(
-        "%d test cases (%s), ordered by N.factor (max_N_HEAD/max_N_%s) and P.value (T-test)",
+        "%d test cases (%s), ordered by max.Nx (max_N_HEAD/max_N_%s) and P.value (T-test)",
         N_int, N_name, compare.name))+
       ggplot2::theme_bw()+
       ggplot2::geom_hline(ggplot2::aes(
@@ -193,7 +205,7 @@ atime_pkg_plot_files <- function(out.dir, test.info, pkg.results){
       ggplot2::scale_color_manual(values=test.info$version.colors)+
       ggplot2::scale_fill_manual(values=test.info$version.colors)+
       ggplot2::facet_grid(
-        unit ~ N.factor + P.value + Test, scales="free", labeller="label_both")+
+        unit ~ max.Nx + P.value + Test, scales="free", labeller="label_both")+
       ggplot2::geom_line(ggplot2::aes(
         N, empirical, color=expr.name),
         data=N_bench)+
