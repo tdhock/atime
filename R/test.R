@@ -12,22 +12,29 @@ find_tests_file <- function(pkg.path, tests.dir){
 atime_pkg <- function(pkg.path=".", tests.dir=NULL){
   ## For an example package see
   ## https://github.com/tdhock/binsegRcpp/blob/another-branch/inst/atime/tests.R
+  pkg.results <- list()
+  test.info <- atime_pkg_test_info(pkg.path, tests.dir)
+  for(Test in names(test.info$test.call)){
+    atv.call <- test.info$test.call[[Test]]
+    atime.list <- eval(atv.call, test.info)
+    pkg.results[[Test]] <- atime.list
+  }
+  atime_pkg_plot_files(dirname(test.info$tests.R), test.info, pkg.results)
+}
+
+atime_pkg_plot_files <- function(out.dir, test.info, pkg.results){
   each.sign.rank <- unit <- . <- N <- expr.name <- reference <- fun.name <- 
     empirical <- q25 <- q75 <- p.str <- p.value <- P.value <- 
       seconds.limit <- time <- log10.seconds <- seconds <- Test <-
         N.factor <- unit.value <- x.str <- NULL
   ## above to avoid CRAN check NOTE.
-  pkg.results <- list()
   blank.dt.list <- list()
   bench.dt.list <- list()
   limit.dt.list <- list()
   compare.dt.list <- list()
   issue <- character()
-  test.info <- atime_pkg_test_info(pkg.path, tests.dir)
-  for(Test in names(test.info$test.list)){
-    atv.call <- test.info$test.call[[Test]]
-    atime.list <- eval(atv.call, test.info)
-    pkg.results[[Test]] <- atime.list
+  for(Test in names(pkg.results)){
+    atime.list <- pkg.results[[Test]]
     best.list <- atime::references_best(atime.list)
     ref.dt <- best.list$ref[each.sign.rank==1]
     sec.dt <- best.list$meas[unit=="seconds"]
@@ -138,7 +145,7 @@ atime_pkg <- function(pkg.path=".", tests.dir=NULL){
       ggplot2::theme(legend.position="none")+
       ggplot2::coord_cartesian(xlim=c(NA,xmax))
     out.png <- file.path(
-      dirname(test.info$tests.R), 
+      out.dir,
       paste0(gsub('[\':\\ /*|<>"?\n\r]', "_", Test), ".png"))
     grDevices::png(out.png, width=test.info$width.in*nrow(max.dt), height=test.info$height.in, units="in", res=100)
     suppressWarnings(print(gg))
@@ -154,13 +161,13 @@ atime_pkg <- function(pkg.path=".", tests.dir=NULL){
     N.factor = num2fac(n.factor)
   )], N.factor, p.value)
   meta.dt <- unique(bench.dt[, .(Test, N.factor, P.value)])
-  tests.RData <- sub("R$", "RData", test.info$tests.R)
+  tests.RData <- file.path(out.dir, "tests.RData")
   install.seconds <- sapply(pkg.results, "[[", "install.seconds")
   cat(
     sum(install.seconds),
-    file=file.path(dirname(tests.RData), "install_seconds.txt"))
+    file=file.path(out.dir, "install_seconds.txt"))
   ## create all and preview facet PNGs.
-  N.tests <- length(test.info$test.list)
+  N.tests <- length(pkg.results)
   out_N_list <- list(
     all=N.tests,
     preview=min(N.tests, test.info$N.tests.preview))
@@ -220,7 +227,7 @@ atime_pkg <- function(pkg.path=".", tests.dir=NULL){
       method="right.polygons",
       data=N_bench)
     out.png <- file.path(
-      dirname(test.info$tests.R),
+      out.dir,
       sprintf("tests_%s_facet.png", N_name))
     grDevices::png(
       out.png,
@@ -232,7 +239,7 @@ atime_pkg <- function(pkg.path=".", tests.dir=NULL){
     grDevices::dev.off()
     if(N_name=="all"){
       save(
-        pkg.results, bench.dt, limit.dt, test.info, blank.dt, 
+        pkg.results, bench.dt, limit.dt, test.info, blank.dt, issues.dt,
         file=tests.RData)
       if(length(issue)){
         markdown <- issues.dt[, sprintf(

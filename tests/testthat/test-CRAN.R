@@ -575,3 +575,13 @@ if(FALSE){
   issue109=list(pkg.results=pkg.results,bench.dt=bench.dt,limit.dt=limit.dt,test.info=sapply(ls(test.info), function(name)get(name,envir=test.info)),blank.dt=blank.dt)
   save(issue109, file="~/R/atime/data/issue109.RData", compress="xz")
 }
+
+test_that("issue109 speed improvement shows in issues.dt", {
+  data(issue109,package="atime")
+  tdir <- tempfile()
+  dir.create(tdir)
+  pres <- atime:::atime_pkg_plot_files(tdir, issue109$test.info, issue109$pkg.results)
+  tests.RData <- file.path(tdir, "tests.RData")
+  load(tests.RData)
+  expect_equal(nrow(issues.dt), 1)
+})
