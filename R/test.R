@@ -172,7 +172,8 @@ atime_pkg_plot_files <- function(out.dir, test.info, pkg.results){
     N.factor = num2fac(n.factor),
     max.Nx = num2fac(max.N.times, "%.1fx", -abs.log10.n.factor)
   )][]
-  meta.dt <- unique(bench.dt[, .(Test, max.Nx, P.value)])
+  meta.dt <- setkey(unique(bench.dt[, .(max.Nx, P.value, Test)]))
+  meta.dt <- unique(bench.dt[, .(max.Nx, P.value, Test)])
   tests.RData <- file.path(out.dir, "tests.RData")
   install.seconds <- sapply(pkg.results, "[[", "install.seconds")
   cat(
@@ -183,9 +184,11 @@ atime_pkg_plot_files <- function(out.dir, test.info, pkg.results){
   out_N_list <- list(
     all=N.tests,
     preview=min(N.tests, test.info$N.tests.preview))
+  N_meta_list <- list()
   for(N_name in names(out_N_list)){
     N_int <- out_N_list[[N_name]]
     N_meta <- meta.dt[1:N_int]
+    N_meta_list[[N_name]] <- N_meta
     limit.dt <- rbindlist(limit.dt.list)[N_meta, on="Test", nomatch=0L]
     blank.dt <- rbindlist(blank.dt.list)[N_meta, on="Test", nomatch=0L]
     compare.dt <- if(length(compare.dt.list))rbindlist(compare.dt.list)[N_meta, on="Test", nomatch=0L]
@@ -267,7 +270,7 @@ atime_pkg_plot_files <- function(out.dir, test.info, pkg.results){
         file=file.path(dirname(tests.RData), "HEAD_issues.md"))
     }
   }
-  pkg.results
+  N_meta_list
 }
 
 default.version.colors <- c(#RColorBrewer::brewer.pal(7, "Dark2")
