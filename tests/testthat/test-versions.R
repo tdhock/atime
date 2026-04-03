@@ -45,6 +45,7 @@ if(requireNamespace("ggplot2"))test_that("atime_pkg produces tests_all_facet.png
     "binseg(1:N,maxSegs=N/2) DIST=poisson",
     "binseg_normal(1:N,maxSegs=N/2)"
   )
+  expect_match(issues.dt$issue, "slower")
   expect_identical(sort(unique(bench.dt$Test)), sort(expected.names))
   expect_identical(sort(limit.dt$Test), sort(expected.names))
   expect_is(limit.dt$P.value, "factor")

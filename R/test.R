@@ -57,11 +57,11 @@ atime_pkg_plot_files <- function(out.dir, test.info, pkg.results){
       missing.max <- sec.HEAD.compare[expr.name==missing.name, max(N)]
       issue[[Test]] <- paste0(
         test.info$HEAD.name,
-        " ",
+        " much ",
         if(missing.name==test.info$HEAD.name){
-          "stopped early"
+          "slower"
         }else{
-          "much faster"
+          "faster"
         })
       pred.obj <- predict(best.list)
       setkey(pred.obj$pred, expr.name)
