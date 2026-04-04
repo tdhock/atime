@@ -1,6 +1,6 @@
 Changes in version 2026.4.2
 
-- atime_pkg() sorts by abs.log.N.fac instead of N.factor (issue109 data and fix), and option for alternative in t.test().
+- atime_pkg() sorts by max.Nx instead of N.factor (issue109 data and fix), and option for alternative in t.test().
 
 Changes in version 2026.4.1
 
