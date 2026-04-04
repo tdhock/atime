@@ -12,22 +12,29 @@ find_tests_file <- function(pkg.path, tests.dir){
 atime_pkg <- function(pkg.path=".", tests.dir=NULL){
   ## For an example package see
   ## https://github.com/tdhock/binsegRcpp/blob/another-branch/inst/atime/tests.R
+  pkg.results <- list()
+  test.info <- atime_pkg_test_info(pkg.path, tests.dir)
+  for(Test in names(test.info$test.call)){
+    atv.call <- test.info$test.call[[Test]]
+    atime.list <- eval(atv.call, test.info)
+    pkg.results[[Test]] <- atime.list
+  }
+  atime_pkg_plot_files(dirname(test.info$tests.R), test.info, pkg.results)
+}
+
+atime_pkg_plot_files <- function(out.dir, test.info, pkg.results){
   each.sign.rank <- unit <- . <- N <- expr.name <- reference <- fun.name <- 
     empirical <- q25 <- q75 <- p.str <- p.value <- P.value <- 
       seconds.limit <- time <- log10.seconds <- seconds <- Test <-
-        N.factor <- unit.value <- x.str <- NULL
+        N.factor <- unit.value <- x.str <- pred.Nx <- NULL
   ## above to avoid CRAN check NOTE.
-  pkg.results <- list()
   blank.dt.list <- list()
   bench.dt.list <- list()
   limit.dt.list <- list()
   compare.dt.list <- list()
   issue <- character()
-  test.info <- atime_pkg_test_info(pkg.path, tests.dir)
-  for(Test in names(test.info$test.list)){
-    atv.call <- test.info$test.call[[Test]]
-    atime.list <- eval(atv.call, test.info)
-    pkg.results[[Test]] <- atime.list
+  for(Test in names(pkg.results)){
+    atime.list <- pkg.results[[Test]]
     best.list <- atime::references_best(atime.list)
     ref.dt <- best.list$ref[each.sign.rank==1]
     sec.dt <- best.list$meas[unit=="seconds"]
@@ -48,11 +55,14 @@ atime_pkg <- function(pkg.path=".", tests.dir=NULL){
       max.name <- max.HEAD.compare$expr.name
       missing.name <- setdiff(HEAD.compare, max.name)
       missing.max <- sec.HEAD.compare[expr.name==missing.name, max(N)]
-      if(missing.name==test.info$HEAD.name){
-        issue[[Test]] <- paste0(
-          missing.name,
-          " stopped early")
-      }
+      issue[[Test]] <- paste0(
+        test.info$HEAD.name,
+        " much ",
+        if(missing.name==test.info$HEAD.name){
+          "slower"
+        }else{
+          "faster"
+        })
       pred.obj <- predict(best.list)
       setkey(pred.obj$pred, expr.name)
       pred.compare <- pred.obj$pred[HEAD.compare]
@@ -86,19 +96,27 @@ atime_pkg <- function(pkg.path=".", tests.dir=NULL){
         test.args[[commit.i]] <- largest.common.timings[
           expr.name==commit.name, log10.seconds]
       }
-      test.args$alternative <- "greater"
-      p.value <- do.call(stats::t.test, test.args)$p.value
+      test.args$alternative <- "two.sided"
+      t.list <- do.call(stats::t.test, test.args)
+      p.value <- t.list$p.value
       if(p.value < test.info$pval.thresh){
         issue[[Test]] <- sprintf(
-          "%s slower P<%s",
+          "%s %s P<%s",
           test.info$HEAD.name,
+          if(diff(t.list$estimate)>0)"faster" else "slower",
           paste(test.info$pval.thresh))
       }
     }
     hline.df <- with(atime.list, data.frame(seconds.limit, unit="seconds"))
     limit.dt.list[[Test]] <- data.table(Test, hline.df)
+    log10.n.factor <- log10(n.factor)
+    abs.log10.n.factor <- abs(log10.n.factor)
+    max.N.times <- (10^abs.log10.n.factor)*sign(log10.n.factor)
     bench.dt.list[[Test]] <- data.table(
-      Test, p.value, n.factor, best.list$meas)
+      Test, p.value, n.factor,
+      log10.n.factor, abs.log10.n.factor,
+      max.N.times,
+      best.list$meas)
     log10.range <- range(log10(atime.list$meas$N))
     expand <- diff(log10.range)*test.info$expand.prop
     xmax <- 10^(log10.range[2]+expand)
@@ -138,35 +156,38 @@ atime_pkg <- function(pkg.path=".", tests.dir=NULL){
       ggplot2::theme(legend.position="none")+
       ggplot2::coord_cartesian(xlim=c(NA,xmax))
     out.png <- file.path(
-      dirname(test.info$tests.R), 
+      out.dir,
       paste0(gsub('[\':\\ /*|<>"?\n\r]', "_", Test), ".png"))
     grDevices::png(out.png, width=test.info$width.in*nrow(max.dt), height=test.info$height.in, units="in", res=100)
     suppressWarnings(print(gg))
     grDevices::dev.off()
   }
-  num2fac <- function(x.num){
-    x.dt <- data.table(x.num, x.str=sprintf("%.2e", x.num))
-    levs <- x.dt[order(x.num), unique(x.str)]
+  num2fac <- function(x.num, pat="%.2e", x.ord=x.num){
+    x.dt <- data.table(x.num, x.str=sprintf(pat, x.num))
+    levs <- x.dt[order(x.ord), unique(x.str)]
     factor(x.dt$x.str, levs)
   }
-  bench.dt <- setkey(rbindlist(bench.dt.list)[, let(
+  bench.dt <- rbindlist(bench.dt.list)[, let(
     P.value = num2fac(p.value),
-    N.factor = num2fac(n.factor)
-  )], N.factor, p.value)
-  meta.dt <- unique(bench.dt[, .(Test, N.factor, P.value)])
-  tests.RData <- sub("R$", "RData", test.info$tests.R)
+    N.factor = num2fac(n.factor),
+    pred.Nx = num2fac(max.N.times, "%.1fx", -abs.log10.n.factor)
+  )][]
+  meta.dt <- setkey(unique(bench.dt[, .(pred.Nx, P.value, Test)]))
+  tests.RData <- file.path(out.dir, "tests.RData")
   install.seconds <- sapply(pkg.results, "[[", "install.seconds")
   cat(
     sum(install.seconds),
-    file=file.path(dirname(tests.RData), "install_seconds.txt"))
+    file=file.path(out.dir, "install_seconds.txt"))
   ## create all and preview facet PNGs.
-  N.tests <- length(test.info$test.list)
+  N.tests <- length(pkg.results)
   out_N_list <- list(
     all=N.tests,
     preview=min(N.tests, test.info$N.tests.preview))
+  N_meta_list <- list()
   for(N_name in names(out_N_list)){
     N_int <- out_N_list[[N_name]]
     N_meta <- meta.dt[1:N_int]
+    N_meta_list[[N_name]] <- N_meta
     limit.dt <- rbindlist(limit.dt.list)[N_meta, on="Test", nomatch=0L]
     blank.dt <- rbindlist(blank.dt.list)[N_meta, on="Test", nomatch=0L]
     compare.dt <- if(length(compare.dt.list))rbindlist(compare.dt.list)[N_meta, on="Test", nomatch=0L]
@@ -176,7 +197,7 @@ atime_pkg <- function(pkg.path=".", tests.dir=NULL){
     ##ggplot()+geom_point(aes(seconds, expr.name), shape=1, data=compare.dt)+facet_grid(. ~ P.value + Test, labeller=label_both, scales="free")+scale_x_log10()
     gg <- ggplot2::ggplot()+
       ggplot2::ggtitle(sprintf(
-        "%d test cases (%s), ordered by N.factor (max_N_HEAD/max_N_%s) and P.value (T-test)",
+        "%d test cases (%s), ordered by pred.Nx (N_HEAD/N_%s at time limit) and P.value (two-sided T-test)",
         N_int, N_name, compare.name))+
       ggplot2::theme_bw()+
       ggplot2::geom_hline(ggplot2::aes(
@@ -186,7 +207,7 @@ atime_pkg <- function(pkg.path=".", tests.dir=NULL){
       ggplot2::scale_color_manual(values=test.info$version.colors)+
       ggplot2::scale_fill_manual(values=test.info$version.colors)+
       ggplot2::facet_grid(
-        unit ~ N.factor + P.value + Test, scales="free", labeller="label_both")+
+        unit ~ pred.Nx + P.value + Test, scales="free", labeller="label_both")+
       ggplot2::geom_line(ggplot2::aes(
         N, empirical, color=expr.name),
         data=N_bench)+
@@ -220,7 +241,7 @@ atime_pkg <- function(pkg.path=".", tests.dir=NULL){
       method="right.polygons",
       data=N_bench)
     out.png <- file.path(
-      dirname(test.info$tests.R),
+      out.dir,
       sprintf("tests_%s_facet.png", N_name))
     grDevices::png(
       out.png,
@@ -232,7 +253,7 @@ atime_pkg <- function(pkg.path=".", tests.dir=NULL){
     grDevices::dev.off()
     if(N_name=="all"){
       save(
-        pkg.results, bench.dt, limit.dt, test.info, blank.dt, 
+        pkg.results, bench.dt, limit.dt, test.info, blank.dt, issues.dt,
         file=tests.RData)
       if(length(issue)){
         markdown <- issues.dt[, sprintf(
@@ -248,7 +269,7 @@ atime_pkg <- function(pkg.path=".", tests.dir=NULL){
         file=file.path(dirname(tests.RData), "HEAD_issues.md"))
     }
   }
-  pkg.results
+  N_meta_list
 }
 
 default.version.colors <- c(#RColorBrewer::brewer.pal(7, "Dark2")
@@ -385,5 +406,14 @@ inherit_args <- function(L, common.args){
       out[[Test]] <- out.args
     }
   }
+  out
+}
+
+test_results_env_to_list <- function(tests.RData){
+  (objs <- load(tests.RData))
+  test.info$test.call <- NULL
+  test.info$test.list <- NULL
+  out <- sapply(objs, get)
+  out$test.info <- sapply(ls(test.info), function(name)get(name,envir=test.info))
   out
 }

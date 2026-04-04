@@ -45,7 +45,7 @@ atime_pkg_test_info(pkg.path=".", tests.dir=NULL)
   default (names for versions, values for colors).
   If \code{tests.R} defines a variable named \code{pval.thresh}, then
   it should be a positive numeric value between 0 and 1 (any smaller p-values
-  will generate messages about slowdowns in HEAD_issues.md).
+  will generate messages about slowdowns in \code{HEAD_issues.md}).
 }
 \value{
   \code{atime_pkg_test_info} returns an environment in which the code of
@@ -53,26 +53,23 @@ atime_pkg_test_info(pkg.path=".", tests.dir=NULL)
   which is a list of un-evaluated \code{atime_versions} calls,
   one for each test
   (use with \code{eval} to run a single test).
-  \code{atime_pkg} returns a named list of test results,
-  names come from names of \code{test.list}, and values
-  come from results of \code{atime_versions}. Side effect is that
+  \code{atime_pkg} returns a named list of two elements (preview and
+  all), each a data table with one row per test shown in result figures.
+  Side effect is that
   data/plot files are saved in \code{atime} directory, including
-  tests.RData (test results which can be read into R if you want to make
-  your own alternative plots/analyses), tests_all_facet.png (plot
-  summarizing all test results), tests_preview_facet.png (plot
-  summarizing only most significant results), and install_seconds.txt
+  \code{tests.RData} (test results which can be read into R if you want to make
+  your own alternative plots/analyses), \code{tests_all_facet.png} (plot
+  summarizing all test results), \code{tests_preview_facet.png} (plot
+  summarizing only most significant results), and \code{install_seconds.txt}
   (total number of seconds used to install different package versions).
   Plots emphasize differences between \code{HEAD} and a comparison
   version, which is defined as the first of
   these versions which is available: \code{merge-base}, \code{base}, \code{CRAN}.
-  Plots show test cases, first sorted by \code{N.factor}, which is the
-  ratio of N values at the time limit, \code{HEAD} versus comparison
-  version. If \code{N.factor<1} then \code{HEAD} is much slower than
-  comparison version (the smaller N value for \code{HEAD} went over the
-  time limit). \code{N.factor=1} means \code{HEAD} and comparison version
-  had same value for largest N (so have nearly the same speed); ties
-  are broken using \code{P.value}, un-paired two-sample T-test for
-  \code{HEAD} time greater than comparison time at largest N.
+  Plots show test cases, first sorted by \code{pred.Nx}, which is the
+  ratio of N values at the time limit (positive for speedup, negative
+  for slowdown).
+  Ties are broken using \code{P.value}, un-paired, two-sided,
+  two-sample T-test for differince of mean times at largest N.
 }
 
 \author{Toby Dylan Hocking}

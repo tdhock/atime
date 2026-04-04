@@ -36,9 +36,10 @@ if(requireNamespace("ggplot2"))test_that("atime_pkg produces tests_all_facet.png
   unlink(file.path(atime.dir, "*"))
   git2r::checkout(repo, branch="atime-test-funs", force=TRUE)
   options(repos="http://cloud.r-project.org")#required to check CRAN version.
-  result.list <- atime::atime_pkg(tdir, ".ci")
+  plist <- atime::atime_pkg(tdir, ".ci")
   tests.RData <- file.path(atime.dir, "tests.RData")
   (objs <- load(tests.RData))
+  expect_match(issues.dt$issue, "slower")
   expected.names <- c(
     "binseg(1:N,maxSegs=N/2) DIST=l1",
     "binseg(1:N,maxSegs=N/2) DIST=meanvar_norm", 
@@ -48,13 +49,13 @@ if(requireNamespace("ggplot2"))test_that("atime_pkg produces tests_all_facet.png
   expect_identical(sort(unique(bench.dt$Test)), sort(expected.names))
   expect_identical(sort(limit.dt$Test), sort(expected.names))
   expect_is(limit.dt$P.value, "factor")
-  expect_is(limit.dt$N.factor, "factor")
+  expect_is(limit.dt$pred.Nx, "factor")
   expect_identical(names(pkg.results), expected.names)
   expect_is(bench.dt[["Test"]], "character")
-  install.seconds <- sapply(result.list, "[[", "install.seconds")
+  install.seconds <- sapply(pkg.results, "[[", "install.seconds")
   expect_is(install.seconds, "numeric")
   expect_identical(names(install.seconds), expected.names)
-  bench.seconds <- sapply(result.list, "[[", "bench.seconds")
+  bench.seconds <- sapply(pkg.results, "[[", "bench.seconds")
   expect_is(bench.seconds, "numeric")
   expect_identical(names(bench.seconds), expected.names)
   ## also test global PNG.
@@ -73,7 +74,7 @@ if(requireNamespace("ggplot2"))test_that("atime_pkg produces tests_all_facet.png
   unlink(file.path(inst.atime, "*"))
   git2r::checkout(repo, branch="another-branch", force=TRUE)
   options(repos="http://cloud.r-project.org")#required to check CRAN version.
-  result.list <- atime::atime_pkg(tdir)
+  plist <- atime::atime_pkg(tdir)
   tests_all_facet.png <- file.path(inst.atime, "tests_all_facet.png")
   expect_true(file.exists(tests_all_facet.png))
   ##N.tests.preview=2 < N.tests=4 so should make one more PNG with those two.
@@ -90,7 +91,7 @@ if(requireNamespace("ggplot2"))test_that("atime_pkg produces tests_all_facet.png
   unlink(file.path(inst.atime, "*"))
   git2r::checkout(repo, branch="master", force=TRUE)
   options(repos="http://cloud.r-project.org")#required to check CRAN version.
-  result.list <- atime::atime_pkg(tdir)
+  plist <- atime::atime_pkg(tdir)
   tests_all_facet.png <- file.path(inst.atime, "tests_all_facet.png")
   expect_true(file.exists(tests_all_facet.png))
   tests_preview_facet.png <- file.path(inst.atime, "tests_preview_facet.png")
@@ -107,7 +108,7 @@ if(requireNamespace("ggplot2"))test_that("atime_pkg produces tests_all_facet.png
   unlink(file.path(inst.atime, "*"))
   git2r::checkout(repo, branch="priority_queue", force=TRUE)
   options(repos="http://cloud.r-project.org")#required to check CRAN version.
-  result.list <- atime::atime_pkg(tdir)
+  plist <- atime::atime_pkg(tdir)
   tests_all_facet.png <- file.path(inst.atime, "tests_all_facet.png")
   expect_true(file.exists(tests_all_facet.png))
   tests_preview_facet.png <- file.path(inst.atime, "tests_preview_facet.png")

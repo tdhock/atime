@@ -566,3 +566,20 @@ if(require(Matrix))test_that("result=fun works, N=commas no decimals", {
     N=c(r.len, r.sqrt, r.sqrt),
     label=c("vector\nN=10", "matrix\nN=3", "Matrix\nN=3")))
 })
+
+test_that("issue109 speed improvement shows in issues.dt", {
+  data(issue109,package="atime")
+  tdir <- if(interactive())"~/atest" else tempfile()
+  dir.create(tdir)
+  pres <- atime:::atime_pkg_plot_files(tdir, issue109$test.info, issue109$pkg.results)
+  expected <- pres$all[order(pred.Nx, P.value)][1:nrow(pres$preview)]
+  computed <- pres$preview[order(pred.Nx, P.value)]
+  expect_identical(computed, expected)
+  tests.RData <- file.path(tdir, "tests.RData")
+  load(tests.RData)
+  bench.meta <- setkey(unique(bench.dt[, .(pred.Nx, P.value, max.N.times, p.value)]))[]
+  expect_true(all(diff(abs(bench.meta$max.N.times))<=0))
+  expect_true(all(diff(bench.meta[max.N.times==0,p.value])>0))
+  expect_equal(nrow(issues.dt), 2)
+  expect_match(issues.dt$issue, "faster")
+})
