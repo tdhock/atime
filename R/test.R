@@ -197,7 +197,7 @@ atime_pkg_plot_files <- function(out.dir, test.info, pkg.results){
     ##ggplot()+geom_point(aes(seconds, expr.name), shape=1, data=compare.dt)+facet_grid(. ~ P.value + Test, labeller=label_both, scales="free")+scale_x_log10()
     gg <- ggplot2::ggplot()+
       ggplot2::ggtitle(sprintf(
-        "%d test cases (%s), ordered by pred.Nx (max_N_HEAD/max_N_%s) and P.value (T-test)",
+        "%d test cases (%s), ordered by pred.Nx (N_HEAD/N_%s at time limit) and P.value (two-sided T-test)",
         N_int, N_name, compare.name))+
       ggplot2::theme_bw()+
       ggplot2::geom_hline(ggplot2::aes(
