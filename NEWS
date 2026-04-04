@@ -1,6 +1,10 @@
+Changes in version 2026.4.2
+
+- atime_pkg() now sorts tests in facet plots to emphasize speedups, in addition to slowdowns. New pred.Nx used instead of N.factor (issue109 data and fix), as well as alternative="two.sided" instead of "greater" in t.test().
+
 Changes in version 2026.4.1
 
-- issue107 data and fix.
+- predict() uses cummin(), issue107 data and fix.
 
 Changes in version 2025.9.30
 
