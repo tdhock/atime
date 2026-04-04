@@ -65,7 +65,7 @@ atime_pkg_test_info(pkg.path=".", tests.dir=NULL)
   Plots emphasize differences between \code{HEAD} and a comparison
   version, which is defined as the first of
   these versions which is available: \code{merge-base}, \code{base}, \code{CRAN}.
-  Plots show test cases, first sorted by \code{max.Nx}, which is the
+  Plots show test cases, first sorted by \code{pred.Nx}, which is the
   ratio of N values at the time limit (positive for speedup, negative
   for slowdown).
   Ties are broken using \code{P.value}, un-paired, two-sided,

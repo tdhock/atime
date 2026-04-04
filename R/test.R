@@ -26,7 +26,7 @@ atime_pkg_plot_files <- function(out.dir, test.info, pkg.results){
   each.sign.rank <- unit <- . <- N <- expr.name <- reference <- fun.name <- 
     empirical <- q25 <- q75 <- p.str <- p.value <- P.value <- 
       seconds.limit <- time <- log10.seconds <- seconds <- Test <-
-        N.factor <- unit.value <- x.str <- max.Nx <- NULL
+        N.factor <- unit.value <- x.str <- pred.Nx <- NULL
   ## above to avoid CRAN check NOTE.
   blank.dt.list <- list()
   bench.dt.list <- list()
@@ -170,9 +170,9 @@ atime_pkg_plot_files <- function(out.dir, test.info, pkg.results){
   bench.dt <- rbindlist(bench.dt.list)[, let(
     P.value = num2fac(p.value),
     N.factor = num2fac(n.factor),
-    max.Nx = num2fac(max.N.times, "%.1fx", -abs.log10.n.factor)
+    pred.Nx = num2fac(max.N.times, "%.1fx", -abs.log10.n.factor)
   )][]
-  meta.dt <- setkey(unique(bench.dt[, .(max.Nx, P.value, Test)]))
+  meta.dt <- setkey(unique(bench.dt[, .(pred.Nx, P.value, Test)]))
   tests.RData <- file.path(out.dir, "tests.RData")
   install.seconds <- sapply(pkg.results, "[[", "install.seconds")
   cat(
@@ -197,7 +197,7 @@ atime_pkg_plot_files <- function(out.dir, test.info, pkg.results){
     ##ggplot()+geom_point(aes(seconds, expr.name), shape=1, data=compare.dt)+facet_grid(. ~ P.value + Test, labeller=label_both, scales="free")+scale_x_log10()
     gg <- ggplot2::ggplot()+
       ggplot2::ggtitle(sprintf(
-        "%d test cases (%s), ordered by max.Nx (max_N_HEAD/max_N_%s) and P.value (T-test)",
+        "%d test cases (%s), ordered by pred.Nx (max_N_HEAD/max_N_%s) and P.value (T-test)",
         N_int, N_name, compare.name))+
       ggplot2::theme_bw()+
       ggplot2::geom_hline(ggplot2::aes(
@@ -207,7 +207,7 @@ atime_pkg_plot_files <- function(out.dir, test.info, pkg.results){
       ggplot2::scale_color_manual(values=test.info$version.colors)+
       ggplot2::scale_fill_manual(values=test.info$version.colors)+
       ggplot2::facet_grid(
-        unit ~ max.Nx + P.value + Test, scales="free", labeller="label_both")+
+        unit ~ pred.Nx + P.value + Test, scales="free", labeller="label_both")+
       ggplot2::geom_line(ggplot2::aes(
         N, empirical, color=expr.name),
         data=N_bench)+
