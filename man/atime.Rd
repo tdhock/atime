@@ -37,7 +37,7 @@
 \seealso{\code{\link{atime_grid}} for avoiding repetition when measuring
   asymptotic properties of several similar expressions.}
 
-\value{list of class atime with elements \code{unit.col.vec} (character
+\value{list of class \code{atime} with elements \code{unit.col.vec} (character
   vector of column names to analyze), \code{seconds.limit} (numeric
   input param), \code{measurements} (data table of results).}
 
