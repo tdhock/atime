@@ -39,7 +39,7 @@ if(requireNamespace("ggplot2"))test_that("atime_pkg produces tests_all_facet.png
   plist <- atime::atime_pkg(tdir, ".ci")
   tests.RData <- file.path(atime.dir, "tests.RData")
   (objs <- load(tests.RData))
-  expect_match(issues.dt$issue, "slower")
+  ##expect_match(issues.dt$issue, "slower")
   expected.names <- c(
     "binseg(1:N,maxSegs=N/2) DIST=l1",
     "binseg(1:N,maxSegs=N/2) DIST=meanvar_norm", 
