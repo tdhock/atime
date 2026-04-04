@@ -49,7 +49,7 @@ if(requireNamespace("ggplot2"))test_that("atime_pkg produces tests_all_facet.png
   expect_identical(sort(unique(bench.dt$Test)), sort(expected.names))
   expect_identical(sort(limit.dt$Test), sort(expected.names))
   expect_is(limit.dt$P.value, "factor")
-  expect_is(limit.dt$max.Nx, "factor")
+  expect_is(limit.dt$pred.Nx, "factor")
   expect_identical(names(pkg.results), expected.names)
   expect_is(bench.dt[["Test"]], "character")
   install.seconds <- sapply(pkg.results, "[[", "install.seconds")
