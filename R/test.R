@@ -413,5 +413,7 @@ test_results_env_to_list <- function(tests.RData){
   (objs <- load(tests.RData))
   test.info$test.call <- NULL
   test.info$test.list <- NULL
-  list(pkg.results=pkg.results,bench.dt=bench.dt,limit.dt=limit.dt,test.info=sapply(ls(test.info), function(name)get(name,envir=test.info)),blank.dt=blank.dt)
+  out <- sapply(objs, get)
+  out$test.info <- sapply(ls(test.info), function(name)get(name,envir=test.info))
+  out
 }
