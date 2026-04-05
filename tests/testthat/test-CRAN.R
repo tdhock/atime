@@ -117,6 +117,17 @@ test_that("more units defined in 1 row result", {
   expect_identical(names(unit.tab), c("match.len","seconds"))
 })
 
+test_that("result=FALSE and check=TRUE", {
+  expr.list <- atime::atime_grid(seq=seq(1,N), colon=1:N)
+  alist <- atime::atime(expr.list=expr.list, foo=1)
+  alist$measurements[, expect_identical(result, replicate(.N, NULL))]
+  expect_error({
+    atime::atime(expr.list=expr.list, foo=1, check=TRUE)
+  }, "`seq` does not equal `foo`", fixed=TRUE)
+  alist <- atime::atime(expr.list=expr.list, check=TRUE)
+  alist$measurements[, expect_identical(result, replicate(.N, NULL))]
+})
+
 test_that("result returned when some are NULL and others not", {
   atime.list <- atime::atime(
     N=10^seq(-3, 0),

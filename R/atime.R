@@ -21,8 +21,8 @@ get_result_rows <- function(result.list){
   }
 }
 
-run_bench_mark <- function(times, sub.elist, N.env, result){
-  m.list <- list(quote(bench::mark), iterations=times, check=FALSE)
+run_bench_mark <- function(times, sub.elist, N.env, result, check){
+  m.list <- list(quote(bench::mark), iterations=times, check=check)
   N.env$result.list <- list()
   for(expr.name in names(sub.elist)){
     expr <- sub.elist[[expr.name]]
@@ -36,9 +36,9 @@ run_bench_mark <- function(times, sub.elist, N.env, result){
   }
   m.call <- as.call(m.list)
   N.df <- suppressWarnings(eval(m.call, N.env))
-  if(result$keep){
-    N.df$result <- N.env$result.list
-  }
+  N.df$result <- if(result$keep){
+    N.env$result.list
+  }else list(NULL)
   N.df
 }
 
@@ -74,7 +74,7 @@ check_atime_inputs <- function(N, result, elist){
   list(keep=keep, fun=fun)
 }
 
-atime <- function(N=default_N(), setup, expr.list=NULL, times=10, seconds.limit=0.01, verbose=FALSE, result=FALSE, N.env.parent=NULL, ...){
+atime <- function(N=default_N(), setup, expr.list=NULL, times=10, seconds.limit=0.01, verbose=FALSE, result=FALSE, N.env.parent=NULL, check=FALSE, ...){
   kilobytes <- mem_alloc <- . <- sizes <- expr.name <- NULL
   ## above for CRAN NOTE.
   formal.names <- names(formals())
@@ -96,7 +96,7 @@ atime <- function(N=default_N(), setup, expr.list=NULL, times=10, seconds.limit=
     N.env <- new.env(parent=N.env.parent)
     N.env$N <- N.value
     eval(mc.args$setup, N.env)
-    N.df <- run_bench_mark(times, elist[not.done.yet], N.env, result)
+    N.df <- run_bench_mark(times, elist[not.done.yet], N.env, result, check)
     result.row.list <- get_result_rows(N.env$result.list)
     N.stats <- data.table(
       N=N.value, expr.name=not.done.yet, N.df
