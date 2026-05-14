@@ -1,5 +1,6 @@
 atime: Asymptotic Timing
 
+- [[https://docs.google.com/presentation/d/1_aWo2HgM600Mk1nZ4UUv3qV-DzdBmvcEInEU96KqIjY/edit?usp=sharing][Asymptotic benchmarking slides]] for a short talk about atime.
 - compare time/memory/other quantities of different R codes that depend on N: [[https://atime-docs.netlify.app/manual#sec:man-atime][atime().]]
 - estimate the asymptotic complexity (big-O notation) of any R code that depends on some data size N: [[https://atime-docs.netlify.app/manual#sec:man-references_best][references_best()]].
 - compare time/memory of different git versions of R package code: [[https://atime-docs.netlify.app/manual#sec:man-atime_versions][atime_versions()]].
