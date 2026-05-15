@@ -329,13 +329,15 @@ atime_pkg_test_info <- function(pkg.path=".", tests.dir=NULL){
   }else{
     CRAN.name <- NA_character_
   }
-  base.ref <- Sys.getenv("GITHUB_BASE_REF", "master")
+  if(is.null(test.env$base.ref)){
+    test.env$base.ref <- Sys.getenv("GITHUB_BASE_REF", "master")
+  }
   base.commit <- tryCatch({
-    git2r::revparse_single(repo, base.ref)
+    git2r::revparse_single(repo, test.env$base.ref)
   }, error=function(e){
     NULL
   })
-  base.name <- paste0("base=",base.ref)
+  base.name <- paste0("base=", test.env$base.ref)
   if(git2r::is_commit(base.commit)){
     add_if_new <- function(name, commit.obj){
       sha <- git2r::sha(commit.obj)
