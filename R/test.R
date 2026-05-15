@@ -35,6 +35,11 @@ atime_pkg_plot_files <- function(out.dir, test.info, pkg.results){
   issue <- character()
   for(Test in names(pkg.results)){
     atime.list <- pkg.results[[Test]]
+    if(is.character(test.info$remove.units)){
+      keep <- !atime.list$unit.col.vec %in% test.info$remove.units
+      ## don't use setdiff() here because it drops names.
+      atime.list$unit.col.vec <- atime.list$unit.col.vec[keep]
+    }
     best.list <- atime::references_best(atime.list)
     ref.dt <- best.list$ref[each.sign.rank==1]
     sec.dt <- best.list$meas[unit=="seconds"]
