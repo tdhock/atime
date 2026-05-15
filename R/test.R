@@ -318,11 +318,13 @@ atime_pkg_test_info <- function(pkg.path=".", tests.dir=NULL){
     CRAN.name <- NA_character_
   }
   ap <- utils::available.packages()
-  CRAN_version <- ap[Package,"Version"]
-  if(!identical(CRAN_version, installed_version)){
-    warning(sprintf(
-      "CRAN version=%s but installed version=%s fix via install.packages('%s')",
-      CRAN_version, installed_version, Package))
+  if(Package %in% rownames(ap)){
+    CRAN_version <- ap[Package,"Version"]
+    if(!identical(CRAN_version, installed_version)){
+      warning(sprintf(
+        "CRAN version=%s but installed version=%s fix via install.packages('%s')",
+        CRAN_version, installed_version, Package))
+    }
   }
   base.ref <- Sys.getenv("GITHUB_BASE_REF", "master")
   base.commit <- tryCatch({
