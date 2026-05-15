@@ -71,7 +71,9 @@ atime_versions_install <- function(Package, pkg.path, new.Package.vec, sha.vec, 
       }else{
         new.repo.path <- file.path(tdir, new.Package)
         unlink(new.repo.path, recursive=TRUE, force=TRUE)
-        repo <- git2r::clone(orig.repo.path, new.repo.path, progress=FALSE)
+        file.copy(orig.repo.path, tdir, recursive=TRUE)
+        file.rename(file.path(tdir, basename(orig.repo.path)), new.repo.path)
+        repo <- git2r::repository(new.repo.path)
         new.pkg.path <- paste0(new.repo.path, pkg.suffix.in.repo)
         tryCatch(
           git2r::checkout(repo, branch=sha, force=TRUE),
