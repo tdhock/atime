@@ -38,7 +38,7 @@
   Each version should be either \code{""} (to use currently installed
   version of package, or if missing, install most recent
   version from CRAN) or a SHA1 hash, which is passed as branch
-  arg to \code{git2r::checkout}; version names used to identify/interpret
+  arg to git checkout; version names used to identify/interpret
   the output/plots.
   Each version is installed as a separate package
   (to whatever R library is first on \code{.libPaths()}),

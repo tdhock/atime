@@ -49,7 +49,7 @@ atime_versions(
   Each version should be either \code{""} (to use currently installed
   version of package, or if missing, install most recent
   version from CRAN) or a SHA1 hash, which is passed as branch
-  arg to \code{git2r::checkout}; version names used to identify/interpret
+  to git checkout; version names used to identify/interpret
   the output/plots.
 }
 \value{list of class atime with elements \code{seconds.limit} (numeric
@@ -85,7 +85,7 @@ if(FALSE){
 
   gdir <- tempfile()
   dir.create(gdir)
-  git2r::clone("https://github.com/tdhock/grates", gdir)
+  gert::git_clone("https://github.com/tdhock/grates", gdir)
   glist <- atime::atime_versions(
     file.path(gdir,"pkg"),
     current = "1aae646888dcedb128c9076d9bd53fcb4075dcda",
