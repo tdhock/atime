@@ -2,7 +2,7 @@ library(data.table)
 library(testthat)
 tdir <- tempfile()
 dir.create(tdir)
-git2r::clone("https://github.com/tdhock/binsegRcpp", tdir)
+gert::git_clone("https://github.com/tdhock/binsegRcpp", tdir)
 test_that("error if no versions specified", {
   expect_error({
     atime.list <- atime::atime_versions(
@@ -30,11 +30,10 @@ test_that("atime_versions_exprs error when expr does not contain pkg:", {
 })
 
 if(requireNamespace("ggplot2"))test_that("atime_pkg produces tests_all_facet.png and tests_preview_facet.png on atime-test-funs", {
-  repo <- git2r::repository(tdir)
   ## https://github.com/tdhock/binsegRcpp/tree/atime-test-funs
   atime.dir <- file.path(tdir, ".ci", "atime")
   unlink(file.path(atime.dir, "*"))
-  git2r::checkout(repo, branch="atime-test-funs", force=TRUE)
+  gert::git_branch_checkout("atime-test-funs", force=TRUE, repo=tdir)
   options(repos="http://cloud.r-project.org")#required to check CRAN version.
   plist <- atime::atime_pkg(tdir, ".ci")
   tests.RData <- file.path(atime.dir, "tests.RData")
@@ -68,11 +67,10 @@ if(requireNamespace("ggplot2"))test_that("atime_pkg produces tests_all_facet.png
 })
 
 if(requireNamespace("ggplot2"))test_that("atime_pkg produces tests_all_facet.png and tests_preview_facet.png on another-branch", {
-  repo <- git2r::repository(tdir)
   ## https://github.com/tdhock/binsegRcpp/tree/another-branch
   inst.atime <- file.path(tdir, "inst", "atime")
   unlink(file.path(inst.atime, "*"))
-  git2r::checkout(repo, branch="another-branch", force=TRUE)
+  gert::git_branch_checkout("another-branch", force=TRUE, repo=tdir)
   options(repos="http://cloud.r-project.org")#required to check CRAN version.
   plist <- atime::atime_pkg(tdir)
   tests_all_facet.png <- file.path(inst.atime, "tests_all_facet.png")
@@ -86,10 +84,9 @@ if(requireNamespace("ggplot2"))test_that("atime_pkg produces tests_all_facet.png
 })
 
 if(requireNamespace("ggplot2"))test_that("atime_pkg produces tests_all_facet.png and tests_preview_facet.png on master", {
-  repo <- git2r::repository(tdir)
   inst.atime <- file.path(tdir, ".ci", "atime")
   unlink(file.path(inst.atime, "*"))
-  git2r::checkout(repo, branch="master", force=TRUE)
+  gert::git_branch_checkout("master", force=TRUE, repo=tdir)
   options(repos="http://cloud.r-project.org")#required to check CRAN version.
   plist <- atime::atime_pkg(tdir)
   tests_all_facet.png <- file.path(inst.atime, "tests_all_facet.png")
@@ -102,11 +99,10 @@ if(requireNamespace("ggplot2"))test_that("atime_pkg produces tests_all_facet.png
 })
 
 if(requireNamespace("ggplot2"))test_that("atime_pkg produces tests_all_facet.png and tests_preview_facet.png on priority_queue", {
-  repo <- git2r::repository(tdir)
   ## https://github.com/tdhock/binsegRcpp/pull/23
   inst.atime <- file.path(tdir, ".ci", "atime")
   unlink(file.path(inst.atime, "*"))
-  git2r::checkout(repo, branch="priority_queue", force=TRUE)
+  gert::git_branch_checkout("priority_queue", force=TRUE, repo=tdir)
   options(repos="http://cloud.r-project.org")#required to check CRAN version.
   plist <- atime::atime_pkg(tdir)
   tests_all_facet.png <- file.path(inst.atime, "tests_all_facet.png")
@@ -128,10 +124,9 @@ test_that("pkg.edit.fun is a function", {
   pkg.dir <- dirname(ci.dir)
   DESCRIPTION <- file.path(pkg.dir, "DESCRIPTION")
   cat("Package: atime\nVersion: 1.0\n", file=DESCRIPTION)
-  git2r::init(pkg.dir)
-  repo <- git2r::repository(pkg.dir)
-  git2r::add(repo, DESCRIPTION)
-  git2r::commit(repo, "test commit")
+  gert::git_init(pkg.dir)
+  gert::git_add(DESCRIPTION, repo=pkg.dir)
+  gert::git_commit("test commit", repo=pkg.dir)
   options(repos="http://cloud.r-project.org")#required to check CRAN version.
   test.env <- atime::atime_pkg_test_info(pkg.dir)
   test_N_expr <- test.env$test.list$test_N_expr
@@ -148,7 +143,7 @@ test_that("pkg.edit.fun is a function", {
 
 gdir <- tempfile()
 dir.create(gdir)
-git2r::clone("https://github.com/tdhock/grates", gdir)
+gert::git_clone("https://github.com/tdhock/grates", gdir)
 
 test_that("informative error when pkg.path is not a package", {
   expect_error({
@@ -175,7 +170,7 @@ test_that("atime_versions works with grates pkg in sub-dir of git repo", {
 test_that("atime_pkg_test_info() works for data.table, run one test case", {
   dt_dir <- tempfile()
   dir.create(dt_dir)
-  git2r::clone("https://github.com/Rdatatable/data.table", dt_dir)
+  gert::git_clone("https://github.com/Rdatatable/data.table", dt_dir)
   dt_info <- atime::atime_pkg_test_info(dt_dir)
   tname <- "melt improved in #5054"
   tcall <- dt_info$test.call[[tname]]
