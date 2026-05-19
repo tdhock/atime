@@ -342,7 +342,7 @@ atime_pkg_test_info <- function(pkg.path=".", tests.dir=NULL){
     NULL
   })
   base.name <- paste0("base=", test.env$base.ref)
-  if(is.character(base.commit){
+  if(is.character(base.commit)){
     maybe.new.list <- list()
     maybe.new.list[[base.name]] <- base.commit
     maybe.new.list[["merge-base"]] <- gert::git_merge_find_base(

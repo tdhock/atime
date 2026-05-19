@@ -71,7 +71,7 @@ atime_versions_install <- function(Package, pkg.path, new.Package.vec, sha.vec, 
         new.repo.path <- file.path(tdir, new.Package)
         unlink(new.repo.path, recursive=TRUE, force=TRUE)
         tryCatch(
-          gert::git_clone(orig.repo.path, new.repo.path, sha)
+          gert::git_clone(orig.repo.path, new.repo.path, sha),
           error=function(e)stop(
             e, " when trying to clone and checkout ", sha))
         ## before editing and installing, make sure directory has sha
