@@ -122,7 +122,7 @@ test_that("pkg.edit.fun is a function", {
   file.copy(example_tests.R, tests.R)
   ci.dir <- dirname(tests.dir)
   pkg.dir <- dirname(ci.dir)
-  cat("Package: atime\nVersion: 1.0\n", file=DESCRIPTION)
+  cat("Package: atime\nVersion: 1.0\n", file=file.path(pkg.dir, "DESCRIPTION"))
   gert::git_init(pkg.dir)
   gert::git_add("DESCRIPTION", repo=pkg.dir)
   gert::git_commit("test commit", repo=pkg.dir)
