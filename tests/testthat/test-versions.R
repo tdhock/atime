@@ -122,10 +122,9 @@ test_that("pkg.edit.fun is a function", {
   file.copy(example_tests.R, tests.R)
   ci.dir <- dirname(tests.dir)
   pkg.dir <- dirname(ci.dir)
-  DESCRIPTION <- file.path(pkg.dir, "DESCRIPTION")
   cat("Package: atime\nVersion: 1.0\n", file=DESCRIPTION)
   gert::git_init(pkg.dir)
-  gert::git_add(DESCRIPTION, repo=pkg.dir)
+  gert::git_add("DESCRIPTION", repo=pkg.dir)
   gert::git_commit("test commit", repo=pkg.dir)
   options(repos="http://cloud.r-project.org")#required to check CRAN version.
   test.env <- atime::atime_pkg_test_info(pkg.dir)
@@ -179,4 +178,13 @@ test_that("atime_pkg_test_info() works for data.table, run one test case", {
   tcall[c("Slow", "Fast")] <- NULL
   dt_result <- eval(tcall)
   expect_is(dt_result, "atime")
+})
+
+if(interactive())test_that("atime_pkg() works for poncatime", {
+  poncatime_dir <- tempfile()
+  dir.create(poncatime_dir)
+  gert::git_clone("https://github.com/poncateam/poncatime", poncatime_dir)
+  gert::git_branch_create("atime-version-test", "afe6f986836f3f37e743bda93a8d0746587aad1a", repo=poncatime_dir)
+  poncatime_info <- atime::atime_pkg(poncatime_dir)
+  expect_equal(nrow(poncatime_info$all), 2)#two test cases run.
 })
