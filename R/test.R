@@ -310,11 +310,10 @@ atime_pkg_test_info <- function(pkg.path=".", tests.dir=NULL){
   pkg.DESC <- file.path(pkg.path, "DESCRIPTION")
   DESC.mat <- read.dcf(pkg.DESC)
   Package <- DESC.mat[,"Package"]
-  repo <- git2r::repository(pkg.path)
-  HEAD.commit <- git2r::revparse_single(repo, "HEAD")
+  HEAD.commit <- gert::git_commit_info("HEAD",pkg.path)$id
   sha.vec <- c()
-  HEAD.name <- paste0("HEAD=",git2r::repository_head(repo)$name)
-  sha.vec[[HEAD.name]] <- git2r::sha(HEAD.commit)
+  HEAD.name <- paste0("HEAD=", gert::git_branch(pkg.path))
+  sha.vec[[HEAD.name]] <- HEAD.commit
   installed_version <- tryCatch(paste(packageVersion(Package)), error=function(e)NULL)
   ap <- utils::available.packages()
   installed_name <- "installed"
@@ -338,21 +337,22 @@ atime_pkg_test_info <- function(pkg.path=".", tests.dir=NULL){
     test.env$base.ref <- Sys.getenv("GITHUB_BASE_REF", "master")
   }
   base.commit <- tryCatch({
-    git2r::revparse_single(repo, test.env$base.ref)
+    gert::git_commit_info(test.env$base.ref, pkg.path)$id
   }, error=function(e){
     NULL
   })
   base.name <- paste0("base=", test.env$base.ref)
-  if(git2r::is_commit(base.commit)){
-    add_if_new <- function(name, commit.obj){
-      sha <- git2r::sha(commit.obj)
-      if(!sha %in% sha.vec){
-        sha.vec[[name]] <<- sha
+  if(is.character(base.commit){
+    maybe.new.list <- list()
+    maybe.new.list[[base.name]] <- base.commit
+    maybe.new.list[["merge-base"]] <- gert::git_merge_find_base(
+      base.commit, "HEAD", pkg.path)
+    for(maybe.new.name in names(maybe.new.list)){
+      maybe.new.sha <- maybe.new.list[[maybe.new.name]]
+      if(!maybe.new.sha %in% sha.vec){
+        sha.vec[[maybe.new.name]] <- maybe.new.sha
       }
     }
-    add_if_new(base.name, base.commit)
-    mb.commit <- git2r::merge_base(HEAD.commit, base.commit)
-    add_if_new("merge-base", mb.commit)
   }
   abbrev2name <- c(
     HEAD=HEAD.name,
