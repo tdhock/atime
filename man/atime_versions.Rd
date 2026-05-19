@@ -68,7 +68,7 @@ if(FALSE){
 
   tdir <- tempfile()
   dir.create(tdir)
-  git2r::clone("https://github.com/tdhock/binsegRcpp", tdir)
+  gert::git_clone("https://github.com/tdhock/binsegRcpp", tdir)
   atime.list <- atime::atime_versions(
     pkg.path=tdir,
     setup={

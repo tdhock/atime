@@ -4,9 +4,11 @@ Title: Asymptotic Timing
 Version: 2026.5.19
 Depends: R (>= 3.5.0)
 Authors@R: c(
-    person("Toby", "Hocking",
-     email="toby.hocking@r-project.org",
-     role=c("aut", "cre")))
+ person("Toby", "Hocking",
+        email="toby.hocking@r-project.org",
+        role=c("aut", "cre"),
+        comment = c(ORCID="0000-0002-3146-0865"))
+    )
 Description: Computing and visualizing comparative
  asymptotic timings of different algorithms and code versions.
  Also includes functionality for comparing empirical timings with

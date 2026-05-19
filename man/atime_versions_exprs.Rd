@@ -63,7 +63,7 @@ if(FALSE){
   if(requireNamespace("changepoint")){
     tdir <- tempfile()
     dir.create(tdir)
-    git2r::clone("https://github.com/tdhock/binsegRcpp", tdir)
+    gert::git_clone("https://github.com/tdhock/binsegRcpp", tdir)
     expr.list <- atime::atime_versions_exprs(
       pkg.path=tdir,
       expr=binsegRcpp::binseg_normal(data.vec, max.segs),
