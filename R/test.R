@@ -310,11 +310,11 @@ atime_pkg_test_info <- function(pkg.path=".", tests.dir=NULL){
   pkg.DESC <- file.path(pkg.path, "DESCRIPTION")
   DESC.mat <- read.dcf(pkg.DESC)
   Package <- DESC.mat[,"Package"]
-  HEAD.commit <- gert::git_commit_info("HEAD",pkg.path)$id
+  HEAD.commit <- gert::git_commit_id("HEAD",pkg.path)
   sha.vec <- c()
   HEAD.name <- paste0("HEAD=", gert::git_branch(pkg.path))
   sha.vec[[HEAD.name]] <- HEAD.commit
-  installed_version <- tryCatch(paste(packageVersion(Package)), error=function(e)NULL)
+  installed_version <- tryCatch(paste(packageVersion(Package)), error=function(e)"(not installed)")
   ap <- utils::available.packages()
   installed_name <- "installed"
   if(Package %in% rownames(ap)){
