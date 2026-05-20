@@ -216,7 +216,7 @@ store results if check=FALSE, results must be equal if check=TRUE, and
 there is no way to easily specify a time limit which stops for larger
 sizes (like seconds.limit argument in atime).
 
-[[https://github.com/DavisVaughan/cross][cross]] is similar to =atime_versions()=.
+[[https://github.com/DavisVaughan/cross][cross]] runs different package versions in different R sessions, so is similar to =atime_versions()=, which runs different package versions in the same R session.
 
 [[https://github.com/Anirban166/testComplexity][testComplexity]]::asymptoticTimings does something similar, but only for
 one expression (not several), and there is no special setup argument
