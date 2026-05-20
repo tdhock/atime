@@ -71,12 +71,18 @@ atime_versions_install <- function(Package, pkg.path, new.Package.vec, sha.vec, 
         new.repo.path <- file.path(tdir, new.Package)
         unlink(new.repo.path, recursive=TRUE, force=TRUE)
         gert::git_clone(orig.repo.path, new.repo.path)
-        gert::git_branch_create(
+        gert::git_branch_create(#and checkout
           "atime-versions-testing", sha, repo=new.repo.path)
-        submodule_tib <- gert::git_submodule_list(new.repo.path)
-        for(sub.i in seq_along(submodule_tib$name)){
-          gert::git_submodule_init(
-            submodule_tib$name[sub.i], overwrite=TRUE, repo=new.repo.path)
+        if(TRUE){
+          old.wd <- setwd(new.repo.path)
+          system("git submodule update --init --recursive")
+          setwd(old.wd)
+        }else{
+          submodule_tib <- gert::git_submodule_list(new.repo.path)
+          for(sub.i in seq_along(submodule_tib$name)){
+            gert::git_submodule_init(
+              submodule_tib$name[sub.i], overwrite=TRUE, repo=new.repo.path)
+          }
         }
         new.pkg.path <- paste0(new.repo.path, pkg.suffix.in.repo)
         unlink(file.path(new.pkg.path, "src", "*.o"))
