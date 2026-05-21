@@ -6,7 +6,7 @@
 
 \usage{atime(
  N, setup, expr.list=NULL, times=10, seconds.limit=0.01, verbose=FALSE,
- result=FALSE, N.env.parent=NULL, ...)}
+ result=FALSE, N.env.parent=NULL, check=FALSE, ...)}
 
 \arguments{
   \item{N}{numeric vector of at least two unique data sizes, default is \code{2^seq(2,20)}.}
@@ -25,7 +25,9 @@
     and seconds).
   }
   \item{N.env.parent}{environment to use as parent of environment
-  created for each data size N, or NULL to use default parent env.}
+    created for each data size N, or NULL to use default parent env.}
+  \item{check}{logical, error if results are not all equal? (default
+  FALSE) Passed to \code{\link[bench]{mark}}.}
   \item{\dots}{named expressions to time.}
 }
 
