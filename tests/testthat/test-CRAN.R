@@ -131,6 +131,17 @@ test_that("result returned when some are NULL and others not", {
   expect_is(atime.list$mea$result, "list")
 })
 
+test_that("N with different units", {
+  atime.list <- atime::atime(
+    slow=if(N==2){
+      data.frame(x=1)
+    }else if(N==4){
+      data.frame(y=2)
+    }else data.frame(x=3, y=4),
+    result = TRUE)
+  expect_is(atime.list$mea$result, "list")
+})
+
 test_that("sensible error when duplicate names", {
   expect_error({
     atime::atime(
