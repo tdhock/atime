@@ -26,7 +26,7 @@ test_that("atime_versions_exprs error when expr does not contain pkg:", {
       "Before"="be2f72e6f5c90622fe72e1c315ca05769a9dc854",
       "Regression"="e793f53466d99f86e70fc2611b708ae8c601a451", 
       "Fixed"="58409197426ced4714af842650b0cc3b9e2cb842") 
-  }, "expr should contain at least one instance of binsegRcpp:: to replace with binsegRcpp.be2f72e6f5c90622fe72e1c315ca05769a9dc854:", fixed=TRUE)
+  }, "expr=dt[, .(vs = (sum(val))), by = .(id)] should contain at least one instance of binsegRcpp:: to replace with binsegRcpp.be2f72e6f5c90622fe72e1c315ca05769a9dc854::", fixed=TRUE)
 })
 
 if(requireNamespace("ggplot2"))test_that("atime_pkg produces tests_all_facet.png and tests_preview_facet.png on atime-test-funs", {
@@ -34,7 +34,7 @@ if(requireNamespace("ggplot2"))test_that("atime_pkg produces tests_all_facet.png
   ## https://github.com/tdhock/binsegRcpp/tree/atime-test-funs
   atime.dir <- file.path(tdir, ".ci", "atime")
   unlink(file.path(atime.dir, "*"))
-  git2r::checkout(repo, branch="atime-test-funs", force=TRUE)
+  git2r::checkout(repo, branch="test-setup-HEAD", force=TRUE)
   options(repos="http://cloud.r-project.org")#required to check CRAN version.
   plist <- atime::atime_pkg(tdir, ".ci")
   tests.RData <- file.path(atime.dir, "tests.RData")
