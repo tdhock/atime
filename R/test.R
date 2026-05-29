@@ -117,15 +117,19 @@ atime_pkg_plot_files <- function(out.dir, test.info, pkg.results){
     log10.n.factor <- log10(n.factor)
     abs.log10.n.factor <- abs(log10.n.factor)
     max.N.times <- (10^abs.log10.n.factor)*sign(log10.n.factor)
+    some.meas <- best.list$meas[, .(
+      unit, expr.name, N, empirical,
+      q25, q75,
+      fun.name, fun.latex,
+      expr.class, expr.latex)]
     bench.dt.list[[Test]] <- data.table(
       Test, p.value, n.factor,
       log10.n.factor, abs.log10.n.factor,
-      max.N.times,
-      best.list$meas)
+      max.N.times, some.meas)
     log10.range <- range(log10(atime.list$meas$N))
     expand <- diff(log10.range)*test.info$expand.prop
     xmax <- 10^(log10.range[2]+expand)
-    blank.dt.list[[Test]] <- data.table(Test, best.list$meas[1])[, N := xmax]
+    blank.dt.list[[Test]] <- data.table(Test, some.meas[1][, N := xmax])
     gg <- ggplot2::ggplot()+
       ggplot2::ggtitle(Test)+
       ggplot2::theme_bw()+

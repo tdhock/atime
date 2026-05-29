@@ -16,8 +16,10 @@ atime_versions(
   \item{N}{numeric vector of data sizes to vary.}
   \item{setup}{
     expression to evaluate for every data size, before timings.
-    In contrast to \code{expr},
-    no replacement of \code{Package::} is performed.
+    If one of the versions contains name HEAD, then
+    \code{Package::} is replaced with
+    \code{Package.SHA_for_HEAD::}
+    (in other words, setup is run using the HEAD commit).
   }
   \item{expr}{
     code with package double-colon prefix, for example

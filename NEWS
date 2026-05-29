@@ -1,4 +1,4 @@
-Changes in version 2026.5.19
+Changes in version 2026.5.30
 
 - switched from git2r to gert for running git from R.
 - atime_pkg() now works with repos that have sub-modules, via system("git submodule update --init --recursive").
@@ -6,6 +6,11 @@ Changes in version 2026.5.19
 - .ci/atime/tests.R can define base.ref="main" for repos where the default branch is not named master.
 - .ci/atime/tests.R can define remove.units="kilobytes" for repos where memory benchmarking results should be hidden.
 - atime_pkg_test_info() bugfix when pkg is not on CRAN.
+
+Changes in version 2026.5.29
+
+- atime_pkg() now uses only a common subset of columns of the measurements table from each test, so that each test can have different units to analyze.
+- atime_versions() runs setup using the HEAD commit (if present).
 
 Changes in version 2026.4.2
 

@@ -26,14 +26,14 @@ test_that("atime_versions_exprs error when expr does not contain pkg:", {
       "Before"="be2f72e6f5c90622fe72e1c315ca05769a9dc854",
       "Regression"="e793f53466d99f86e70fc2611b708ae8c601a451", 
       "Fixed"="58409197426ced4714af842650b0cc3b9e2cb842") 
-  }, "expr should contain at least one instance of binsegRcpp:: to replace with binsegRcpp.be2f72e6f5c90622fe72e1c315ca05769a9dc854:", fixed=TRUE)
+  }, "expr=dt[, .(vs = (sum(val))), by = .(id)] should contain at least one instance of binsegRcpp:: to replace with binsegRcpp.be2f72e6f5c90622fe72e1c315ca05769a9dc854::", fixed=TRUE)
 })
 
 if(requireNamespace("ggplot2"))test_that("atime_pkg produces tests_all_facet.png and tests_preview_facet.png on atime-test-funs", {
   ## https://github.com/tdhock/binsegRcpp/tree/atime-test-funs
   atime.dir <- file.path(tdir, ".ci", "atime")
   unlink(file.path(atime.dir, "*"))
-  gert::git_branch_checkout("atime-test-funs", force=TRUE, repo=tdir)
+  gert::git_branch_checkout("test-setup-HEAD", force=TRUE, repo=tdir)
   options(repos="http://cloud.r-project.org")#required to check CRAN version.
   plist <- atime::atime_pkg(tdir, ".ci")
   tests.RData <- file.path(atime.dir, "tests.RData")
@@ -131,13 +131,15 @@ test_that("pkg.edit.fun is a function", {
   test_N_expr <- test.env$test.list$test_N_expr
   expect_identical(test_N_expr$pkg.edit.fun, test.env$edit.data.table)
   expect_identical(test_N_expr$N, c(2,20))
-  expect_identical(test_N_expr$expr, quote(rnorm(N)))
+  expect_identical(test_N_expr$expr, quote(atime:::.packageName))
   test_expr <- test.env$test.list$test_expr
   expect_identical(test_expr$pkg.edit.fun, test.env$edit.data.table)
   expect_identical(test_expr$N, c(9,90))
-  expect_identical(test_expr$expr, quote(rnorm(N)))
+  expect_identical(test_expr$expr, quote(atime:::.packageName))
   e.res <- eval(test.env$test.call[["global_var_in_setup"]])
   expect_is(e.res, "atime")
+  p.res <- atime::atime_pkg(pkg.dir)
+  expect_is(p.res, "list")
 })
 
 gdir <- tempfile()
@@ -173,9 +175,6 @@ test_that("atime_pkg_test_info() works for data.table, run one test case", {
   dt_info <- atime::atime_pkg_test_info(dt_dir)
   tname <- "melt improved in #5054"
   tcall <- dt_info$test.call[[tname]]
-  ## old data.table versions have compiler errors with reduced C API
-  ## in R-devel.
-  tcall[c("Slow", "Fast")] <- NULL
   dt_result <- eval(tcall)
   expect_is(dt_result, "atime")
 })
