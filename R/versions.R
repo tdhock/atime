@@ -3,7 +3,11 @@ glob_find_replace <- function(glob, FIND, REPLACE){
   for(f in some.files){
     l.old <- readLines(f)
     l.new <- gsub(FIND, REPLACE, l.old)
-    writeLines(l.new, f)
+    if(identical(l.old, l.new)){
+      warning(sprintf("no changes to %s when FIND=%s and replace=%s", f, FIND, REPLACE))
+    }else{
+      writeLines(l.new, f)
+    }
   }
 }
 
@@ -16,12 +20,15 @@ pkg.edit.default <- function(old.Package, new.Package, sha, new.pkg.path){
     paste0("Package:\\s+", old.Package),
     paste("Package:", new.Package))
   Package_ <- gsub(".", "_", old.Package, fixed=TRUE)
-  R_init_pkg <- paste0("R_init_", Package_)
   new.Package_ <- paste0(Package_, "_", sha)
   pkg_find_replace(
     file.path("src", "RcppExports.cpp"),
-    R_init_pkg,
+    paste0("R_init_", Package_),
     paste0("R_init_", new.Package_))
+  pkg_find_replace(
+    file.path("R", "RcppExports.R"),
+    sprintf("PACKAGE = '%s'", old.Package),
+    sprintf("PACKAGE = '%s'", new.Package))
   pkg_find_replace(
     "NAMESPACE",
     sprintf('useDynLib\\("?%s"?', Package_),
