@@ -179,9 +179,6 @@ test_that("atime_pkg_test_info() works for data.table, run one test case", {
   dt_info <- atime::atime_pkg_test_info(dt_dir)
   tname <- "melt improved in #5054"
   tcall <- dt_info$test.call[[tname]]
-  ## old data.table versions have compiler errors with reduced C API
-  ## in R-devel.
-  tcall[c("Slow", "Fast")] <- NULL
   dt_result <- eval(tcall)
   expect_is(dt_result, "atime")
 })
