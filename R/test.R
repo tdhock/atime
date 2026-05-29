@@ -331,11 +331,11 @@ atime_pkg_test_info <- function(pkg.path=".", tests.dir=NULL){
         CRAN_version, installed_version, Package))
     }
   }
-  if(!is.null(installed_version)){
+  if(identical(installed_version, "(not installed)")){
+    CRAN.name <- NA_character_
+  }else{
     CRAN.name <- paste0(installed_name, "=", installed_version)
     sha.vec[[CRAN.name]] <- ""
-  }else{
-    CRAN.name <- NA_character_
   }
   if(is.null(test.env$base.ref)){
     test.env$base.ref <- Sys.getenv("GITHUB_BASE_REF", "master")
