@@ -34,7 +34,7 @@ if(requireNamespace("ggplot2"))test_that("atime_pkg produces tests_all_facet.png
   ## https://github.com/tdhock/binsegRcpp/tree/atime-test-funs
   atime.dir <- file.path(tdir, ".ci", "atime")
   unlink(file.path(atime.dir, "*"))
-  git2r::checkout(repo, branch="atime-test-funs", force=TRUE)
+  git2r::checkout(repo, branch="test-setup-HEAD", force=TRUE)
   options(repos="http://cloud.r-project.org")#required to check CRAN version.
   plist <- atime::atime_pkg(tdir, ".ci")
   tests.RData <- file.path(atime.dir, "tests.RData")
