@@ -38,8 +38,10 @@ atime_versions(
     this many seconds, then no timings for larger N are computed.}
   \item{verbose}{logical, print messages after every data size?}
   \item{pkg.edit.fun}{function called to edit package before
-    installation, should typically replace instances of PKG with
-    PKG.SHA, default works with Rcpp packages.}
+    installation, should typically replace instances of \code{PKG} with
+    \code{PKG.SHA},
+    default works with Rcpp packages that have \code{useDynLib(pkg)}
+    in NAMESPACE (no \code{.registration=TRUE}).}
   \item{result}{logical or function, passed to \code{\link{atime}}.}
   \item{N.env.parent}{environment to use as parent of environment
   created for each data size N, or NULL to use default parent env.}
