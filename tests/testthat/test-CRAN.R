@@ -131,6 +131,19 @@ test_that("result returned when some are NULL and others not", {
   expect_is(atime.list$mea$result, "list")
 })
 
+test_that("N with different units", {
+  atime.list <- atime::atime(
+    slow=if(N==2){
+      data.frame(x=1)
+    }else if(N==4){
+      data.frame(y=2)
+    }else data.frame(x=3, y=4),
+    result = TRUE)
+  expected.dt <- data.table(x=c(1,NA,3), y=c(NA,2,4))
+  computed.dt <- atime.list$mea[1:3, .(x,y)]
+  expect_equal(computed.dt, expected.dt)
+})
+
 test_that("sensible error when duplicate names", {
   expect_error({
     atime::atime(
@@ -427,31 +440,18 @@ if(requireNamespace("ggplot2"))test_that("references for non-NA unit, with NA un
 })
 
 test_that("error for result data frames with different column names",{
-  expect_error({
-    atime::atime(
-      missing=data.frame(my_unit=NA),
-      constant=data.frame(foo=1),
-      linear=data.frame(my_unit=N),
-      quadratic=data.frame(my_unit=N^2),
-      seconds.limit=0.001,
-      result=TRUE)
-  }, "results are all 1 row data frames, but some have different names (missing, constant); please fix by making column names of results identical", fixed=TRUE)
-  expect_error({
-    atime:::get_result_rows(list(
-      missing=data.frame(my_unit=NA),
-      linear=data.frame(my_unit=5),
-      quadratic=data.frame(my_unit=1, other=2)))
-  }, "results are all 1 row data frames, but some have different names (missing, quadratic); please fix by making column names of results identical", fixed=TRUE)
-  expect_null(
-    atime:::get_result_rows(list(
-      missing=data.frame(my_unit=NA),
-      linear=data.frame(my_unit=5),
-      quadratic=data.frame(my_unit=1, other=2:3)))
-  )
+  alist <- atime::atime(
+    missing=data.frame(my_unit=NA),
+    constant=data.frame(foo=1),
+    linear=data.frame(my_unit=N),
+    quadratic=data.frame(my_unit=N^2),
+    seconds.limit=0.001,
+    result=TRUE)
+  expect_in(c("my_unit", "foo"), names(alist$measurements))
   valid.input.list <- list(
-    missing=data.frame(my_unit=NA, other="a"),
-    linear=data.frame(my_unit=5, other="b"),
-    quadratic=data.frame(my_unit=1, other="c"))
+    missing=data.table(my_unit=NA, other="a"),
+    linear=data.table(my_unit=5, other="b"),
+    quadratic=data.table(my_unit=1, other="c"))
   computed <- atime:::get_result_rows(valid.input.list)
   expected <- list(
     result.rows=do.call(rbind, valid.input.list),

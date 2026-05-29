@@ -3,6 +3,7 @@ Changes in version 2026.5.29
 - atime_pkg() now uses only a common subset of columns of the measurements table from each test, so that each test can have different units to analyze.
 - atime_versions() runs setup using the HEAD commit (if present).
 - atime_versions() bugfix for Rcpp packages, which must useDynLib(pkg) in NAMESPACE without .registration=TRUE, so we can edit PACKAGE args in R/RcppExports.R.
+- atime() now allows different column names in 1-row result data frames, either in different expressions, or different N.
 
 Changes in version 2026.4.2
 
