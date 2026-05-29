@@ -24,7 +24,7 @@ atime_pkg <- function(pkg.path=".", tests.dir=NULL){
 
 atime_pkg_plot_files <- function(out.dir, test.info, pkg.results){
   each.sign.rank <- unit <- . <- N <- expr.name <- reference <- fun.name <- 
-    empirical <- q25 <- q75 <- p.str <- p.value <- P.value <- 
+    empirical <- q25 <- q75 <- p.str <- p.value <- P.value <- fun.latex <- expr.class <- expr.latex <- 
       seconds.limit <- time <- log10.seconds <- seconds <- Test <-
         N.factor <- unit.value <- x.str <- pred.Nx <- NULL
   ## above to avoid CRAN check NOTE.
