@@ -20,7 +20,9 @@
     logical: save the result of evaluating each expression?
     Or a function to compute a result, given the value obtained after
     evaluating each expression.
-    If each result is a data frame with one row, then the numeric column
+    Or \code{NULL} (default), meaning to only save if the result is a
+    data frame with one row.
+    If evaluation result is a data frame with one row, then the numeric column
     names will be saved as more units to analyze (in addition to kilobytes
     and seconds).
   }

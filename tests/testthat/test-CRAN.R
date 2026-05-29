@@ -439,24 +439,21 @@ if(requireNamespace("ggplot2"))test_that("references for non-NA unit, with NA un
   expect_identical(sort(names(rtab)), c("linear","quadratic"))
 })
 
-test_that("error for result data frames with different column names",{
+test_that("result data frames with different column names",{
   alist <- atime::atime(
+    N=1:2,
+    two.rows=data.frame(x=1:2),
+    list=list(y=1),
     missing=data.frame(my_unit=NA),
     constant=data.frame(foo=1),
     linear=data.frame(my_unit=N),
     quadratic=data.frame(my_unit=N^2),
-    seconds.limit=0.001,
-    result=TRUE)
-  expect_in(c("my_unit", "foo"), names(alist$measurements))
-  valid.input.list <- list(
-    missing=data.table(my_unit=NA, other="a"),
-    linear=data.table(my_unit=5, other="b"),
-    quadratic=data.table(my_unit=1, other="c"))
-  computed <- atime:::get_result_rows(valid.input.list)
-  expected <- list(
-    result.rows=do.call(rbind, valid.input.list),
-    more.units="my_unit")
-  expect_identical(computed, expected)
+    seconds.limit=0.001)
+  mrow <- alist$measurements[N==2]
+  expect_null(mrow[["x"]])
+  expect_null(mrow[["y"]])
+  expect_equal(mrow[["my_unit"]], c(NA,NA,NA,NA,2,4))
+  expect_equal(mrow[["foo"]], c(NA,NA,NA,1,NA,NA))
 })
 
 test_that("error for new unit name conflicting with existing", {
@@ -468,7 +465,7 @@ test_that("error for new unit name conflicting with existing", {
       quadratic=data.frame(median=N^2, kilobytes=1, ok=2),
       seconds.limit=0.001,
       result=TRUE)
-  }, "value of expression is 1 row data frame with column(s) named median, kilobytes (reserved for internal use); please fix by changing the column name(s) in your results", fixed=TRUE)
+  }, "value of expression missing is 1 row data frame with column(s) named median, kilobytes (reserved for internal use); please fix by changing the column name(s) in your results", fixed=TRUE)
 })
 
 test_that("atime_test outputs historical versions", {

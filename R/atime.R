@@ -2,15 +2,19 @@ default_N <- function(){
   as.integer(2^seq(1, 20))
 }
 
-get_result_rows <- function(result.list){
+get_result_rows <- function(result.list, N.stats){
   out.rows <- list()
   out.names <- list()
-  for(result.i in seq_along(result.list)){
-    result <- result.list[[result.i]]
+  for(expr.name in names(result.list)){
+    result <- result.list[[expr.name]]
     if(is.data.frame(result) && nrow(result)==1){
       is.num <- sapply(result, is.numeric)
-      out.rows[[paste(result.i)]] <- result
-      out.names[[paste(result.i)]] <- names(result)[is.num]
+      new.bad <- intersect(names(result), names(N.stats))
+      if(length(new.bad)){
+        stop(sprintf("value of expression %s is 1 row data frame with column(s) named %s (reserved for internal use); please fix by changing the column name(s) in your results", expr.name, paste(new.bad, collapse=", ")))
+      }
+      out.rows[[expr.name]] <- data.table(expr.name, result)
+      out.names[[expr.name]] <- names(result)[is.num]
     }
   }
   list(
@@ -65,13 +69,16 @@ check_atime_inputs <- function(N, result, elist){
     TRUE
   }else if(isTRUE(result)){
     TRUE
+  }else if(is.null(result)){
+    fun <- function(out)if(is.data.frame(out) && nrow(out)==1)out
+    TRUE
   }else{
     FALSE
   }
   list(keep=keep, fun=fun)
 }
 
-atime <- function(N=default_N(), setup, expr.list=NULL, times=10, seconds.limit=0.01, verbose=FALSE, result=FALSE, N.env.parent=NULL, ...){
+atime <- function(N=default_N(), setup, expr.list=NULL, times=10, seconds.limit=0.01, verbose=FALSE, result=NULL, N.env.parent=NULL, ...){
   kilobytes <- mem_alloc <- . <- sizes <- expr.name <- NULL
   ## above for CRAN NOTE.
   formal.names <- names(formals())
@@ -94,7 +101,6 @@ atime <- function(N=default_N(), setup, expr.list=NULL, times=10, seconds.limit=
     N.env$N <- N.value
     eval(mc.args$setup, N.env)
     N.df <- run_bench_mark(times, elist[not.done.yet], N.env, result)
-    result.row.list <- get_result_rows(N.env$result.list)
     N.stats <- data.table(
       N=N.value, expr.name=not.done.yet, N.df
     )[, `:=`(
@@ -114,15 +120,14 @@ atime <- function(N=default_N(), setup, expr.list=NULL, times=10, seconds.limit=
     }
     done.pkgs <- N.stats[median > seconds.limit, paste(expr.name)]
     done.vec[done.pkgs] <- TRUE
-    new.bad <- intersect(names(result.row.list$result.rows), names(N.stats))
-    if(length(new.bad)){
-      stop(sprintf("value of expression is 1 row data frame with column(s) named %s (reserved for internal use); please fix by changing the column name(s) in your results", paste(new.bad, collapse=", ")))
+    result.row.list <- get_result_rows(N.env$result.list, N.stats)
+    if(nrow(result.row.list$result.rows)){
+      N.stats <- result.row.list$result.rows[N.stats, on="expr.name"]
     }
-    N.out <- data.table(N.stats, result.row.list$result.rows)
-    if(verbose)print(N.out[, data.table(
+    if(verbose)print(N.stats[, data.table(
       N, expr.name, seconds.median=median, kilobytes)],
       class=FALSE)
-    metric.dt.list[[paste(N.value)]] <- N.out
+    metric.dt.list[[paste(N.value)]] <- N.stats
   }
   unit.col.vec <- c(
     "kilobytes",
