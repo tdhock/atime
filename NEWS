@@ -1,6 +1,7 @@
 Changes in version 2026.5.29
 
 - atime_pkg() now uses only a common subset of columns of the measurements table from each test, so that each test can have different units to analyze.
+- atime_versions() runs setup using the HEAD commit (if present).
 
 Changes in version 2026.4.2
 
