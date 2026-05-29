@@ -132,8 +132,14 @@ atime_versions <- function(pkg.path, N=default_N(), setup, expr, sha.vec=NULL, t
   install.seconds <- system.time({
     ver.exprs <- do.call(atime_versions_exprs, ver.args)
   })[["elapsed"]]
+  sub.setup <- substitute(setup)
+  Package <- attr(ver.exprs, "Package")
+  if(is.character(Package)){
+    new.Package <- attr(ver.exprs, "new.Package")
+    sub.setup <- expr_pkg(sub.setup, Package, new.Package, check=FALSE)
+  }
   a.args <- list(
-    N, substitute(setup), ver.exprs, times, seconds.limit, verbose, result, N.env.parent)
+    N, sub.setup, ver.exprs, times, seconds.limit, verbose, result, N.env.parent)
   bench.seconds <- system.time({
     out.list <- do.call(atime, a.args)
   })[["elapsed"]]
@@ -157,7 +163,20 @@ get_sha_vec <- function(sha.vec, dots.vec){
     stop("each ... argument value and sha.vec element must be a string (package version, length=1, not NA), problems: ", paste(names(SHA.vec[is.problem]), collapse=", "))
   }
   SHA.vec
-}  
+}
+
+expr_pkg <- function(expr, Package, new.Package, check=FALSE){
+  old.lines <- capture.output(expr)
+  new.lines <- gsub(
+    paste0(Package,"::"),
+    paste0(new.Package,"::"),
+    old.lines,
+    fixed=TRUE)
+  if(check && Package!=new.Package && identical(old.lines,new.lines)){
+    stop(sprintf("expr=%s should contain at least one instance of %s:: to replace with %s::", old.lines, Package, new.Package))
+  }
+  str2lang(paste(new.lines, collapse="\n"))
+}
 
 atime_versions_exprs <- function(pkg.path, expr, sha.vec=NULL, verbose=FALSE, pkg.edit.fun=pkg.edit.default, ...){
   formal.names <- names(formals())
@@ -175,20 +194,16 @@ atime_versions_exprs <- function(pkg.path, expr, sha.vec=NULL, verbose=FALSE, pk
     ifelse(SHA.vec=="", "", "."), 
     SHA.vec)
   a.args <- list()
+  sub.expr <- substitute(expr)
   for(commit.i in seq_along(SHA.vec)){
     sha <- SHA.vec[[commit.i]]
     commit.name <- names(SHA.vec)[[commit.i]]
     new.Package <- new.Package.vec[[commit.i]]
-    old.lines <- capture.output(substitute(expr))
-    new.lines <- gsub(
-      paste0(Package,"::"),
-      paste0(new.Package,"::"),
-      old.lines,
-      fixed=TRUE)
-    if(Package!=new.Package && identical(old.lines,new.lines)){
-      stop(sprintf("expr should contain at least one instance of %s:: to replace with %s::", Package, new.Package))
+    if(grepl("HEAD", commit.name)){
+      attr(a.args, "Package") <- Package
+      attr(a.args, "new.Package") <- new.Package
     }
-    a.args[[commit.name]] <- str2lang(paste(new.lines, collapse="\n"))
+    a.args[[commit.name]] <- expr_pkg(sub.expr, Package, new.Package, check=TRUE)
     atime_versions_install(
       Package, normalizePath(pkg.path),
       new.Package.vec, SHA.vec, verbose, pkg.edit.fun)
