@@ -116,7 +116,11 @@ atime_pkg_plot_files <- function(out.dir, test.info, pkg.results){
       Test, p.value, n.factor,
       log10.n.factor, abs.log10.n.factor,
       max.N.times,
-      best.list$meas)
+      best.list$meas[, .(
+        unit, expr.name, N, empirical,
+        q25, q75,
+        fun.name, fun.latex,
+        expr.class, expr.latex)])
     log10.range <- range(log10(atime.list$meas$N))
     expand <- diff(log10.range)*test.info$expand.prop
     xmax <- 10^(log10.range[2]+expand)
