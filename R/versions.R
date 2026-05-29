@@ -132,11 +132,15 @@ atime_versions <- function(pkg.path, N=default_N(), setup, expr, sha.vec=NULL, t
   install.seconds <- system.time({
     ver.exprs <- do.call(atime_versions_exprs, ver.args)
   })[["elapsed"]]
-  sub.setup <- substitute(setup)
-  Package <- attr(ver.exprs, "Package")
-  if(is.character(Package)){
-    new.Package <- attr(ver.exprs, "new.Package")
-    sub.setup <- expr_pkg(sub.setup, Package, new.Package, check=FALSE)
+  if(missing(setup)){
+    sub.setup <- quote({})
+  }else{
+    sub.setup <- substitute(setup)
+    Package <- attr(ver.exprs, "Package")
+    if(is.character(Package)){
+      new.Package <- attr(ver.exprs, "new.Package")
+      sub.setup <- expr_pkg(sub.setup, Package, new.Package, check=FALSE)
+    }
   }
   a.args <- list(
     N, sub.setup, ver.exprs, times, seconds.limit, verbose, result, N.env.parent)
