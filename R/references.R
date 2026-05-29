@@ -80,9 +80,9 @@ references_best <- function(L, fun.list=NULL){
         references(N, .SD[[col.name]], lower.limit, fun.list),
         by=c(L$by.vec)]
       all.refs[, rank := rank(-N), by=c(L$by.vec, "fun.name")]
-      second <- all.refs[rank==2]
-      second[, dist := log10(empirical/reference) ]
-      second[, sign := sign(dist)]
+      second <- all.refs[rank==2][
+      , dist := log10(empirical/reference)
+      ][, sign := sign(dist)][]
       l.cols <- list(overall=L$by.vec, each.sign=c(L$by.vec,"sign"))
       for(best.type in names(l.cols)){
         by <- l.cols[[best.type]]
