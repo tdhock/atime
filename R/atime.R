@@ -3,22 +3,19 @@ default_N <- function(){
 }
 
 get_result_rows <- function(result.list){
-  if(
-    all(sapply(result.list, is.data.frame)) &&
-      all(sapply(result.list, nrow)==1)
-  ){
-    names.list <- lapply(result.list, names)
-    for(result.i in seq_along(names.list)){
-      if(!identical(names.list[[1]], names.list[[result.i]])){
-        stop(sprintf("results are all 1 row data frames, but some have different names (%s, %s); please fix by making column names of results identical", names(names.list)[[1]], names(names.list)[[result.i]]))
-      }
+  out.rows <- list()
+  out.names <- list()
+  for(result.i in seq_along(result.list)){
+    result <- result.list[[result.i]]
+    if(is.data.frame(result) && nrow(result)==1){
+      is.num <- sapply(result, is.numeric)
+      out.rows[[paste(result.i)]] <- result
+      out.names[[paste(result.i)]] <- names(result)[is.num]
     }
-    result.rows <- do.call(rbind, result.list)
-    is.more <- sapply(result.rows, is.numeric)
-    list(
-      result.rows=result.rows,
-      more.units=names(result.rows)[is.more])
   }
+  list(
+    result.rows=rbindlist(out.rows, use.names=TRUE, fill=TRUE),
+    more.units=unique(unlist(out.names)))
 }
 
 run_bench_mark <- function(times, sub.elist, N.env, result){
@@ -131,7 +128,7 @@ atime <- function(N=default_N(), setup, expr.list=NULL, times=10, seconds.limit=
     "kilobytes",
     seconds="median",
     result.row.list$more.units)
-  measurements <- rbindlist(metric.dt.list)
+  measurements <- rbindlist(metric.dt.list, use.names=TRUE, fill=TRUE)
   expr.list.params <- attr(expr.list,"parameters")
   by.vec <- "expr.name"
   if(is.data.table(expr.list.params)){
