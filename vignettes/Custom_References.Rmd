@@ -18,7 +18,7 @@ The code below uses the following arguments:
 * `setup` is an R expression to create the data,
 * the other arguments have names to identify them in the results, and
   values which are R expressions to time,
-
+ 
 ```{r}
 library(data.table)
 seg.result <- atime::atime(
