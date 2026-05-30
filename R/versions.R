@@ -26,7 +26,7 @@ pkg.edit.default <- function(old.Package, new.Package, sha, new.pkg.path){
     paste0("R_init_", Package_),
     paste0("R_init_", new.Package_))
   pkg_find_replace(
-    file.path("R", "RcppExports.R"),
+    file.path("R", "RcppExports.R"),#.Call(`_binsegRcpp_
     sprintf("PACKAGE = '%s'", old.Package),
     sprintf("PACKAGE = '%s'", new.Package))
   pkg_find_replace(
