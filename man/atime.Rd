@@ -6,7 +6,7 @@
 
 \usage{atime(
  N, setup, expr.list=NULL, times=10, seconds.limit=0.01, verbose=FALSE,
- result=FALSE, N.env.parent=NULL, ...)}
+ result=NULL, N.env.parent=NULL, ...)}
 
 \arguments{
   \item{N}{numeric vector of at least two unique data sizes, default is \code{2^seq(2,20)}.}
@@ -20,7 +20,9 @@
     logical: save the result of evaluating each expression?
     Or a function to compute a result, given the value obtained after
     evaluating each expression.
-    If each result is a data frame with one row, then the numeric column
+    Or \code{NULL} (default), meaning to only save if the result is a
+    data frame with one row.
+    If evaluation result is a data frame with one row, then the numeric column
     names will be saved as more units to analyze (in addition to kilobytes
     and seconds).
   }
