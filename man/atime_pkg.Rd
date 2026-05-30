@@ -12,14 +12,15 @@
   \code{atime_pkg} runs all tests and saves results/plots to disk.
 }
 \usage{
-atime_pkg(pkg.path=".", tests.dir=NULL)
-atime_pkg_test_info(pkg.path=".", tests.dir=NULL)
+atime_pkg(pkg.path=".", tests.dir=NULL, verbose=FALSE)
+atime_pkg_test_info(pkg.path=".", tests.dir=NULL, verbose=FALSE)
 }
 \arguments{
   \item{pkg.path}{path to git repository containing R package.}
   \item{tests.dir}{path to directory which contains \code{atime/tests.R},
     relative to \code{pkg.path} (default \code{NULL} means first
     existing directory of \code{"inst"} or \code{".ci"}).}
+  \item{verbose}{logical (default \code{FALSE}):  print messages?}
 }
 \details{
   There should be a \code{tests.R} code file which

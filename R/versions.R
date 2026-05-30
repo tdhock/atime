@@ -1,10 +1,12 @@
-glob_find_replace <- function(glob, FIND, REPLACE){
+glob_find_replace <- function(glob, FIND, REPLACE, warn=TRUE){
   some.files <- Sys.glob(glob)
   for(f in some.files){
     l.old <- readLines(f)
     l.new <- gsub(FIND, REPLACE, l.old)
     if(identical(l.old, l.new)){
-      warning(sprintf("no changes to %s when FIND=%s and replace=%s", f, FIND, REPLACE))
+      if(warn)warning(sprintf(
+        "no changes to %s when FIND=%s and replace=%s",
+        f, FIND, REPLACE))
     }else{
       writeLines(l.new, f)
     }
@@ -12,8 +14,8 @@ glob_find_replace <- function(glob, FIND, REPLACE){
 }
 
 pkg.edit.default <- function(old.Package, new.Package, sha, new.pkg.path){
-  pkg_find_replace <- function(glob, FIND, REPLACE){
-    glob_find_replace(file.path(new.pkg.path, glob), FIND, REPLACE)
+  pkg_find_replace <- function(glob, FIND, REPLACE, warn=TRUE){
+    glob_find_replace(file.path(new.pkg.path, glob), FIND, REPLACE, warn)
   }
   pkg_find_replace(
     "DESCRIPTION", 
@@ -26,9 +28,10 @@ pkg.edit.default <- function(old.Package, new.Package, sha, new.pkg.path){
     paste0("R_init_", Package_),
     paste0("R_init_", new.Package_))
   pkg_find_replace(
-    file.path("R", "RcppExports.R"),#.Call(`_binsegRcpp_
+    file.path("R", "RcppExports.R"),
     sprintf("PACKAGE = '%s'", old.Package),
-    sprintf("PACKAGE = '%s'", new.Package))
+    sprintf("PACKAGE = '%s'", new.Package),
+    warn=FALSE)#does not appear if registration used.
   pkg_find_replace(
     "NAMESPACE",
     sprintf('useDynLib\\("?%s"?', Package_),
@@ -122,6 +125,7 @@ atime_versions_install <- function(Package, pkg.path, new.Package.vec, sha.vec, 
             grep_glob("DESCRIPTION", "^Package"),
             grep_glob("NAMESPACE", "^useDynLib"),
             grep_glob(file.path("src", "*.c"), "R_init_"),
+            grep_glob(file.path("R", "RcppExports.R"), "[.]Call"),
             grep_glob(file.path("src", "*.cpp"), "R_init_"))
           src.files <- dir(file.path(new.pkg.path, "src"))
           out[["src/*.so|dll"]] <- grep("(so|dll)$", src.files, value=TRUE)
