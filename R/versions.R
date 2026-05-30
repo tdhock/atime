@@ -125,7 +125,7 @@ atime_versions_install <- function(Package, pkg.path, new.Package.vec, sha.vec, 
             grep_glob("DESCRIPTION", "^Package"),
             grep_glob("NAMESPACE", "^useDynLib"),
             grep_glob(file.path("src", "*.c"), "R_init_"),
-            grep_glob(file.path("R", "RcppExports.R"), "[.]Call"),
+            grep_glob(file.path("R", "RcppExports.R"), "PACKAGE"),
             grep_glob(file.path("src", "*.cpp"), "R_init_"))
           src.files <- dir(file.path(new.pkg.path, "src"))
           out[["src/*.so|dll"]] <- grep("(so|dll)$", src.files, value=TRUE)
