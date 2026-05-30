@@ -13,6 +13,7 @@ Changes in version 2026.5.29
 - atime_versions() runs setup using the HEAD commit (if present).
 - atime_versions() bugfix for Rcpp packages, which must useDynLib(pkg) in NAMESPACE without .registration=TRUE, so we can edit PACKAGE args in R/RcppExports.R.
 - atime() now allows different column names in 1-row result data frames, either in different expressions, or different N.
+- atime() has new default result=NULL, meaning only keep 1-row result data frames.
 
 Changes in version 2026.4.2
 

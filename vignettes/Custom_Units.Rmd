@@ -29,8 +29,8 @@ The output above shows that we can replace the `a` in `foobar` with
 either one or two dashes, and the output is a data frame with one row
 and two columns, including the numeric `nchar` column which we may
 want to visualize as a function of `N`. To do that in the code below,
-we use that function inside a call to `atime` with `result=TRUE`
-(required in order to save the resulting 1 row data frames).
+we use that function inside a call to `atime`
+(default saves any results which are 1 row data frames).
 
 ```{r}
 atime.gsub.list <- atime::atime(
@@ -39,8 +39,7 @@ atime.gsub.list <- atime::atime(
     pattern <- paste(rep(c("a?", "a"), each=N), collapse="")
   },
   constant.replacement=gsub_replace("constant size replacement",subject),
-  linear.replacement=gsub_replace(subject,subject),
-  result=TRUE)
+  linear.replacement=gsub_replace(subject,subject))
 plot(atime.gsub.list)
 ```
 
@@ -113,8 +112,7 @@ an argument to `atime`, along with the other required arguments:
   N=as.integer(10^seq(1, 3, by=0.5)),
   setup=SETUP,
   expr.list=expr.list,
-  seconds.limit=Inf,
-  result=TRUE),
+  seconds.limit=Inf),
   list(SETUP=setup)))
 ```
 
