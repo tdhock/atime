@@ -9,11 +9,11 @@ find_tests_file <- function(pkg.path, tests.dir){
   stop("could not find tests.R file after checking ", paste(checked, collapse=", "))
 }
 
-atime_pkg <- function(pkg.path=".", tests.dir=NULL){
+atime_pkg <- function(pkg.path=".", tests.dir=NULL, verbose=FALSE){
   ## For an example package see
   ## https://github.com/tdhock/binsegRcpp/blob/another-branch/inst/atime/tests.R
   pkg.results <- list()
-  test.info <- atime_pkg_test_info(pkg.path, tests.dir)
+  test.info <- atime_pkg_test_info(pkg.path, tests.dir, verbose=verbose)
   for(Test in names(test.info$test.call)){
     atv.call <- test.info$test.call[[Test]]
     atime.list <- eval(atv.call, test.info)
@@ -291,7 +291,7 @@ default.version.colors <- c(#RColorBrewer::brewer.pal(7, "Dark2")
   Fixed="#A6761D", Fast="#A6761D"
 )
 
-atime_pkg_test_info <- function(pkg.path=".", tests.dir=NULL){
+atime_pkg_test_info <- function(pkg.path=".", tests.dir=NULL, verbose=FALSE){
   if(is.null(tests.dir)){
     tests.dir <- c("inst",".ci")
   }
@@ -372,7 +372,8 @@ atime_pkg_test_info <- function(pkg.path=".", tests.dir=NULL){
   common.args <- list(
     N.env.parent=test.env,
     pkg.path=pkg.path,
-    sha.vec=sha.vec)
+    sha.vec=sha.vec,
+    verbose=verbose)
   test.env$sha.vec <- sha.vec
   test.env$test.list <- inherit_args(test.env$test.list, common.args)
   test.env$test.call <- list()

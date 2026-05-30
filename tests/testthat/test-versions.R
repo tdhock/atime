@@ -35,7 +35,7 @@ if(requireNamespace("ggplot2"))test_that("atime_pkg produces tests_all_facet.png
   unlink(file.path(atime.dir, "*"))
   gert::git_branch_checkout("test-setup-HEAD", force=TRUE, repo=tdir)
   options(repos="http://cloud.r-project.org")#required to check CRAN version.
-  plist <- atime::atime_pkg(tdir, ".ci")
+  plist <- atime::atime_pkg(tdir, ".ci", verbose=TRUE)
   tests.RData <- file.path(atime.dir, "tests.RData")
   (objs <- load(tests.RData))
   ##expect_match(issues.dt$issue, "slower")
@@ -104,7 +104,7 @@ if(requireNamespace("ggplot2"))test_that("atime_pkg produces tests_all_facet.png
   unlink(file.path(inst.atime, "*"))
   gert::git_branch_checkout("priority_queue", force=TRUE, repo=tdir)
   options(repos="http://cloud.r-project.org")#required to check CRAN version.
-  plist <- atime::atime_pkg(tdir)
+  plist <- atime::atime_pkg(tdir, verbose=TRUE)
   tests_all_facet.png <- file.path(inst.atime, "tests_all_facet.png")
   expect_true(file.exists(tests_all_facet.png))
   tests_preview_facet.png <- file.path(inst.atime, "tests_preview_facet.png")
