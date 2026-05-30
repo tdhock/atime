@@ -13,13 +13,14 @@ jobs:
       repo_token: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - uses: actions/checkout@v3
-      - name: Setup r2u
-        uses: eddelbuettel/github-actions/r2u-setup@master
-      - name: install R+ package
+      - name: Setup
+        uses: eddelbuettel/github-actions/r-ci@master
+        with:
+          backend: 'RAPT'
+      - name: Dependencies
+        run: ./run.sh install_deps
+      - name: install package
         run: |
-          /usr/bin/sudo DEBIAN_FRONTEND=noninteractive apt update -y -qq
-          /usr/bin/sudo DEBIAN_FRONTEND=noninteractive apt install tidy texlive texlive-fonts-extra texlive-extra-utils r-recommended r-cran-devtools -y
-          R -e "devtools::install_dev_deps()"
           R CMD build .
           R CMD INSTALL *.tar.gz
           R -e 'litedown::fuse_site("site")'
