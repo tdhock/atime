@@ -87,9 +87,8 @@ if(FALSE){
   ## Clone binsegRcpp, and checkout a branch which has performance tests.
   tdir <- tempfile()
   dir.create(tdir)
-  git2r::clone("https://github.com/tdhock/binsegRcpp", tdir)
-  repo <- git2r::repository(tdir)
-  git2r::checkout(repo, "another-branch")
+  gert::git_clone("https://github.com/tdhock/binsegRcpp", tdir)
+  gert::git_branch_checkout("another-branch", repo=tdir)
 
   ## Run one test.
   info.env <- atime::atime_pkg_test_info(tdir)

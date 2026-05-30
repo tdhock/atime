@@ -18,7 +18,7 @@ viz.data <- function(get.seg.means, data.per.seg=10, penalty=1){
     start=integer(), end=integer(), changes=integer())
   expr.list <- c(
     if(requireNamespace("changepoint"))atime::atime_grid(
-      "changepoint::cpt.mean"=changepoint::cpt.mean(
+       "changepoint::cpt.mean"=changepoint::cpt.mean(
         data.vec, method="PELT", penalty="Manual", pen.value=penalty)),
     if(requireNamespace("binsegRcpp"))atime::atime_grid(
       "binsegRcpp::binseg_normal"=binsegRcpp::binseg_normal(data.vec, N)),
