@@ -35,6 +35,11 @@ atime_pkg_plot_files <- function(out.dir, test.info, pkg.results){
   issue <- character()
   for(Test in names(pkg.results)){
     atime.list <- pkg.results[[Test]]
+    if(is.character(test.info$remove.units)){
+      keep <- !atime.list$unit.col.vec %in% test.info$remove.units
+      ## don't use setdiff() here because it drops names.
+      atime.list$unit.col.vec <- atime.list$unit.col.vec[keep]
+    }
     best.list <- atime::references_best(atime.list)
     ref.dt <- best.list$ref[each.sign.rank==1]
     sec.dt <- best.list$meas[unit=="seconds"]
@@ -309,42 +314,49 @@ atime_pkg_test_info <- function(pkg.path=".", tests.dir=NULL, verbose=FALSE){
   pkg.DESC <- file.path(pkg.path, "DESCRIPTION")
   DESC.mat <- read.dcf(pkg.DESC)
   Package <- DESC.mat[,"Package"]
-  repo <- git2r::repository(pkg.path)
-  HEAD.commit <- git2r::revparse_single(repo, "HEAD")
+  HEAD.commit <- gert::git_commit_id("HEAD",pkg.path)
   sha.vec <- c()
-  HEAD.name <- paste0("HEAD=",git2r::repository_head(repo)$name)
-  sha.vec[[HEAD.name]] <- git2r::sha(HEAD.commit)
-  installed_version <- tryCatch(paste(packageVersion(Package)), error=function(e)NULL)
-  if(!is.null(installed_version)){
-    CRAN.name <- paste0("CRAN=", installed_version)
-    sha.vec[[CRAN.name]] <- ""
-  }else{
-    CRAN.name <- NA_character_
-  }
+  HEAD.name <- paste0("HEAD=", gert::git_branch(pkg.path))
+  sha.vec[[HEAD.name]] <- HEAD.commit
+  installed_version <- tryCatch(paste(packageVersion(Package)), error=function(e)"(not installed)")
   ap <- utils::available.packages()
-  CRAN_version <- ap[Package,"Version"]
-  if(!identical(CRAN_version, installed_version)){
-    warning(sprintf(
-      "CRAN version=%s but installed version=%s fix via install.packages('%s')",
-      CRAN_version, installed_version, Package))
+  installed_name <- "installed"
+  if(Package %in% rownames(ap)){
+    CRAN_version <- ap[Package,"Version"]
+    if(identical(CRAN_version, installed_version)){
+      installed_name <- "CRAN"
+    }else{
+      warning(sprintf(
+        "CRAN version=%s but installed version=%s fix via install.packages('%s')",
+        CRAN_version, installed_version, Package))
+    }
   }
-  base.ref <- Sys.getenv("GITHUB_BASE_REF", "master")
+  if(identical(installed_version, "(not installed)")){
+    CRAN.name <- NA_character_
+  }else{
+    CRAN.name <- paste0(installed_name, "=", installed_version)
+    sha.vec[[CRAN.name]] <- ""
+  }
+  if(is.null(test.env$base.ref)){
+    test.env$base.ref <- Sys.getenv("GITHUB_BASE_REF", "master")
+  }
   base.commit <- tryCatch({
-    git2r::revparse_single(repo, base.ref)
+    gert::git_commit_info(test.env$base.ref, pkg.path)$id
   }, error=function(e){
     NULL
   })
-  base.name <- paste0("base=",base.ref)
-  if(git2r::is_commit(base.commit)){
-    add_if_new <- function(name, commit.obj){
-      sha <- git2r::sha(commit.obj)
-      if(!sha %in% sha.vec){
-        sha.vec[[name]] <<- sha
+  base.name <- paste0("base=", test.env$base.ref)
+  if(is.character(base.commit)){
+    maybe.new.list <- list()
+    maybe.new.list[[base.name]] <- base.commit
+    maybe.new.list[["merge-base"]] <- gert::git_merge_find_base(
+      base.commit, "HEAD", pkg.path)
+    for(maybe.new.name in names(maybe.new.list)){
+      maybe.new.sha <- maybe.new.list[[maybe.new.name]]
+      if(!maybe.new.sha %in% sha.vec){
+        sha.vec[[maybe.new.name]] <- maybe.new.sha
       }
     }
-    add_if_new(base.name, base.commit)
-    mb.commit <- git2r::merge_base(HEAD.commit, base.commit)
-    add_if_new("merge-base", mb.commit)
   }
   abbrev2name <- c(
     HEAD=HEAD.name,

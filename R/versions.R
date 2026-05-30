@@ -60,11 +60,10 @@ atime_versions_install <- function(Package, pkg.path, new.Package.vec, sha.vec, 
     ## on GH actions windows tempfile() gives C:\Users\RUNNER~1\AppData\Local\Temp\Rtmpc9T5Us/working_dir\Rtmpu23suf\file5d41af35765
     tdir <- normalizePath(tempfile(), mustWork=FALSE)
     dir.create(tdir)
-    ## pkg.path may be path/to/repo/pkg
+    ## pkg.path may be in a sub-dir of git repo: path/to/repo/pkg
     norm.pkg.path <- normalizePath(pkg.path)
-    orig.repo <- git2r::repository(norm.pkg.path)
     ## path/to/repo root without trailing /.git
-    orig.repo.path <- normalizePath(dirname(orig.repo$path))
+    orig.repo.path <- normalizePath(gert::git_info(pkg.path)$path)
     ## /pkg
     pkg.suffix.in.repo <- sub(orig.repo.path, "", norm.pkg.path, fixed=TRUE)
     for(new.i in which(new.not.installed)){
@@ -81,14 +80,21 @@ atime_versions_install <- function(Package, pkg.path, new.Package.vec, sha.vec, 
       }else{
         new.repo.path <- file.path(tdir, new.Package)
         unlink(new.repo.path, recursive=TRUE, force=TRUE)
-        repo <- git2r::clone(orig.repo.path, new.repo.path, progress=FALSE)
+        gert::git_clone(orig.repo.path, new.repo.path)
+        gert::git_branch_create(#and checkout
+          "atime-versions-testing", sha, repo=new.repo.path)
+        if(TRUE){
+          old.wd <- setwd(new.repo.path)
+          system("git submodule update --init --recursive")
+          setwd(old.wd)
+        }else{
+          submodule_tib <- gert::git_submodule_list(new.repo.path)
+          for(sub.i in seq_along(submodule_tib$name)){
+            gert::git_submodule_init(
+              submodule_tib$name[sub.i], overwrite=TRUE, repo=new.repo.path)
+          }
+        }
         new.pkg.path <- paste0(new.repo.path, pkg.suffix.in.repo)
-        tryCatch(
-          git2r::checkout(repo, branch=sha, force=TRUE),
-          error=function(e)stop(
-            e, " when trying to checkout ", sha))
-        ## before editing and installing, make sure directory has sha
-        ## suffix, for windows checks.
         unlink(file.path(new.pkg.path, "src", "*.o"))
         pkg.edit.fun(
           old.Package=Package, 
