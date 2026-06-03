@@ -393,7 +393,7 @@ get_test_args <- function(){
   could.copy <- Reduce(intersect, name.vecs)
   mc <- as.list(match.call(pfun, sys.call(s.parent))[-1])
   common.names <- intersect(names(mc), could.copy)
-  possible.uneval <- c("setup","expr")
+  possible.uneval <- c("setup","expr","setup.version")
   uneval.names <- intersect(common.names, possible.uneval)
   eval.names <- setdiff(common.names, possible.uneval)
   p.frame <- parent.frame()
@@ -402,11 +402,11 @@ get_test_args <- function(){
   test.args
 }
 
-atime_test <- function(N, setup, expr, times, seconds.limit, verbose, pkg.edit.fun, result, ...){
+atime_test <- function(N, setup, expr, times, seconds.limit, verbose, pkg.edit.fun, result, setup.version, ...){
   c(get_test_args(), ...)
 }
 
-atime_test_list <- function(N, setup, expr, times, seconds.limit, verbose, pkg.edit.fun, result, tests=NULL, ...){
+atime_test_list <- function(N, setup, expr, times, seconds.limit, verbose, pkg.edit.fun, result, setup.version, tests=NULL, ...){
   common.args <- get_test_args()
   L <- c(tests, list(...))
   inherit_args(L, common.args)
