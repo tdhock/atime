@@ -302,7 +302,7 @@ test_that("errors for predict method", {
   }, "argument names should be unique, problem(count): foo(3), kilobytes(2)", fixed=TRUE)
 })
 
-test_that("atime_versions_exprs error when called with setup", {
+test_that("atime_versions_exprs error when called with N", {
   expect_error({
     atime::atime_versions_exprs(
       pkg.path="~/R/data.table",
@@ -317,7 +317,7 @@ test_that("atime_versions_exprs error when called with setup", {
       "Before"="be2f72e6f5c90622fe72e1c315ca05769a9dc854",
       "Regression"="e793f53466d99f86e70fc2611b708ae8c601a451", 
       "Fixed"="58409197426ced4714af842650b0cc3b9e2cb842") 
-  }, "each ... argument value and sha.vec element must be a string (package version, length=1, not NA), problems: N, setup", fixed=TRUE)
+  }, "each ... argument value and sha.vec element must be a string (package version, length=1, not NA), problems: N", fixed=TRUE)
 })
 
 test_that("atime_versions_exprs error when sha.vec element not string", {
