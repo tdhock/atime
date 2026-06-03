@@ -51,10 +51,16 @@
   A list of expressions, one for
   each version, created by replacing \code{PKG::}
   in \code{expr} with \code{PKG.SHA::}.
+  If \code{setup.version} is used, then each expression has an attribute
+  named \code{setup.version}, an version-specific expression to run
+  prior to timings.
   This list can be used as \code{expr.list} argument of \code{atime()},
   instead of writing code like
   \code{atime(name1=Package.SHA1::fun(argA, argB),
     name2=Package.SHA2::fun(argA, argB))}.
+  If there is a HEAD commit, then the list has attributes \code{Package}
+  and \code{new.Package} which are used in \code{\link{atime_versions}}
+  to modify \code{setup} so that it runs using the HEAD version.
 }
 
 \author{Toby Dylan Hocking}
