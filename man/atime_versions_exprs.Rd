@@ -9,7 +9,8 @@
 \usage{atime_versions_exprs(
  pkg.path, expr, sha.vec=NULL,
  verbose=FALSE,
- pkg.edit.fun=pkg.edit.default, ...)}
+ pkg.edit.fun=pkg.edit.default,
+ setup.version=NULL, ...)}
 \arguments{
   \item{pkg.path}{Path to git repo containing R package.}
   \item{expr}{
@@ -30,6 +31,8 @@
     \code{PKG.SHA}, default works with Rcpp packages, but does not work
     with all packages. For an example of a custom package editing
     function, see the atime vignette about data.table.}
+  \item{setup.version}{expression to evaluate for each version, prior to
+  timings.}
   \item{\dots}{named versions.}
 }
 \details{

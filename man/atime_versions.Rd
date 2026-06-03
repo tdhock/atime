@@ -8,7 +8,7 @@ atime_versions(
  pkg.path, N, setup, expr, sha.vec=NULL,
  times=10, seconds.limit=0.01, verbose=FALSE,
  pkg.edit.fun=pkg.edit.default, result=FALSE,
- N.env.parent=NULL,
+ N.env.parent=NULL, setup.version=NULL,
  ...)
 }
 \arguments{
@@ -45,6 +45,8 @@ atime_versions(
   \item{result}{logical or function, passed to \code{\link{atime}}.}
   \item{N.env.parent}{environment to use as parent of environment
   created for each data size N, or NULL to use default parent env.}
+  \item{setup.version}{expression to evaluate for each version, prior to
+  timings.}
   \item{\dots}{named versions.}
 }
 \details{
