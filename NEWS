@@ -6,6 +6,7 @@ Changes in version 2026.5.30
 - .ci/atime/tests.R can define base.ref="main" for repos where the default branch is not named master.
 - .ci/atime/tests.R can define remove.units="kilobytes" for repos where memory benchmarking results should be hidden.
 - atime_pkg_test_info() bugfix when pkg is not on CRAN.
+- atime_versions(), atime_versions_exprs(), atime_test(), and atime_test_list() gain setup.version argument, an expression that is evaluated for each version, prior to running timings.
 
 Changes in version 2026.5.29
 
