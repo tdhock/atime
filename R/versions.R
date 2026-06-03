@@ -143,9 +143,9 @@ atime_versions_install <- function(Package, pkg.path, new.Package.vec, sha.vec, 
   }#any to install
 }
 
-atime_versions <- function(pkg.path, N=default_N(), setup, expr, sha.vec=NULL, times=10, seconds.limit=0.01, verbose=FALSE, pkg.edit.fun=pkg.edit.default, result=FALSE, N.env.parent=NULL, ...){
+atime_versions <- function(pkg.path, N=default_N(), setup, expr, sha.vec=NULL, times=10, seconds.limit=0.01, verbose=FALSE, pkg.edit.fun=pkg.edit.default, result=FALSE, N.env.parent=NULL, setup.version=NULL, ...){
   ver.args <- list(
-    pkg.path, substitute(expr), sha.vec, verbose, pkg.edit.fun, ...)
+    pkg.path, substitute(expr), sha.vec, verbose, pkg.edit.fun, substitute(setup.version), ...)
   install.seconds <- system.time({
     ver.exprs <- do.call(atime_versions_exprs, ver.args)
   })[["elapsed"]]
@@ -199,7 +199,7 @@ expr_pkg <- function(expr, Package, new.Package, check=FALSE){
   str2lang(paste(new.lines, collapse="\n"))
 }
 
-atime_versions_exprs <- function(pkg.path, expr, sha.vec=NULL, verbose=FALSE, pkg.edit.fun=pkg.edit.default, ...){
+atime_versions_exprs <- function(pkg.path, expr, sha.vec=NULL, verbose=FALSE, pkg.edit.fun=pkg.edit.default, setup.version=NULL, ...){
   formal.names <- names(formals())
   mc.args <- as.list(match.call()[-1])
   dots.vec <- mc.args[!names(mc.args) %in% formal.names]
@@ -224,7 +224,12 @@ atime_versions_exprs <- function(pkg.path, expr, sha.vec=NULL, verbose=FALSE, pk
       attr(a.args, "Package") <- Package
       attr(a.args, "new.Package") <- new.Package
     }
-    a.args[[commit.name]] <- expr_pkg(sub.expr, Package, new.Package, check=TRUE)
+    v.expr <- expr_pkg(sub.expr, Package, new.Package, check=TRUE)
+    sub.ver <- substitute(setup.version)
+    if(!is.null(sub.ver)){
+      attr(v.expr, "setup.version") <- expr_pkg(sub.ver, Package, new.Package, check=TRUE)
+    }
+    a.args[[commit.name]] <- v.expr
     atime_versions_install(
       Package, normalizePath(pkg.path),
       new.Package.vec, SHA.vec, verbose, pkg.edit.fun)
