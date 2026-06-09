@@ -51,7 +51,7 @@ atime_versions_remove <- function(Package){
   code
 }
 
-atime_versions_install <- function(Package, pkg.path, new.Package.vec, sha.vec, verbose, pkg.edit.fun=pkg.edit.default){
+atime_versions_install <- function(Package, repo.path, pkg.path, new.Package.vec, sha.vec, verbose, pkg.edit.fun=pkg.edit.default){
   first.lib <- .libPaths()[1]
   DESC.in.lib <- Sys.glob(file.path(first.lib, "*", "DESCRIPTION"))
   pkgs.in.lib <- basename(dirname(DESC.in.lib))
@@ -63,7 +63,7 @@ atime_versions_install <- function(Package, pkg.path, new.Package.vec, sha.vec, 
     ## pkg.path may be in a sub-dir of git repo: path/to/repo/pkg
     norm.pkg.path <- normalizePath(pkg.path)
     ## path/to/repo root without trailing /.git
-    orig.repo.path <- normalizePath(gert::git_info(pkg.path)$path)
+    orig.repo.path <- normalizePath(gert::git_info(repo.path)$path)
     ## /pkg
     pkg.suffix.in.repo <- sub(orig.repo.path, "", norm.pkg.path, fixed=TRUE)
     for(new.i in which(new.not.installed)){
@@ -143,9 +143,9 @@ atime_versions_install <- function(Package, pkg.path, new.Package.vec, sha.vec, 
   }#any to install
 }
 
-atime_versions <- function(pkg.path, N=default_N(), setup, expr, sha.vec=NULL, times=10, seconds.limit=0.01, verbose=FALSE, pkg.edit.fun=pkg.edit.default, result=FALSE, N.env.parent=NULL, setup.version=NULL, ...){
+atime_versions <- function(repo.path, pkg.path, N=default_N(), setup, expr, sha.vec=NULL, times=10, seconds.limit=0.01, verbose=FALSE, pkg.edit.fun=pkg.edit.default, result=FALSE, N.env.parent=NULL, setup.version=NULL, ...){
   ver.args <- list(
-    pkg.path, substitute(expr), sha.vec, verbose, pkg.edit.fun, substitute(setup.version), ...)
+    repo.path, pkg.path, substitute(expr), sha.vec, verbose, pkg.edit.fun, substitute(setup.version), ...)
   install.seconds <- system.time({
     ver.exprs <- do.call(atime_versions_exprs, ver.args)
   })[["elapsed"]]
@@ -199,10 +199,23 @@ expr_pkg <- function(expr, Package, new.Package, check=FALSE){
   str2lang(paste(new.lines, collapse="\n"))
 }
 
-atime_versions_exprs <- function(pkg.path, expr, sha.vec=NULL, verbose=FALSE, pkg.edit.fun=pkg.edit.default, setup.version=NULL, ...){
+atime_versions_exprs <- function(repo.path, pkg.path, expr, sha.vec=NULL, verbose=FALSE, pkg.edit.fun=pkg.edit.default, setup.version=NULL, ...){
   formal.names <- names(formals())
   mc.args <- as.list(match.call()[-1])
   dots.vec <- mc.args[!names(mc.args) %in% formal.names]
+  if(missing(repo.path)){
+    if(missing(pkg.path)){
+      stop("must specify repo.path and/or pkg.path")
+    }else{
+      repo.path <- pkg.path
+    }
+  }else{
+    if(missing(pkg.path)){
+      pkg.path <- repo.path
+    }else{
+      pkg.path <- file.path(repo.path, pkg.path)
+    }
+  }
   SHA.vec <- get_sha_vec(sha.vec, dots.vec)
   pkg.DESC <- file.path(pkg.path, "DESCRIPTION")
   if(!file.exists(pkg.DESC)){
@@ -231,7 +244,7 @@ atime_versions_exprs <- function(pkg.path, expr, sha.vec=NULL, verbose=FALSE, pk
     }
     a.args[[commit.name]] <- v.expr
     atime_versions_install(
-      Package, normalizePath(pkg.path),
+      Package, normalizePath(repo.path), normalizePath(pkg.path),
       new.Package.vec, SHA.vec, verbose, pkg.edit.fun)
   }
   a.args
