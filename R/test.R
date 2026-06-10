@@ -9,11 +9,11 @@ find_tests_file <- function(pkg.path, tests.dir){
   stop("could not find tests.R file after checking ", paste(checked, collapse=", "))
 }
 
-atime_pkg <- function(pkg.path=".", tests.dir=NULL, verbose=FALSE){
+atime_pkg <- function(repo.path=NULL, pkg.path=NULL, tests.dir=NULL, verbose=FALSE){
   ## For an example package see
   ## https://github.com/tdhock/binsegRcpp/blob/another-branch/inst/atime/tests.R
   pkg.results <- list()
-  test.info <- atime_pkg_test_info(pkg.path, tests.dir, verbose=verbose)
+  test.info <- atime_pkg_test_info(repo.path, pkg.path, tests.dir, verbose=verbose)
   for(Test in names(test.info$test.call)){
     atv.call <- test.info$test.call[[Test]]
     atime.list <- eval(atv.call, test.info)
@@ -291,12 +291,30 @@ default.version.colors <- c(#RColorBrewer::brewer.pal(7, "Dark2")
   Fixed="#A6761D", Fast="#A6761D"
 )
 
-atime_pkg_test_info <- function(pkg.path=".", tests.dir=NULL, verbose=FALSE){
+get_repo_pkg <- function(repo.path, pkg.path){
+  if(is.null(repo.path)){
+    if(is.null(pkg.path)){
+      stop("must specify repo.path and/or pkg.path")
+    }else{
+      repo.path <- pkg.path
+    }
+  }else{
+    if(is.null(pkg.path)){
+      pkg.path <- repo.path
+    }else{
+      pkg.path <- file.path(repo.path, pkg.path)
+    }
+  }
+  list(repo.path=repo.path, pkg.path=pkg.path)
+}
+
+atime_pkg_test_info <- function(repo.path=NULL, pkg.path=NULL, tests.dir=NULL, verbose=FALSE){
   if(is.null(tests.dir)){
     tests.dir <- c("inst",".ci")
   }
   test.env <- new.env()
-  test.env$tests.R <- find_tests_file(pkg.path, tests.dir)
+  path.list <- get_repo_pkg(repo.path, pkg.path)
+  test.env$tests.R <- find_tests_file(path.list$pkg.path, tests.dir)
   tests.parsed <- parse(test.env$tests.R)
   eval(tests.parsed, test.env)
   default.list <- list(
@@ -311,12 +329,12 @@ atime_pkg_test_info <- function(pkg.path=".", tests.dir=NULL, verbose=FALSE){
       test.env[[var.name]] <- default.list[[var.name]]
     }
   }
-  pkg.DESC <- file.path(pkg.path, "DESCRIPTION")
+  pkg.DESC <- file.path(path.list$pkg.path, "DESCRIPTION")
   DESC.mat <- read.dcf(pkg.DESC)
   Package <- DESC.mat[,"Package"]
-  HEAD.commit <- gert::git_commit_id("HEAD",pkg.path)
+  HEAD.commit <- gert::git_commit_id("HEAD", path.list$repo.path)
   sha.vec <- c()
-  HEAD.name <- paste0("HEAD=", gert::git_branch(pkg.path))
+  HEAD.name <- paste0("HEAD=", gert::git_branch(path.list$repo.path))
   sha.vec[[HEAD.name]] <- HEAD.commit
   installed_version <- tryCatch(paste(packageVersion(Package)), error=function(e)"(not installed)")
   ap <- utils::available.packages()
@@ -341,7 +359,7 @@ atime_pkg_test_info <- function(pkg.path=".", tests.dir=NULL, verbose=FALSE){
     test.env$base.ref <- Sys.getenv("GITHUB_BASE_REF", "master")
   }
   base.commit <- tryCatch({
-    gert::git_commit_info(test.env$base.ref, pkg.path)$id
+    gert::git_commit_info(test.env$base.ref, path.list$repo.path)$id
   }, error=function(e){
     NULL
   })
@@ -350,7 +368,7 @@ atime_pkg_test_info <- function(pkg.path=".", tests.dir=NULL, verbose=FALSE){
     maybe.new.list <- list()
     maybe.new.list[[base.name]] <- base.commit
     maybe.new.list[["merge-base"]] <- gert::git_merge_find_base(
-      base.commit, "HEAD", pkg.path)
+      base.commit, "HEAD", path.list$repo.path)
     for(maybe.new.name in names(maybe.new.list)){
       maybe.new.sha <- maybe.new.list[[maybe.new.name]]
       if(!maybe.new.sha %in% sha.vec){
@@ -371,7 +389,8 @@ atime_pkg_test_info <- function(pkg.path=".", tests.dir=NULL, verbose=FALSE){
     names(test.env$version.colors))
   common.args <- list(
     N.env.parent=test.env,
-    pkg.path=pkg.path,
+    repo.path=path.list$repo.path,
+    pkg.path=path.list$pkg.path,
     sha.vec=sha.vec,
     verbose=verbose)
   test.env$sha.vec <- sha.vec

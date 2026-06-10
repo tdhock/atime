@@ -143,7 +143,7 @@ atime_versions_install <- function(Package, repo.path, pkg.path, new.Package.vec
   }#any to install
 }
 
-atime_versions <- function(repo.path, pkg.path, N=default_N(), setup, expr, sha.vec=NULL, times=10, seconds.limit=0.01, verbose=FALSE, pkg.edit.fun=pkg.edit.default, result=FALSE, N.env.parent=NULL, setup.version=NULL, ...){
+atime_versions <- function(repo.path=NULL, pkg.path=NULL, N=default_N(), setup, expr, sha.vec=NULL, times=10, seconds.limit=0.01, verbose=FALSE, pkg.edit.fun=pkg.edit.default, result=FALSE, N.env.parent=NULL, setup.version=NULL, ...){
   ver.args <- list(
     repo.path, pkg.path, substitute(expr), sha.vec, verbose, pkg.edit.fun, substitute(setup.version), ...)
   install.seconds <- system.time({
@@ -199,23 +199,10 @@ expr_pkg <- function(expr, Package, new.Package, check=FALSE){
   str2lang(paste(new.lines, collapse="\n"))
 }
 
-atime_versions_exprs <- function(repo.path, pkg.path, expr, sha.vec=NULL, verbose=FALSE, pkg.edit.fun=pkg.edit.default, setup.version=NULL, ...){
+atime_versions_exprs <- function(repo.path=NULL, pkg.path=NULL, expr, sha.vec=NULL, verbose=FALSE, pkg.edit.fun=pkg.edit.default, setup.version=NULL, ...){
   formal.names <- names(formals())
   mc.args <- as.list(match.call()[-1])
   dots.vec <- mc.args[!names(mc.args) %in% formal.names]
-  if(missing(repo.path)){
-    if(missing(pkg.path)){
-      stop("must specify repo.path and/or pkg.path")
-    }else{
-      repo.path <- pkg.path
-    }
-  }else{
-    if(missing(pkg.path)){
-      pkg.path <- repo.path
-    }else{
-      pkg.path <- file.path(repo.path, pkg.path)
-    }
-  }
   SHA.vec <- get_sha_vec(sha.vec, dots.vec)
   pkg.DESC <- file.path(pkg.path, "DESCRIPTION")
   if(!file.exists(pkg.DESC)){
