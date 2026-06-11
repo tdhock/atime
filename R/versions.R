@@ -51,7 +51,19 @@ atime_versions_remove <- function(Package){
   code
 }
 
-atime_versions_install <- function(Package, pkg.path, new.Package.vec, sha.vec, verbose, pkg.edit.fun=pkg.edit.default){
+R_CMD_INSTALL <- function(new.pkg.path){
+  INSTALL.cmd <- paste(
+    shQuote(file.path(
+      Sys.getenv("R_HOME"),
+      "bin",
+      "R")),
+    'CMD INSTALL -l',
+    shQuote(.libPaths()[1]),
+    shQuote(new.pkg.path))
+  system(INSTALL.cmd)
+}
+
+atime_versions_install <- function(Package, pkg.path, new.Package.vec, sha.vec, verbose, pkg.edit.fun=pkg.edit.default, checkout.path=pkg.path){
   first.lib <- .libPaths()[1]
   DESC.in.lib <- Sys.glob(file.path(first.lib, "*", "DESCRIPTION"))
   pkgs.in.lib <- basename(dirname(DESC.in.lib))
@@ -60,13 +72,18 @@ atime_versions_install <- function(Package, pkg.path, new.Package.vec, sha.vec, 
     ## on GH actions windows tempfile() gives C:\Users\RUNNER~1\AppData\Local\Temp\Rtmpc9T5Us/working_dir\Rtmpu23suf\file5d41af35765
     tdir <- normalizePath(tempfile(), mustWork=FALSE)
     dir.create(tdir)
-    ## pkg.path may be path/to/repo/pkg
-    norm.pkg.path <- normalizePath(pkg.path)
-    orig.repo <- git2r::repository(norm.pkg.path)
+    ## pkg.path may be in a sub-dir of git repo: path/to/repo/pkg
     ## path/to/repo root without trailing /.git
-    orig.repo.path <- normalizePath(dirname(orig.repo$path))
+    orig.repo.path <- normalizePath(gert::git_info(pkg.path)$path)
     ## /pkg
-    pkg.suffix.in.repo <- sub(orig.repo.path, "", norm.pkg.path, fixed=TRUE)
+    sub_or_stop <- function(x){
+      nx <- normalizePath(x)
+      out <- sub(orig.repo.path, "", nx, fixed=TRUE)
+      if(out==x)stop(sprintf("repo=%s should be the first part of %s", orig.repo.path, nx))
+      out
+    }
+    pkg.suffix.in.repo <- sub_or_stop(pkg.path)
+    checkout.suffix.in.repo <- sub_or_stop(checkout.path)
     for(new.i in which(new.not.installed)){
       sha <- sha.vec[[new.i]]
       new.Package <- new.Package.vec[[new.i]]
@@ -81,31 +98,21 @@ atime_versions_install <- function(Package, pkg.path, new.Package.vec, sha.vec, 
       }else{
         new.repo.path <- file.path(tdir, new.Package)
         unlink(new.repo.path, recursive=TRUE, force=TRUE)
-        repo <- git2r::clone(orig.repo.path, new.repo.path, progress=FALSE)
+        file.copy(orig.repo.path, tdir, recursive=TRUE)
+        file.rename(file.path(tdir, basename(orig.repo.path)), new.repo.path)
+        new.checkout.path <- paste0(new.repo.path, checkout.suffix.in.repo)
         new.pkg.path <- paste0(new.repo.path, pkg.suffix.in.repo)
-        tryCatch(
-          git2r::checkout(repo, branch=sha, force=TRUE),
-          error=function(e)stop(
-            e, " when trying to checkout ", sha))
-        ## before editing and installing, make sure directory has sha
-        ## suffix, for windows checks.
+        gert::git_branch_create(#and checkout
+          "atime-versions-testing", sha, repo=new.checkout.path)
         unlink(file.path(new.pkg.path, "src", "*.o"))
         pkg.edit.fun(
           old.Package=Package, 
           new.Package=new.Package,
           sha=sha, 
           new.pkg.path=new.pkg.path)
-        INSTALL.cmd <- paste(
-          shQuote(file.path(
-            Sys.getenv("R_HOME"),
-            "bin",
-            "R")),
-          'CMD INSTALL -l',
-          shQuote(.libPaths()[1]),
-          shQuote(new.pkg.path))
-        status.int <- system(INSTALL.cmd)
+        status.int <- R_CMD_INSTALL(new.pkg.path)
         if(status.int != 0){
-          stop(INSTALL.cmd, " returned error status code ", status.int)
+          stop("R CMD INSTALL returned error status code ", status.int)
         }
         if(verbose){
           cat("\nPackage info after editing and installation:\n")
@@ -137,9 +144,9 @@ atime_versions_install <- function(Package, pkg.path, new.Package.vec, sha.vec, 
   }#any to install
 }
 
-atime_versions <- function(pkg.path, N=default_N(), setup, expr, sha.vec=NULL, times=10, seconds.limit=0.01, verbose=FALSE, pkg.edit.fun=pkg.edit.default, result=FALSE, N.env.parent=NULL, ...){
+atime_versions <- function(pkg.path, N=default_N(), setup, expr, sha.vec=NULL, times=10, seconds.limit=0.01, verbose=FALSE, pkg.edit.fun=pkg.edit.default, result=FALSE, N.env.parent=NULL, setup.version=NULL, checkout.path=pkg.path, ...){
   ver.args <- list(
-    pkg.path, substitute(expr), sha.vec, verbose, pkg.edit.fun, ...)
+    pkg.path, substitute(expr), sha.vec, verbose, pkg.edit.fun, substitute(setup.version), checkout.path, ...)
   install.seconds <- system.time({
     ver.exprs <- do.call(atime_versions_exprs, ver.args)
   })[["elapsed"]]
@@ -193,7 +200,7 @@ expr_pkg <- function(expr, Package, new.Package, check=FALSE){
   str2lang(paste(new.lines, collapse="\n"))
 }
 
-atime_versions_exprs <- function(pkg.path, expr, sha.vec=NULL, verbose=FALSE, pkg.edit.fun=pkg.edit.default, ...){
+atime_versions_exprs <- function(pkg.path, expr, sha.vec=NULL, verbose=FALSE, pkg.edit.fun=pkg.edit.default, setup.version=NULL, checkout.path=pkg.path, ...){
   formal.names <- names(formals())
   mc.args <- as.list(match.call()[-1])
   dots.vec <- mc.args[!names(mc.args) %in% formal.names]
@@ -218,10 +225,16 @@ atime_versions_exprs <- function(pkg.path, expr, sha.vec=NULL, verbose=FALSE, pk
       attr(a.args, "Package") <- Package
       attr(a.args, "new.Package") <- new.Package
     }
-    a.args[[commit.name]] <- expr_pkg(sub.expr, Package, new.Package, check=TRUE)
+    v.expr <- expr_pkg(sub.expr, Package, new.Package, check=TRUE)
+    sub.ver <- substitute(setup.version)
+    if(!is.null(sub.ver)){
+      attr(v.expr, "setup.version") <- expr_pkg(sub.ver, Package, new.Package, check=TRUE)
+    }
+    a.args[[commit.name]] <- v.expr
     atime_versions_install(
       Package, normalizePath(pkg.path),
-      new.Package.vec, SHA.vec, verbose, pkg.edit.fun)
+      new.Package.vec, SHA.vec, verbose, pkg.edit.fun,
+      checkout.path)
   }
   a.args
 }

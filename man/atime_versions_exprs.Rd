@@ -9,7 +9,8 @@
 \usage{atime_versions_exprs(
  pkg.path, expr, sha.vec=NULL,
  verbose=FALSE,
- pkg.edit.fun=pkg.edit.default, ...)}
+ pkg.edit.fun=pkg.edit.default,
+ setup.version=NULL, ...)}
 \arguments{
   \item{pkg.path}{Path to git repo containing R package.}
   \item{expr}{
@@ -30,6 +31,8 @@
     \code{PKG.SHA}, default works with Rcpp packages, but does not work
     with all packages. For an example of a custom package editing
     function, see the atime vignette about data.table.}
+  \item{setup.version}{expression to evaluate for each version, prior to
+  timings.}
   \item{\dots}{named versions.}
 }
 \details{
@@ -38,7 +41,7 @@
   Each version should be either \code{""} (to use currently installed
   version of package, or if missing, install most recent
   version from CRAN) or a SHA1 hash, which is passed as branch
-  arg to \code{git2r::checkout}; version names used to identify/interpret
+  arg to git checkout; version names used to identify/interpret
   the output/plots.
   Each version is installed as a separate package
   (to whatever R library is first on \code{.libPaths()}),
@@ -48,10 +51,16 @@
   A list of expressions, one for
   each version, created by replacing \code{PKG::}
   in \code{expr} with \code{PKG.SHA::}.
+  If \code{setup.version} is used, then each expression has an attribute
+  named \code{setup.version}, an version-specific expression to run
+  prior to timings.
   This list can be used as \code{expr.list} argument of \code{atime()},
   instead of writing code like
   \code{atime(name1=Package.SHA1::fun(argA, argB),
     name2=Package.SHA2::fun(argA, argB))}.
+  If there is a HEAD commit, then the list has attributes \code{Package}
+  and \code{new.Package} which are used in \code{\link{atime_versions}}
+  to modify \code{setup} so that it runs using the HEAD version.
 }
 
 \author{Toby Dylan Hocking}
@@ -63,7 +72,7 @@ if(FALSE){
   if(requireNamespace("changepoint")){
     tdir <- tempfile()
     dir.create(tdir)
-    git2r::clone("https://github.com/tdhock/binsegRcpp", tdir)
+    gert::git_clone("https://github.com/tdhock/binsegRcpp", tdir)
     expr.list <- atime::atime_versions_exprs(
       pkg.path=tdir,
       expr=binsegRcpp::binseg_normal(data.vec, max.segs),

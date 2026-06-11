@@ -10,15 +10,12 @@
 \usage{
 atime_test(
   N, setup, expr, times, seconds.limit, verbose,
-  pkg.edit.fun, result, ...)
+  pkg.edit.fun, result, setup.version, ...)
 }
 \arguments{
   \item{N}{numeric vector of data sizes to vary.}
   \item{setup}{
-    expression to evaluate for every data size, before timings.
-    In contrast to \code{expr},
-    no replacement of \code{Package:} is performed.
-  }
+    expression to evaluate for every data size, before timings, using HEAD.}
   \item{expr}{
     code with package double-colon prefix, for example
     \code{PKG::fun(argA, argB)}, where PKG is the name of the
@@ -38,6 +35,8 @@ atime_test(
     installation, should typically replace instances of PKG with
     PKG.SHA, default works with Rcpp packages.}
   \item{result}{logical, save results? (default FALSE)}
+  \item{setup.version}{expression to evaluate for each version, prior to
+  timings.}
   \item{\dots}{named versions.}
 }
 \value{

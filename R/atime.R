@@ -27,6 +27,8 @@ run_bench_mark <- function(times, sub.elist, N.env, result){
   N.env$result.list <- list()
   for(expr.name in names(sub.elist)){
     expr <- sub.elist[[expr.name]]
+    v.expr <- attr(expr, "setup.version")
+    eval(v.expr, N.env)
     m.list[expr.name] <- list(if(result$keep){
       substitute(
         result.list[NAME] <- list(FUN(EXPR)),
