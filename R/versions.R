@@ -112,7 +112,7 @@ atime_versions_install <- function(Package, pkg.path, new.Package.vec, sha.vec, 
           new.pkg.path=new.pkg.path)
         status.int <- R_CMD_INSTALL(new.pkg.path)
         if(status.int != 0){
-          stop(INSTALL.cmd, " returned error status code ", status.int)
+          stop("R CMD INSTALL returned error status code ", status.int)
         }
         if(verbose){
           cat("\nPackage info after editing and installation:\n")
