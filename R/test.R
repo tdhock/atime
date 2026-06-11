@@ -299,6 +299,9 @@ atime_pkg_test_info <- function(pkg.path=".", tests.dir=NULL, verbose=FALSE){
   test.env$tests.R <- find_tests_file(pkg.path, tests.dir)
   tests.parsed <- parse(test.env$tests.R)
   eval(tests.parsed, test.env)
+  checkout.path <- if(is.character(test.env$checkout.path.relative)){
+    file.path(pkg.path, test.env$checkout.path.relative)
+  }else pkg.path
   default.list <- list(
     pval.thresh=0.01,
     N.tests.preview=4,
@@ -314,9 +317,9 @@ atime_pkg_test_info <- function(pkg.path=".", tests.dir=NULL, verbose=FALSE){
   pkg.DESC <- file.path(pkg.path, "DESCRIPTION")
   DESC.mat <- read.dcf(pkg.DESC)
   Package <- DESC.mat[,"Package"]
-  HEAD.commit <- gert::git_commit_id("HEAD",pkg.path)
+  HEAD.commit <- gert::git_commit_id("HEAD", repo=checkout.path)
   sha.vec <- c()
-  HEAD.name <- paste0("HEAD=", gert::git_branch(pkg.path))
+  HEAD.name <- paste0("HEAD=", gert::git_branch(repo=checkout.path))
   sha.vec[[HEAD.name]] <- HEAD.commit
   installed_version <- tryCatch(paste(packageVersion(Package)), error=function(e)"(not installed)")
   ap <- utils::available.packages()
@@ -335,13 +338,13 @@ atime_pkg_test_info <- function(pkg.path=".", tests.dir=NULL, verbose=FALSE){
     CRAN.name <- NA_character_
   }else{
     CRAN.name <- paste0(installed_name, "=", installed_version)
-    sha.vec[[CRAN.name]] <- ""
+    if(identical(pkg.path, checkout.path))sha.vec[[CRAN.name]] <- ""
   }
   if(is.null(test.env$base.ref)){
     test.env$base.ref <- Sys.getenv("GITHUB_BASE_REF", "master")
   }
   base.commit <- tryCatch({
-    gert::git_commit_info(test.env$base.ref, pkg.path)$id
+    gert::git_commit_info(test.env$base.ref, repo=checkout.path)$id
   }, error=function(e){
     NULL
   })
@@ -350,7 +353,7 @@ atime_pkg_test_info <- function(pkg.path=".", tests.dir=NULL, verbose=FALSE){
     maybe.new.list <- list()
     maybe.new.list[[base.name]] <- base.commit
     maybe.new.list[["merge-base"]] <- gert::git_merge_find_base(
-      base.commit, "HEAD", pkg.path)
+      base.commit, "HEAD", repo=checkout.path)
     for(maybe.new.name in names(maybe.new.list)){
       maybe.new.sha <- maybe.new.list[[maybe.new.name]]
       if(!maybe.new.sha %in% sha.vec){
@@ -373,7 +376,8 @@ atime_pkg_test_info <- function(pkg.path=".", tests.dir=NULL, verbose=FALSE){
     N.env.parent=test.env,
     pkg.path=pkg.path,
     sha.vec=sha.vec,
-    verbose=verbose)
+    verbose=verbose,
+    checkout.path=checkout.path)
   test.env$sha.vec <- sha.vec
   test.env$test.list <- inherit_args(test.env$test.list, common.args)
   test.env$test.call <- list()
