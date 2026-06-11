@@ -1,3 +1,10 @@
+Changes in version 2026.6.11
+
+- R_CMD_INSTALL() exported for use in user pkg.edit.fun.
+- atime_pkg_test_info() recognizes checkout.path.relative="path/to/submodule" defined in tests.R; pkg.path is appended and then it is passed as checkout.path arg to atime_versions(), in which case CRAN version will be omitted from versions to test.
+- atime_versions() gains argument checkout.path to specify a submodule to checkout instead of the R package repo.
+- atime_versions() no longer runs clone, nor submodule update, instead using file.copy which is faster.
+
 Changes in version 2026.5.30
 
 - switched from git2r to gert for running git from R.
