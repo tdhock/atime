@@ -7,12 +7,12 @@ on:
 jobs:
   litedown:
     runs-on: ubuntu-latest
-    container: ghcr.io/iterative/cml:0-dvc2-base1
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
       repo_token: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - uses: actions/checkout@v3
+      - uses: iterative/setup-cml@v1
       - name: Setup
         uses: eddelbuettel/github-actions/r-ci@master
         with:
