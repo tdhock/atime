@@ -1,0 +1,22 @@
+name: your-workflow-name
+on: [push, pull_request]
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      # may need to setup NodeJS & Python3 on e.g. self-hosted
+      # - uses: actions/setup-node@v3
+      #   with:
+      #     node-version: '16'
+      # - uses: actions/setup-python@v4
+      #   with:
+      #     python-version: '3.x'
+      - uses: iterative/setup-cml@v1
+      - name: Write CML report
+        env:
+          REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Post reports as comments in GitHub PRs
+          echo foo >> report.md
+          cml comment update report.md
