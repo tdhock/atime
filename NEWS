@@ -1,5 +1,6 @@
 Changes in version 2026.5.29
 
+- plot.references_best() sets aes(label.group) in geom_dl() which enables display of direct labels with facet_null().
 - atime_pkg() now uses only a common subset of columns of the measurements table from each test, so that each test can have different units to analyze.
 - atime_pkg() and atime_pkg_test_info() gain verbose arg.
 - glob_find_replace() gains warn arg, to warn if there were no replacements made.
