@@ -15,8 +15,6 @@ jobs:
       - uses: iterative/setup-cml@v1
       - name: Setup
         uses: eddelbuettel/github-actions/r-ci@master
-        with:
-          backend: 'RAPT'
       - name: Dependencies
         run: ./run.sh install_deps
       - name: install package
