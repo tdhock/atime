@@ -14,4 +14,5 @@ jobs:
           PR_API=$ISSUES_API/$PR_NUMBER/comments
           FIRST_COMMENT_ID=$($CURL $PR_API?per_page=1 | grep '"id"' | head -1 | sed s/[^0-9]//g)
           if [ "$FIRST_COMMENT_ID" == "" ]; then CMD=$PR_API; else CMD=$ISSUES_API/comments/$FIRST_COMMENT_ID; fi; echo $CMD
-          $CURL -X PATCH -H "Authorization: Bearer $TOKEN" $CMD -d '{"body":"This is the first comment again $CMD"}'
+          echo '{"body":"This is the first comment from json"}' > pr-comment.json
+          $CURL -X PATCH -H "Authorization: Bearer $TOKEN" $CMD -d "@pr-comment.json"
