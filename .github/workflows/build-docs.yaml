@@ -8,7 +8,9 @@ jobs:
   litedown:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
       - name: Setup
         uses: eddelbuettel/github-actions/r-ci@master
       - name: Dependencies
