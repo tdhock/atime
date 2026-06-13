@@ -1,3 +1,12 @@
+Changes in version 2026.5.30
+
+- switched from git2r to gert for running git from R.
+- atime_pkg() now works with repos that have sub-modules, via system("git submodule update --init --recursive").
+- atime_pkg() now uses label "install" instead of "CRAN" when installed version does not match CRAN version.
+- .ci/atime/tests.R can define base.ref="main" for repos where the default branch is not named master.
+- .ci/atime/tests.R can define remove.units="kilobytes" for repos where memory benchmarking results should be hidden.
+- atime_pkg_test_info() bugfix when pkg is not on CRAN.
+
 Changes in version 2026.5.29
 
 - plot.references_best() sets aes(label.group) in geom_dl() which enables display of direct labels with facet_null().
