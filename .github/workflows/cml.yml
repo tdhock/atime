@@ -11,12 +11,13 @@ jobs:
           PR_NUMBER: ${{ github.event.number }}
         run: |
           ISSUES_API=https://api.github.com/repos/$GITHUB_REPOSITORY/issues
-          CURL='curl -L -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2026-03-10"'
           PR_API=$ISSUES_API/$PR_NUMBER/comments
-          FIRST_COMMENT_ID=$($CURL $PR_API?per_page=1 | grep '"id"' | head -1 | sed s/[^0-9]//g)
+          VERSION=2026-03-10
+          ACCEPT=application/vnd.github+json
+          FIRST_COMMENT_ID=$(curl --no-progress-meter -L -H "Accept: $ACCEPT" -H "X-GitHub-Api-Version: $VERSION" $PR_API?per_page=1 | grep '^    "id"' | head -1 | sed s/[^0-9]//g)
           if [ "$FIRST_COMMENT_ID" == "" ]; then CMD=$PR_API; else CMD=$ISSUES_API/comments/$FIRST_COMMENT_ID; fi; echo $CMD
           IURL=$(curl -F "file=@README-figure.png" -F "visibility=unlisted" https://picrd.com/api/upload | sed 's/.*image_url":"//' | sed 's/",".*//')
           echo "[![tests-preview-facet.png]($IURL)](https://github.com) is the first comment from json" > comment.md
           MD=$(sed 's/"/\\"/g' comment.md | awk '$1=$1' ORS='\\n')
           echo '{"body":"'$MD'"}' > pr-comment.json
-          $CURL -X PATCH -H "Authorization: Bearer $TOKEN" $CMD -d "@pr-comment.json"
+          curl --no-progress-meter -L -H "Accept: $ACCEPT" -H "X-GitHub-Api-Version: $VERSION" -X PATCH -H "Authorization: Bearer $TOKEN" $CMD -d "@pr-comment.json"
