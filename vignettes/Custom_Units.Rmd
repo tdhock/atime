@@ -29,7 +29,7 @@ The output above shows that we can replace the `a` in `foobar` with
 either one or two dashes, and the output is a data frame with one row
 and two columns, including the numeric `nchar` column which we may
 want to visualize as a function of `N`. To do that in the code below,
-we use that function inside a call to `atime` 
+we use that function inside a call to `atime`
 (default saves any results which are 1 row data frames).
 
 ```{r}
