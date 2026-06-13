@@ -1,0 +1,22 @@
+name: update comment
+on: [pull_request]
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: comment
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.number }}
+        run: |
+          ISSUES_API=https://api.github.com/repos/$GITHUB_REPOSITORY/issues
+          PR_API=$ISSUES_API/$PR_NUMBER/comments
+          VERSION=2026-03-10
+          ACCEPT=application/vnd.github+json
+          FIRST_COMMENT_ID=$(curl --no-progress-meter -L -H "Accept: $ACCEPT" -H "X-GitHub-Api-Version: $VERSION" $PR_API?per_page=1 | grep '^    "id"' | head -1 | sed s/[^0-9]//g)
+          if [ "$FIRST_COMMENT_ID" == "" ]; then CMD=$PR_API; else CMD=$ISSUES_API/comments/$FIRST_COMMENT_ID; fi; echo $CMD
+          echo 'a comment with "quotes" is ok' > comment.md
+          MD=$(sed 's/"/\\"/g' comment.md | awk '$1=$1' ORS='\\n')
+          echo '{"body":"'$MD'"}' > pr-comment.json
+          curl --no-progress-meter -L -H "Accept: $ACCEPT" -H "X-GitHub-Api-Version: $VERSION" -X POST -H "Authorization: Bearer $TOKEN" $CMD -d "@pr-comment.json"
