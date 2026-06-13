@@ -11,11 +11,6 @@ jobs:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
-      - name: Retrieve branch references
-        run: |
-          git switch "${GITHUB_BASE_REF}"
-          git switch "${GITHUB_HEAD_REF}"
-        shell: bash
       - name: Setup
         uses: eddelbuettel/github-actions/r-ci@master
       - name: Dependencies
