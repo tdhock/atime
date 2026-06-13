@@ -25,3 +25,4 @@ jobs:
           netlify_auth_token: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           netlify_site_id: ${{ secrets.NETLIFY_SITE_ID }}
           path: site
+          token: ${{ secrets.GITHUB_TOKEN }}
