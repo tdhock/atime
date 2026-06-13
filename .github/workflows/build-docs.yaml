@@ -7,16 +7,13 @@ on:
 jobs:
   litedown:
     runs-on: ubuntu-latest
-    env:
-      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
-      repo_token: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - uses: actions/checkout@v3
       - name: Setup
         uses: eddelbuettel/github-actions/r-ci@master
       - name: Dependencies
         run: ./run.sh install_all
-      - name: install package
+      - name: install package and build site
         run: |
           R CMD build .
           R CMD INSTALL *.tar.gz
