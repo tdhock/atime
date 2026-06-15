@@ -34,7 +34,7 @@ jobs:
           console.log(prc);
           flist = prc.filter((o) => { return o.body.startsWith("<!-- automatic comment for atime -->"); });
           console.log(flist);
-          if(flist.length == 0) process.exit(1);
+          if(flist.length == 0) process.exit(0);
           fs.writeFileSync('comment-number.txt', flist[0].id+"");          
       - name: get comment id
         env:
