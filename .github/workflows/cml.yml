@@ -13,6 +13,7 @@ jobs:
         run: |
           curl --no-progress-meter -L -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2026-03-10" https://api.github.com/repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments > comments.json
           echo > comment-number.txt
+          echo "<!-- automatic comment for atime -->" > comment.md
       - name: show comments
         env:
           PR_NUMBER: ${{ github.event.number }}
@@ -26,17 +27,16 @@ jobs:
         shell: node {0} 
         run: |
           fs = require('fs');
-          result = fs.readdirSync(".");
-          console.log(result);
+          tag = fs.readFileSync('comment.md', 'utf-8');
+          console.log(tag);
           content = fs.readFileSync('comments.json', 'utf-8');
-          console.log(content);
           prc = JSON.parse(content);
           console.log(prc);
-          flist = prc.filter((o) => { return o.body.startsWith("<!-- automatic comment for atime -->"); });
+          flist = prc.filter((o) => { return o.body.startsWith(tag); });
           console.log(flist);
           if(flist.length == 0) process.exit(0);
           fs.writeFileSync('comment-number.txt', flist[0].id+"");          
-      - name: get comment id
+      - name: post comment
         env:
           TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ github.event.number }}
@@ -47,9 +47,9 @@ jobs:
           ACCEPT=application/vnd.github+json
           COMMENT_NUMBER=$(cat comment-number.txt)
           if [ "$COMMENT_NUMBER" == "" ]; then CMD=$PR_API; else CMD=$ISSUES_API/comments/$COMMENT_NUMBER; fi; echo $CMD
-          echo 'a comment with "quotes" is ok' > comment.md
+          echo 'a comment with "quotes" is ok' >> comment.md
           echo >> comment.md
-          echo another line > comment.md
+          echo another line >> comment.md
           MD=$(sed 's/"/\\"/g' comment.md | awk '$1=$1' ORS='\\n')
           echo '{"body":"'$MD'"}' > pr-comment.json
           curl --no-progress-meter -L -H "Accept: $ACCEPT" -H "X-GitHub-Api-Version: $VERSION" -X POST -H "Authorization: Bearer $TOKEN" $CMD -d "@pr-comment.json"
