@@ -1,11 +1,30 @@
 name: update comment
 on: [pull_request]
 jobs:
-  run:
+  comment:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: comment
+      - uses: actions/setup-node@v6
+        name: setup-node https://github.com/actions/setup-node?tab=readme-ov-file#usage
+      - name: get comments
+        env:
+          PR_NUMBER: ${{ github.event.number }}
+        run: |
+          curl --no-progress-meter -L -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2026-03-10" https://api.github.com/repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments > comments.json
+          echo > comment-number.txt
+      - name: get comment id
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.number }}
+        shell: node {0} 
+        run: |
+          prc = require('./comments.json');
+          flist = prc.filter((o) => { return o.body.startsWith("<!-- automatic comment for atime -->"); });
+          if(flist.length == 0) process.exit(1);
+          const fs = require('node:fs');
+          fs.writeFileSync('comment-number.txt', flist[0].id+"");          
+      - name: get comment id
         env:
           TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ github.event.number }}
@@ -14,9 +33,11 @@ jobs:
           PR_API=$ISSUES_API/$PR_NUMBER/comments
           VERSION=2026-03-10
           ACCEPT=application/vnd.github+json
-          FIRST_COMMENT_ID=$(curl --no-progress-meter -L -H "Accept: $ACCEPT" -H "X-GitHub-Api-Version: $VERSION" $PR_API?per_page=1 | grep '^    "id"' | head -1 | sed s/[^0-9]//g)
-          if [ "$FIRST_COMMENT_ID" == "" ]; then CMD=$PR_API; else CMD=$ISSUES_API/comments/$FIRST_COMMENT_ID; fi; echo $CMD
+          COMMENT_NUMBER=$(cat comment-number.txt)
+          if [ "$COMMENT_NUMBER" == "" ]; then CMD=$PR_API; else CMD=$ISSUES_API/comments/$COMMENT_NUMBER; fi; echo $CMD
           echo 'a comment with "quotes" is ok' > comment.md
+          echo >> comment.md
+          echo another line > comment.md
           MD=$(sed 's/"/\\"/g' comment.md | awk '$1=$1' ORS='\\n')
           echo '{"body":"'$MD'"}' > pr-comment.json
           curl --no-progress-meter -L -H "Accept: $ACCEPT" -H "X-GitHub-Api-Version: $VERSION" -X POST -H "Authorization: Bearer $TOKEN" $CMD -d "@pr-comment.json"
