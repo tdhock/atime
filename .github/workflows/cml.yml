@@ -47,7 +47,7 @@ jobs:
           ACCEPT=application/vnd.github+json
           COMMENT_NUMBER=$(cat comment-number.txt)
           if [ "$COMMENT_NUMBER" == "" ]; then CMD=$PR_API; else CMD=$ISSUES_API/comments/$COMMENT_NUMBER; fi; echo $CMD
-          echo 'a comment with "quotes" is ok' >> comment.md
+          echo 'a comment with "quotes" is ok and this edits' >> comment.md
           echo >> comment.md
           echo another line >> comment.md
           MD=$(sed 's/"/\\"/g' comment.md | awk '$1=$1' ORS='\\n')
