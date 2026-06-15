@@ -22,7 +22,7 @@ jobs:
           R -e 'litedown::fuse_site("site")'
         shell: bash
       - name: netlify deploy
-        uses: animint/animint-actions/netlify-simple@main
+        uses: animint/animint-actions/netlify-litedown@main
         with:
           netlify_auth_token: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           netlify_site_id: ${{ secrets.NETLIFY_SITE_ID }}
