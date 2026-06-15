@@ -4,7 +4,7 @@ jobs:
   comment:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
         name: setup-node https://github.com/actions/setup-node?tab=readme-ov-file#usage
       - name: get comments
@@ -25,9 +25,15 @@ jobs:
           PR_NUMBER: ${{ github.event.number }}
         shell: node {0} 
         run: |
-          const fs = require('fs');
-          let prc = JSON.parse(fs.readFileSync('comments.json', 'utf-8'))
+          fs = require('fs');
+          result = fs.readdirSync(".");
+          console.log(result);
+          content = fs.readFileSync('comments.json', 'utf-8');
+          console.log(content);
+          prc = JSON.parse(content);
+          console.log(prc);
           flist = prc.filter((o) => { return o.body.startsWith("<!-- automatic comment for atime -->"); });
+          console.log(flist);
           if(flist.length == 0) process.exit(1);
           fs.writeFileSync('comment-number.txt', flist[0].id+"");          
       - name: get comment id
