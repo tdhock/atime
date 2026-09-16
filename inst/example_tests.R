@@ -35,7 +35,8 @@ gvar <- 5
 test.list <- atime::atime_test_list(
   pkg.edit.fun=edit.data.table,
   N=c(9,90),
-  test_N_expr=atime::atime_test(N=c(2,20), expr=rnorm(N)),
-  test_expr=atime::atime_test(expr=rnorm(N)),
-  global_var_in_setup=atime::atime_test(setup=rnorm(gvar), expr=atime:::.packageName)
+  test_N_expr=atime::atime_test(N=c(2,20), expr=atime:::.packageName),
+  test_expr=atime::atime_test(expr=atime:::.packageName),
+  global_var_in_setup=atime::atime_test(setup=rnorm(gvar), expr=atime:::.packageName),
+  unit=atime::atime_test(expr=data.frame(count=1, name=atime:::.packageName), result=TRUE)
 )

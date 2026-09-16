@@ -9,11 +9,11 @@ find_tests_file <- function(pkg.path, tests.dir){
   stop("could not find tests.R file after checking ", paste(checked, collapse=", "))
 }
 
-atime_pkg <- function(pkg.path=".", tests.dir=NULL){
+atime_pkg <- function(pkg.path=".", tests.dir=NULL, verbose=FALSE){
   ## For an example package see
   ## https://github.com/tdhock/binsegRcpp/blob/another-branch/inst/atime/tests.R
   pkg.results <- list()
-  test.info <- atime_pkg_test_info(pkg.path, tests.dir)
+  test.info <- atime_pkg_test_info(pkg.path, tests.dir, verbose=verbose)
   for(Test in names(test.info$test.call)){
     atv.call <- test.info$test.call[[Test]]
     atime.list <- eval(atv.call, test.info)
@@ -24,7 +24,7 @@ atime_pkg <- function(pkg.path=".", tests.dir=NULL){
 
 atime_pkg_plot_files <- function(out.dir, test.info, pkg.results){
   each.sign.rank <- unit <- . <- N <- expr.name <- reference <- fun.name <- 
-    empirical <- q25 <- q75 <- p.str <- p.value <- P.value <- 
+    empirical <- q25 <- q75 <- p.str <- p.value <- P.value <- fun.latex <- expr.class <- expr.latex <- 
       seconds.limit <- time <- log10.seconds <- seconds <- Test <-
         N.factor <- unit.value <- x.str <- pred.Nx <- NULL
   ## above to avoid CRAN check NOTE.
@@ -112,15 +112,19 @@ atime_pkg_plot_files <- function(out.dir, test.info, pkg.results){
     log10.n.factor <- log10(n.factor)
     abs.log10.n.factor <- abs(log10.n.factor)
     max.N.times <- (10^abs.log10.n.factor)*sign(log10.n.factor)
+    some.meas <- best.list$meas[, .(
+      unit, expr.name, N, empirical,
+      q25, q75,
+      fun.name, fun.latex,
+      expr.class, expr.latex)]
     bench.dt.list[[Test]] <- data.table(
       Test, p.value, n.factor,
       log10.n.factor, abs.log10.n.factor,
-      max.N.times,
-      best.list$meas)
+      max.N.times, some.meas)
     log10.range <- range(log10(atime.list$meas$N))
     expand <- diff(log10.range)*test.info$expand.prop
     xmax <- 10^(log10.range[2]+expand)
-    blank.dt.list[[Test]] <- data.table(Test, best.list$meas[1])[, N := xmax]
+    blank.dt.list[[Test]] <- data.table(Test, some.meas[1][, N := xmax])
     gg <- ggplot2::ggplot()+
       ggplot2::ggtitle(Test)+
       ggplot2::theme_bw()+
@@ -282,7 +286,7 @@ default.version.colors <- c(#RColorBrewer::brewer.pal(7, "Dark2")
   Fixed="#A6761D", Fast="#A6761D"
 )
 
-atime_pkg_test_info <- function(pkg.path=".", tests.dir=NULL){
+atime_pkg_test_info <- function(pkg.path=".", tests.dir=NULL, verbose=FALSE){
   if(is.null(tests.dir)){
     tests.dir <- c("inst",".ci")
   }
@@ -356,7 +360,8 @@ atime_pkg_test_info <- function(pkg.path=".", tests.dir=NULL){
   common.args <- list(
     N.env.parent=test.env,
     pkg.path=pkg.path,
-    sha.vec=sha.vec)
+    sha.vec=sha.vec,
+    verbose=verbose)
   test.env$sha.vec <- sha.vec
   test.env$test.list <- inherit_args(test.env$test.list, common.args)
   test.env$test.call <- list()

@@ -2,23 +2,24 @@ default_N <- function(){
   as.integer(2^seq(1, 20))
 }
 
-get_result_rows <- function(result.list){
-  if(
-    all(sapply(result.list, is.data.frame)) &&
-      all(sapply(result.list, nrow)==1)
-  ){
-    names.list <- lapply(result.list, names)
-    for(result.i in seq_along(names.list)){
-      if(!identical(names.list[[1]], names.list[[result.i]])){
-        stop(sprintf("results are all 1 row data frames, but some have different names (%s, %s); please fix by making column names of results identical", names(names.list)[[1]], names(names.list)[[result.i]]))
+get_result_rows <- function(result.list, N.stats){
+  out.rows <- list()
+  out.names <- list()
+  for(expr.name in names(result.list)){
+    result <- result.list[[expr.name]]
+    if(is.data.frame(result) && nrow(result)==1){
+      is.num <- sapply(result, is.numeric)
+      new.bad <- intersect(names(result), names(N.stats))
+      if(length(new.bad)){
+        stop(sprintf("value of expression %s is 1 row data frame with column(s) named %s (reserved for internal use); please fix by changing the column name(s) in your results", expr.name, paste(new.bad, collapse=", ")))
       }
+      out.rows[[expr.name]] <- data.table(expr.name, result)
+      out.names[[expr.name]] <- names(result)[is.num]
     }
-    result.rows <- do.call(rbind, result.list)
-    is.more <- sapply(result.rows, is.numeric)
-    list(
-      result.rows=result.rows,
-      more.units=names(result.rows)[is.more])
   }
+  list(
+    result.rows=rbindlist(out.rows, use.names=TRUE, fill=TRUE),
+    more.units=unique(unlist(out.names)))
 }
 
 run_bench_mark <- function(times, sub.elist, N.env, result, check){
@@ -67,6 +68,9 @@ check_atime_inputs <- function(N, result, elist){
     fun <- result
     TRUE
   }else if(isTRUE(result)){
+    TRUE
+  }else if(is.null(result)){
+    fun <- function(out)if(is.data.frame(out) && nrow(out)==1)out
     TRUE
   }else{
     FALSE
@@ -117,21 +121,20 @@ atime <- function(N=default_N(), setup, expr.list=NULL, times=10, seconds.limit=
     }
     done.pkgs <- N.stats[median > seconds.limit, paste(expr.name)]
     done.vec[done.pkgs] <- TRUE
-    new.bad <- intersect(names(result.row.list$result.rows), names(N.stats))
-    if(length(new.bad)){
-      stop(sprintf("value of expression is 1 row data frame with column(s) named %s (reserved for internal use); please fix by changing the column name(s) in your results", paste(new.bad, collapse=", ")))
+    result.row.list <- get_result_rows(N.env$result.list, N.stats)
+    if(nrow(result.row.list$result.rows)){
+      N.stats <- result.row.list$result.rows[N.stats, on="expr.name"]
     }
-    N.out <- data.table(N.stats, result.row.list$result.rows)
-    if(verbose)print(N.out[, data.table(
+    if(verbose)print(N.stats[, data.table(
       N, expr.name, seconds.median=median, kilobytes)],
       class=FALSE)
-    metric.dt.list[[paste(N.value)]] <- N.out
+    metric.dt.list[[paste(N.value)]] <- N.stats
   }
   unit.col.vec <- c(
     "kilobytes",
     seconds="median",
     result.row.list$more.units)
-  measurements <- rbindlist(metric.dt.list)
+  measurements <- rbindlist(metric.dt.list, use.names=TRUE, fill=TRUE)
   expr.list.params <- attr(expr.list,"parameters")
   by.vec <- "expr.name"
   if(is.data.table(expr.list.params)){

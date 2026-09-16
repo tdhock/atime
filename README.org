@@ -1,5 +1,6 @@
 atime: Asymptotic Timing
 
+- [[https://docs.google.com/presentation/d/1_aWo2HgM600Mk1nZ4UUv3qV-DzdBmvcEInEU96KqIjY/edit?usp=sharing][Asymptotic benchmarking slides]] for a short talk about atime.
 - compare time/memory/other quantities of different R codes that depend on N: [[https://atime-docs.netlify.app/manual#sec:man-atime][atime().]]
 - estimate the asymptotic complexity (big-O notation) of any R code that depends on some data size N: [[https://atime-docs.netlify.app/manual#sec:man-references_best][references_best()]].
 - compare time/memory of different git versions of R package code: [[https://atime-docs.netlify.app/manual#sec:man-atime_versions][atime_versions()]].
@@ -214,6 +215,8 @@ parameters other than N). However it can not
 store results if check=FALSE, results must be equal if check=TRUE, and
 there is no way to easily specify a time limit which stops for larger
 sizes (like seconds.limit argument in atime).
+
+[[https://github.com/DavisVaughan/cross][cross]] runs different package versions in different R sessions, so is similar to =atime_versions()=, which runs different package versions in the same R session.
 
 [[https://github.com/Anirban166/testComplexity][testComplexity]]::asymptoticTimings does something similar, but only for
 one expression (not several), and there is no special setup argument

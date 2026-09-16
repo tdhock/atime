@@ -80,9 +80,9 @@ references_best <- function(L, fun.list=NULL){
         references(N, .SD[[col.name]], lower.limit, fun.list),
         by=c(L$by.vec)]
       all.refs[, rank := rank(-N), by=c(L$by.vec, "fun.name")]
-      second <- all.refs[rank==2]
-      second[, dist := log10(empirical/reference) ]
-      second[, sign := sign(dist)]
+      second <- all.refs[rank==2][
+      , dist := log10(empirical/reference)
+      ][, sign := sign(dist)][]
       l.cols <- list(overall=L$by.vec, each.sign=c(L$by.vec,"sign"))
       for(best.type in names(l.cols)){
         by <- l.cols[[best.type]]
@@ -153,7 +153,9 @@ plot.references_best <- function(x, ...){
     if(requireNamespace("directlabels")){
       gg+
         directlabels::geom_dl(ggplot2::aes(
-          N, reference, label=fun.name),
+          N, reference,
+          label.group=paste(fun.name, expr.name),
+          label=fun.name),
           data=ref.dt,
           color=ref.color,
           method="bottom.polygons")
