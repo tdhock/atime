@@ -101,7 +101,6 @@ atime <- function(N=default_N(), setup, expr.list=NULL, times=10, seconds.limit=
     N.env$N <- N.value
     eval(mc.args$setup, N.env)
     N.df <- run_bench_mark(times, elist[not.done.yet], N.env, result, check)
-    result.row.list <- get_result_rows(N.env$result.list)
     N.stats <- data.table(
       N=N.value, expr.name=not.done.yet, N.df
     )[, `:=`(
