@@ -1,0 +1,15 @@
+bibentry(
+  bibtype = "Article",
+  title = "Asymptotic benchmarking using the atime package",
+  author = c(
+    person(c("Doris"), "Amoakohene"),
+    person(c("Anirban"), "Chetia"),
+    person(c("Igor"), "Steinmacher"),
+    person(c("Toby", "Dylan"), "Hocking")),
+  year = "2026",
+  journal = "R Journal",
+  volume = "18",
+  number = "1",
+  pages = "169--187",
+  issn = "2073-4859",
+  doi = "10.32614/RJ-2026-013")
