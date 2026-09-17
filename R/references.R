@@ -153,7 +153,9 @@ plot.references_best <- function(x, ...){
     if(requireNamespace("directlabels")){
       gg+
         directlabels::geom_dl(ggplot2::aes(
-          N, reference, label=fun.name),
+          N, reference,
+          label.group=paste(fun.name, expr.name),
+          label=fun.name),
           data=ref.dt,
           color=ref.color,
           method="bottom.polygons")
