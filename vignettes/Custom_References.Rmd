@@ -21,6 +21,28 @@ The code below uses the following arguments:
 
 ```{r}
 library(data.table)
+expr.list <- list()
+if(requireNamespace("changepoint"))expr.list[["changepoint\n::cpt.mean"]] <- quote({
+  cpt.fit <- changepoint::cpt.mean(data.vec, method="BinSeg", Q=max.changes)
+  sort(c(N,cpt.fit@cpts.full[max.changes,]))
+})
+if(requireNamespace("binsegRcpp")){
+  expr.list[["binsegRcpp\nmultiset"]] <- quote({
+    binseg.fit <- binsegRcpp::binseg(
+      "mean_norm", data.vec, max.segs, container.str="multiset")
+    sort(binseg.fit$splits$end)
+  })
+  expr.list[["binsegRcpp\nlist"]] <- quote({
+    binseg.fit <- binsegRcpp::binseg(
+      "mean_norm", data.vec, max.segs, container.str="list")
+    sort(binseg.fit$splits$end)
+  })
+}
+if(requireNamespace("wbs"))expr.list[["wbs::sbs"]] <- quote({
+  wbs.fit <- wbs::sbs(data.vec)
+  split.dt <- data.table(wbs.fit$res)[order(-min.th, scale)]
+  sort(split.dt[, c(N, cpt)][1:max.segs])
+})
 seg.result <- atime::atime(
   N=2^seq(2, 20),
   setup={
@@ -29,29 +51,7 @@ seg.result <- atime::atime(
     set.seed(1)
     data.vec <- 1:N
   },
-  "changepoint\n::cpt.mean"={
-    cpt.fit <- changepoint::cpt.mean(data.vec, method="BinSeg", Q=max.changes)
-    sort(c(N,cpt.fit@cpts.full[max.changes,]))
-  },
-  "binsegRcpp\nmultiset"={
-    binseg.fit <- binsegRcpp::binseg(
-      "mean_norm", data.vec, max.segs, container.str="multiset")
-    sort(binseg.fit$splits$end)
-  },
-  "fpop::\nmultiBinSeg"={
-    mbs.fit <- fpop::multiBinSeg(data.vec, max.changes)
-    sort(c(mbs.fit$t.est, N))
-  },
-  "wbs::sbs"={
-    wbs.fit <- wbs::sbs(data.vec)
-    split.dt <- data.table(wbs.fit$res)[order(-min.th, scale)]
-    sort(split.dt[, c(N, cpt)][1:max.segs])
-  },
-  "binsegRcpp\nlist"={
-    binseg.fit <- binsegRcpp::binseg(
-      "mean_norm", data.vec, max.segs, container.str="list")
-    sort(binseg.fit$splits$end)
-  })
+  expr.list=expr.list)
 plot(seg.result)
 ```
 
@@ -105,7 +105,7 @@ dcast(my.best$references, expr.name + fun.name ~ unit, length)
 ```
 
 The table above shows the counts of rows in the references table, which can be used to draw asymptotic reference curves, for each `expr.name`, `fun.name`, and unit (kilobytes and seconds). 
-To the best fit among these references, we use the code below:
+To compute the best fit among these references, we use the code below:
 
 ```{r}
 plot(my.best)
@@ -124,7 +124,7 @@ plot(some.best)
 From the plot above, you should be able to see the asymptotic time
 complexity class of each algorithm. 
 
-* the fastest packages are log-linear (fpop, wbs, binsegRcpp), 
+* the fastest packages are log-linear (wbs, binsegRcpp), 
 * that the binsegRcpp implementation that uses the list container is
   much slower (quadratic).
 * the changepoint package uses a super-quadratic algorithm (actually
