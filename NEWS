@@ -1,3 +1,16 @@
+Changes in version 2026.9.17
+
+- R_CMD_INSTALL() exported for use in user pkg.edit.fun.
+- atime_pkg_test_info() recognizes checkout.path.relative="path/to/submodule" defined in tests.R; pkg.path is appended and then it is passed as checkout.path arg to atime_versions(), in which case CRAN version will be omitted from versions to test.
+- atime_versions() gains argument checkout.path to specify a submodule to checkout instead of the R package repo.
+- switched from git2r to gert for running git from R.
+- atime_versions() and atime_versions_exprs() gain checkout.path argument, path to repo in which we run git checkout prior to package installation. Default is pkg.path (R package directory), but can be set to a sub-directory with a git submodule.
+- atime_pkg() now uses label "install" instead of "CRAN" when installed version does not match CRAN version.
+- .ci/atime/tests.R can define base.ref="main" for repos where the default branch is not named master.
+- .ci/atime/tests.R can define remove.units="kilobytes" for repos where memory benchmarking results should be hidden.
+- atime_pkg_test_info() bugfix when pkg is not on CRAN.
+- atime_versions(), atime_versions_exprs(), atime_test(), and atime_test_list() gain setup.version argument, an expression that is evaluated for each version, prior to running timings.
+
 Changes in version 2026.9.16
 
 - atime() gains check arg (default FALSE), passed to bench::mark().

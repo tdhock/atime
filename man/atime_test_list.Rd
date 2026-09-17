@@ -13,44 +13,29 @@
 \usage{
 atime_test_list(
   N, setup, expr, times, seconds.limit,
-  verbose, pkg.edit.fun, result,
+  verbose, pkg.edit.fun, result, setup.version,
   tests = NULL, ...)
 }
 \arguments{
-  \item{\dots}{
-    names for tests, values are lists of arguments to pass to
-    \code{\link{atime_versions}} (combined with \code{tests}).
-}
+  \item{N}{integer vector of data sizes.}
+  \item{setup}{
+    expression that depends on \code{N}, to run before timings, using HEAD.
+    Not evaluated before copying to each test.}
+  \item{expr}{expression to time.
+    Not evaluated before copying to each test.}
+  \item{times}{number of times to run \code{expr}.}
+  \item{seconds.limit}{number of seconds after which we stop trying larger \code{N}.}
+  \item{verbose}{logical: print output?}
+  \item{pkg.edit.fun}{function for editing package prior to testing.}
+  \item{result}{logical: save results?}
+  \item{setup.version}{expression to evaluate for each version, prior to
+  timings. Not evaluated before copying to each test.}
   \item{tests}{
     list of tests, with names for tests, values are lists of arguments to pass to
-    \code{\link{atime_versions}} (combined with \dots).
-}
-  \item{N}{
-    integer vector of data sizes.
-}
-  \item{setup}{
-    expression that depends on \code{N}, to run before timings.
-    Not evaluated before copying to each test.
-}
-  \item{expr}{
-    expression to time.
-    Not evaluated before copying to each test.
-}
-  \item{times}{
-    number of times to run \code{expr}.
-}
-  \item{seconds.limit}{
-    number of seconds after which we stop trying larger \code{N}.
-}
-  \item{verbose}{
-    logical: print output?
-}
-  \item{pkg.edit.fun}{
-    function for editing package prior to testing.
-}
-  \item{result}{
-    logical: save results?
-}
+    \code{\link{atime_versions}} (combined with \dots).}
+  \item{\dots}{
+    names for tests, values are lists of arguments to pass to
+    \code{\link{atime_versions}} (combined with \code{tests}).}
 }
 \value{
   List representing performance tests,
