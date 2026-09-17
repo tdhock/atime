@@ -5,8 +5,16 @@
   several different data sizes.}
 
 \usage{atime(
- N, setup, expr.list=NULL, times=10, seconds.limit=0.01, verbose=FALSE,
- result=FALSE, N.env.parent=NULL, check=FALSE, ...)}
+ N = default_N(),
+ setup,
+ expr.list=NULL,
+ times=10,
+ seconds.limit=0.01,
+ verbose=FALSE,
+ result=NULL,
+ N.env.parent=NULL,
+ check=FALSE,
+ ...)}
 
 \arguments{
   \item{N}{numeric vector of at least two unique data sizes, default is \code{2^seq(2,20)}.}
