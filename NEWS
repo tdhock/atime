@@ -1,6 +1,7 @@
 Changes in version 2026.9.16
 
 - atime() gains check arg (default FALSE), passed to bench::mark().
+- remove fpop from Suggests (no longer on CRAN).
 
 Changes in version 2026.5.29
 

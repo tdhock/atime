@@ -38,10 +38,6 @@ if(requireNamespace("binsegRcpp")){
     sort(binseg.fit$splits$end)
   })
 }
-if(requireNamespace("fpop"))expr.list[["fpop::\nmultiBinSeg"]] <- quote({
-  mbs.fit <- fpop::multiBinSeg(data.vec, max.changes)
-  sort(c(mbs.fit$t.est, N))
-})
 if(requireNamespace("wbs"))expr.list[["wbs::sbs"]] <- quote({
   wbs.fit <- wbs::sbs(data.vec)
   split.dt <- data.table(wbs.fit$res)[order(-min.th, scale)]
@@ -128,7 +124,7 @@ plot(some.best)
 From the plot above, you should be able to see the asymptotic time
 complexity class of each algorithm. 
 
-* the fastest packages are log-linear (fpop, wbs, binsegRcpp), 
+* the fastest packages are log-linear (wbs, binsegRcpp), 
 * that the binsegRcpp implementation that uses the list container is
   much slower (quadratic).
 * the changepoint package uses a super-quadratic algorithm (actually

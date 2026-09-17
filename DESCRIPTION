@@ -27,7 +27,6 @@ Suggests:
     binsegRcpp,
     grates, fastymd,
     wbs,
-    fpop,
     changepoint,
     LOPART,
     PeakSegDisk,
