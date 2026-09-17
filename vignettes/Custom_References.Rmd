@@ -105,7 +105,7 @@ dcast(my.best$references, expr.name + fun.name ~ unit, length)
 ```
 
 The table above shows the counts of rows in the references table, which can be used to draw asymptotic reference curves, for each `expr.name`, `fun.name`, and unit (kilobytes and seconds). 
-To the best fit among these references, we use the code below:
+To compute the best fit among these references, we use the code below:
 
 ```{r}
 plot(my.best)
