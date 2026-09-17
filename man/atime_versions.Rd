@@ -9,6 +9,7 @@ atime_versions(
  times=10, seconds.limit=0.01, verbose=FALSE,
  pkg.edit.fun=pkg.edit.default, result=FALSE,
  N.env.parent=NULL, setup.version=NULL,
+ checkout.path=pkg.path,
  ...)
 }
 \arguments{
@@ -47,6 +48,9 @@ atime_versions(
   created for each data size N, or NULL to use default parent env.}
   \item{setup.version}{expression to evaluate for each version, prior to
   timings.}
+  \item{checkout.path}{path to repo in which we run git checkout prior
+    to package installation. Default is \code{pkg.path}, but can be set
+    to a sub-directory with a git submodule. }
   \item{\dots}{named versions.}
 }
 \details{

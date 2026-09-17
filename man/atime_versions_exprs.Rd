@@ -10,7 +10,9 @@
  pkg.path, expr, sha.vec=NULL,
  verbose=FALSE,
  pkg.edit.fun=pkg.edit.default,
- setup.version=NULL, ...)}
+ setup.version=NULL,
+ checkout.path=pkg.path,
+ ...)}
 \arguments{
   \item{pkg.path}{Path to git repo containing R package.}
   \item{expr}{
@@ -33,6 +35,9 @@
     function, see the atime vignette about data.table.}
   \item{setup.version}{expression to evaluate for each version, prior to
   timings.}
+  \item{checkout.path}{path to repo in which we run git checkout prior
+    to package installation. Default is \code{pkg.path}, but can be set
+    to a sub-directory with a git submodule. }
   \item{\dots}{named versions.}
 }
 \details{
