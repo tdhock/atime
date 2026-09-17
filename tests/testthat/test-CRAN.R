@@ -122,9 +122,9 @@ test_that("result=FALSE and check=TRUE", {
   alist <- atime::atime(expr.list=expr.list, foo=1)
   alist$measurements[, expect_identical(result, replicate(.N, NULL))]
   expect_error({
-    atime::atime(expr.list=expr.list, foo=1, check=TRUE)
+    atime::atime(expr.list=expr.list, foo=1, check=TRUE, result=FALSE)
   }, "`seq` does not equal `foo`", fixed=TRUE)
-  alist <- atime::atime(expr.list=expr.list, check=TRUE)
+  alist <- atime::atime(expr.list=expr.list, check=TRUE, result=FALSE)
   alist$measurements[, expect_identical(result, replicate(.N, NULL))]
 })
 
