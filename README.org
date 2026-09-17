@@ -214,16 +214,13 @@ and output]]).
 
 ** GitHub action for continuous performance testing
 
-If you want to run =atime_versions()= to check R package performance
-in every Pull Request, [[https://github.com/marketplace/actions/autocomment-atime-results][autocomment-atime-results]] is a GitHub action
-which can plot results in a PR comment, so you can see if the PR
-affects performance (example output: [[https://github.com/Anirban166/binsegRcpp/pull/2#issuecomment-1986146565][binsegRcpp]], [[https://github.com/Rdatatable/data.table/pull/5427#issuecomment-2075471806][data.table]]). First,
-you should define a =.ci/atime/tests.R= code file that creates an R
-object called =test.list= which should be a list of performance tests,
-each one is a list of arguments that will be passed to
-=atime_versions=. See [[https://github.com/tdhock/atime/blob/main/man/atime_pkg.Rd][?atime_pkg]] for documentation, and see these repos for code examples:
-- [[https://github.com/tdhock/binsegRcpp/blob/atime-test-funs/.ci/atime/tests.R][atime-test-funs branch of binsegRcpp repo]] has a simple example with 4 test cases.
-- [[https://github.com/Rdatatable/data.table/blob/master/.ci/atime/tests.R][data.table]] has a more complex example with over 10 test cases.
+You can run =atime_versions()= to check R package performance in every Pull Request.
+
+- [[https://github.com/tdhock/binsegRcpp/blob/poncatime/.github/workflows/performance-tests.yml][Example yml config for binsegRcpp]]: you need to edit the config file for your package.
+  - install your package from CRAN, if you want to compare with timings from your current CRAN release.
+- Example [[https://github.com/tdhock/binsegRcpp/blob/poncatime/.ci/atime/tests.R][.ci/atime/tests.R]] file: you need to edis this to define performance tests relevant for your package.
+- Example output: [[https://github.com/tdhock/binsegRcpp/pull/29#issuecomment-5719035029][PR comment]].
+- For more complex example configuration, please read [[https://github.com/Rdatatable/data.table/wiki/Performance-testing][data.table Performance testing wiki page]].
 
 ** Related work
 
