@@ -20,6 +20,24 @@ atime: Asymptotic Timing
   remotes::install_github("tdhock/atime")
 #+END_SRC
 
+** Citation
+
+Please read and cite the [[https://doi.org/10.32614/RJ-2026-013][atime R Journal (2026) paper]]:
+
+#+begin_src bibtex
+  @Article{Amoakohene2026atime,
+    title = {Asymptotic benchmarking using the atime package},
+    author = {Doris Amoakohene and Anirban Chetia and Igor Steinmacher and Toby Dylan Hocking},
+    year = {2026},
+    journal = {R Journal},
+    volume = {18},
+    number = {1},
+    pages = {169--187},
+    issn = {2073-4859},
+    doi = {10.32614/RJ-2026-013},
+  }
+#+end_src
+
 ** Usage
 
 Get started by reading the [[https://atime-docs.netlify.app/doc/sparse][sparse matrices]] and [[https://atime-docs.netlify.app/doc/regex][regular expressions]] vignettes, and [[https://atime-docs.netlify.app/articles][others]].
