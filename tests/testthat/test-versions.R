@@ -183,10 +183,9 @@ if(interactive())test_that("atime_pkg() works for poncatime", {
   poncatime_dir <- tempfile()
   dir.create(poncatime_dir)
   gert::git_clone("https://github.com/poncateam/poncatime", poncatime_dir)
-  gert::git_branch_checkout("pkg.edit.fun", repo=poncatime_dir)
   system(paste("cd", poncatime_dir, "&& git submodule update --init --recursive && cd src/external/ponca && git checkout master"))
   tinfo <- atime::atime_pkg_test_info(poncatime_dir)
   expect_identical(tinfo$HEAD.name, "HEAD=master")
-  ##poncatime_info <- atime::atime_pkg(poncatime_dir)
-  ##expect_equal(nrow(poncatime_info$all), 2)#two test cases run.
+  poncatime_info <- atime::atime_pkg(poncatime_dir)
+  expect_gt(nrow(poncatime_info$all), 0)#at least one test case run.
 })
