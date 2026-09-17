@@ -78,7 +78,7 @@ check_atime_inputs <- function(N, result, elist){
   list(keep=keep, fun=fun)
 }
 
-atime <- function(N=default_N(), setup, expr.list=NULL, times=10, seconds.limit=0.01, verbose=FALSE, result=FALSE, N.env.parent=NULL, check=FALSE, ...){
+atime <- function(N=default_N(), setup, expr.list=NULL, times=10, seconds.limit=0.01, verbose=FALSE, result=NULL, N.env.parent=NULL, check=FALSE, ...){
   kilobytes <- mem_alloc <- . <- sizes <- expr.name <- NULL
   ## above for CRAN NOTE.
   formal.names <- names(formals())
