@@ -22,8 +22,6 @@ viz.data <- function(get.seg.means, data.per.seg=10, penalty=1){
         data.vec, method="PELT", penalty="Manual", pen.value=penalty)),
     if(requireNamespace("binsegRcpp"))atime::atime_grid(
       "binsegRcpp::binseg_normal"=binsegRcpp::binseg_normal(data.vec, N)),
-    if(requireNamespace("fpop"))atime::atime_grid(
-      "fpop::Fpop"=fpop::Fpop(data.vec, penalty)),
     if(requireNamespace("LOPART"))atime::atime_grid(
       "LOPART::LOPART"=LOPART::LOPART(data.vec, no.labels, penalty)),
     atime::atime_grid(mean=mean(data.vec)))
