@@ -102,6 +102,7 @@ atime_versions_install <- function(Package, pkg.path, new.Package.vec, sha.vec, 
         file.rename(file.path(tdir, basename(orig.repo.path)), new.repo.path)
         new.checkout.path <- paste0(new.repo.path, checkout.suffix.in.repo)
         new.pkg.path <- paste0(new.repo.path, pkg.suffix.in.repo)
+        gert::git_restore(".", repo=new.checkout.path)#to avoid conflicts, because file.copy() above can sometimes cause status=typechange.
         gert::git_branch_create(#and checkout
           "atime-versions-testing", sha, repo=new.checkout.path)
         unlink(file.path(new.pkg.path, "src", "*.o"))
