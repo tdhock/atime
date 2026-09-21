@@ -220,6 +220,7 @@ You can run =atime_versions()= to check R package performance in every Pull Requ
   - install your package from CRAN, if you want to compare with timings from your current CRAN release.
 - Example [[https://github.com/tdhock/binsegRcpp/blob/poncatime/.ci/atime/tests.R][.ci/atime/tests.R]] file: you need to edis this to define performance tests relevant for your package.
 - Example output: [[https://github.com/tdhock/binsegRcpp/pull/29#issuecomment-5719035029][PR comment]].
+- [[https://github.com/tdhock/mlr3resampling/pull/106][PR106 adding atime CI to mlr3resampling]] (relatively simple).
 - For more complex example configuration, please read [[https://github.com/Rdatatable/data.table/wiki/Performance-testing][data.table Performance testing wiki page]].
 
 ** Related work
