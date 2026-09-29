@@ -214,13 +214,17 @@ and output]]).
 
 ** GitHub action for continuous performance testing
 
-You can run =atime_versions()= to check R package performance in every Pull Request.
+You can run =atime_versions()= to check R package performance in every Pull Request, as in these packages which use atime for performance testing:
 
-- [[https://github.com/tdhock/binsegRcpp/blob/poncatime/.github/workflows/performance-tests.yml][Example yml config for binsegRcpp]]: you need to edit the config file for your package.
-  - install your package from CRAN, if you want to compare with timings from your current CRAN release.
-- Example [[https://github.com/tdhock/binsegRcpp/blob/poncatime/.ci/atime/tests.R][.ci/atime/tests.R]] file: you need to edis this to define performance tests relevant for your package.
-- Example output: [[https://github.com/tdhock/binsegRcpp/pull/29#issuecomment-5719035029][PR comment]].
-- For more complex example configuration, please read [[https://github.com/Rdatatable/data.table/wiki/Performance-testing][data.table Performance testing wiki page]].
+- Simple examples
+  - =binsegRcpp= [[https://github.com/tdhock/binsegRcpp/blob/poncatime/.github/workflows/performance-tests.yml][yml config]], [[https://github.com/tdhock/binsegRcpp/blob/poncatime/.ci/atime/tests.R][.ci/atime/tests.R]], [[https://github.com/tdhock/binsegRcpp/pull/29#issuecomment-5719035029][PR comment output]]. 
+  - =mlr3resampling= [[https://github.com/tdhock/mlr3resampling/blob/main/.github/workflows/performance-tests.yml][yml config]], [[https://github.com/tdhock/mlr3resampling/blob/main/.ci/atime/tests.R][.ci/atime/tests.R]], [[https://github.com/tdhock/mlr3resampling/pull/106#issuecomment-5754924074][PR comment output]].
+- More complex examples
+  - =data.table= please read [[https://github.com/Rdatatable/data.table/wiki/Performance-testing][data.table Performance testing wiki page]].
+
+Note that if you copy the yml config from an example above, you need to edit two config files for your package
+- =.github/workflows/performance-tests.yml= add code to install your package from CRAN, if you want to compare with timings from your current CRAN release.
+- =.ci/atime/tests.R= add performance tests relevant for your package. 
 
 ** Related work
 
