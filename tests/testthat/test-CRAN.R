@@ -591,3 +591,23 @@ test_that("issue109 speed improvement shows in issues.dt", {
   expect_equal(nrow(issues.dt), 2)
   expect_match(issues.dt$issue, "faster")
 })
+
+test_that("atime_grid works in fun", {
+  # from https://tdhock.github.io/blog/2026/dt-atime-update
+  tfgrid <- function(param, ...)atime::atime_grid(
+    setNames(list(c(TRUE,FALSE)), param),
+    ...)
+  computed <- tfgrid(
+    "lazy",
+    "readr::read_csv"={
+      readr::read_csv(input.csv, progress = FALSE, show_col_types = FALSE, lazy=lazy)
+    }
+  )
+  expected <- atime::atime_grid(
+    list(lazy=c(TRUE,FALSE)),
+    "readr::read_csv"={
+      readr::read_csv(input.csv, progress = FALSE, show_col_types = FALSE, lazy=lazy)
+    }
+  )
+  expect_identical(computed, expected)
+})

@@ -44,9 +44,9 @@ atime_grid <- function
   if(any(names(param.list)=="")){
     stop("each element of param.list must be named")
   }
-  formal.names <- names(formals())
-  mc.args <- as.list(match.call()[-1])
-  elist <- mc.args[!names(mc.args) %in% formal.names]
+  elang <- substitute(list(...))
+  elang[-1] <- lapply(elang[-1], function(L)as.call(c(quote(quote),L)))
+  elist <- eval(elang)
   if(is.null(names(elist)) || any(names(elist)=="")){
     stop("each expression in ... must be named")
   }
