@@ -217,7 +217,9 @@ atime_versions_exprs <- function(pkg.path, expr, sha.vec=NULL, verbose=FALSE, pk
     ifelse(SHA.vec=="", "", "."), 
     SHA.vec)
   a.args <- list()
-  sub.expr <- if(is.language(expr))expr else substitute(expr)
+  sub.expr <- if(tryCatch({
+    is.language(expr)
+  }, error=function(e)FALSE))expr else substitute(expr)
   for(commit.i in seq_along(SHA.vec)){
     sha <- SHA.vec[[commit.i]]
     commit.name <- names(SHA.vec)[[commit.i]]
