@@ -168,15 +168,32 @@ test_that("atime_versions works with grates pkg in sub-dir of git repo", {
   expect_is(glist, "atime")
 })
 
+dt_dir <- tempfile()
+dir.create(dt_dir)
+gert::git_clone("https://github.com/Rdatatable/data.table", dt_dir)
 test_that("atime_pkg_test_info() works for data.table, run one test case", {
-  dt_dir <- tempfile()
-  dir.create(dt_dir)
-  gert::git_clone("https://github.com/Rdatatable/data.table", dt_dir)
   dt_info <- atime::atime_pkg_test_info(dt_dir)
   tname <- "melt improved in #5054"
   tcall <- dt_info$test.call[[tname]]
   dt_result <- eval(tcall)
   expect_is(dt_result, "atime")
+})
+
+test_that("atime_versions_exprs works in fun", {
+  dt_exprs <- function(e){
+    expr <- substitute(e)
+    atime::atime_versions_exprs(
+      dt_dir,
+      expr=expr,
+      sha.vec=c(installed=""))
+  }
+  (computed <- dt_exprs({
+    data.table::fwrite(input.df, tempfile(), showProgress = FALSE)
+  }))
+  (expected <- list(installed=quote({
+    data.table::fwrite(input.df, tempfile(), showProgress = FALSE)
+  })))
+  expect_equal(computed, expected)
 })
 
 if(interactive())test_that("atime_pkg() works for poncatime", {
