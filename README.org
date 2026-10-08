@@ -225,8 +225,8 @@ You can run =atime_versions()= to check R package performance in every Pull Requ
 
 ** Related work
 
-[[https://cloud.r-project.org/web/packages/bench/][bench]]::press (multi-dimensional search including N) does something
-similar to =atime= (runs different N) and =atime_grid= (search over
+[[https://cloud.r-project.org/web/packages/bench/][bench]]::press() (multi-dimensional search including N) does something
+similar to =atime()= (runs different N) and =atime_grid()= (search over
 parameters other than N). However it can not
 store results if check=FALSE, results must be equal if check=TRUE, and
 there is no way to easily specify a time limit which stops for larger
@@ -234,7 +234,7 @@ sizes (like seconds.limit argument in atime).
 
 [[https://github.com/DavisVaughan/cross][cross]] runs different package versions in different R sessions, so is similar to =atime_versions()=, which runs different package versions in the same R session.
 
-[[https://github.com/Anirban166/testComplexity][testComplexity]]::asymptoticTimings does something similar, but only for
+[[https://github.com/Anirban166/testComplexity][testComplexity]]::asymptoticTimings() does something similar, but only for
 one expression (not several), and there is no special setup argument
 like atime (which means that the timing must include data setup code
 which may be irrelevant).
@@ -257,7 +257,7 @@ See [[https://bencher.dev/docs/reference/prior-art/][Bencher prior art]] for eve
 benchmarking]] for a plot that shows how false positives can show up
 if you use a database of historical timings (perhaps run on different
 computers, see [[https://github.com/eddelbuettel/lim-chart?tab=readme-ov-file][Dirk's real timings]] to see the typical variability of R
-CI on GitHub Actions). In contrast, =atime_pkg= uses a database of
+CI on GitHub Actions). In contrast, =atime_pkg()= uses a database of
 historical commits (known Fast and Slow), and runs them alongside
 commits which are relevant to the current PR (HEAD, merge-base, etc),
 in the same R session, so we can be confident that any differences
