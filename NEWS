@@ -1,3 +1,7 @@
+Changes in version 2026.9.18
+
+- Removed "git command line program" from SystemRequirements in DESCRIPTION, which was incorrect (gert is now required instead of git2r, and submodules should be cloned prior to running atime).
+
 Changes in version 2026.9.17
 
 - R_CMD_INSTALL() exported for use in user pkg.edit.fun.
