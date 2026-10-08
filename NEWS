@@ -1,3 +1,7 @@
+Changes in version 2026.10.8
+
+- atime_versions_exprs() now works when passed expr from another function.
+
 Changes in version 2026.10.7
 
 - atime_grid() now works when passed ... from another function.
