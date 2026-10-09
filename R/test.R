@@ -23,7 +23,7 @@ atime_pkg <- function(pkg.path=".", tests.dir=NULL, verbose=FALSE){
 }
 
 test_file_name <- function(Test){
-  gsub('[\':\\ /*|<>"?\n\r]', "_", Test)
+  gsub('[^a-zA-Z0-9]', "_", Test)
 }
 
 atime_pkg_plot_files <- function(out.dir, test.info, pkg.results){
