@@ -34,7 +34,11 @@ bisect_run <- function(test.path){
   dir.create(atime.path, showWarnings = FALSE, recursive = TRUE)
   file.copy(tests.R, atime.path, overwrite = TRUE)
   tinfo <- atime_pkg_test_info(pkg.path)
-  gert::git_restore(".", repo=tinfo$checkout.path)
+  if(is.function(tinfo$bisect.restore.fun)){
+    tinfo$bisect.restore.fun(tinfo)
+  }else{
+    gert::git_restore(".", repo=tinfo$checkout.path)
+  }
   Test <- Test_commits[, Test]
   tcall <- tinfo$test.call[[Test]]
   bad <- Test_commits[, bad]
@@ -55,15 +59,19 @@ bisect_run <- function(test.path){
     ## bad one.
   }, error=function(e)125)
   status <- if(is.numeric(tres.or.status)){
-    tres.or.status
     pwide <- data.table()[, N.cols := NA_real_]
+    tres.or.status
   }else{
     tref <- references_best(tres.or.status)
     tpred <- predict(tref)
+    set_version <- function(dt)dt[
+    , version := ifelse(grepl("HEAD", expr.name), "HEAD", expr.name)
+    ][N.cols, on="version"]
+    sec.long <- set_version(tres.or.status$meas)[, .(version, N, median)]
+    sec.wide <- dcast(sec.long, N ~ version, value.var="median")
+    sec.compare <- sec.wide[!apply(is.na(sec.wide), 1, any)][.N]
     pwide <- dcast(
-      tpred$prediction[
-      , version := ifelse(grepl("HEAD", expr.name), "HEAD", expr.name)
-      ],
+      set_version(tpred$prediction),
       . ~ version,
       value.var="N")
     plong <- melt(
@@ -86,9 +94,10 @@ bisect_run <- function(test.path){
   log.dt <- data.table(
     log.row[, c("commit","time")],
     status,
-    pwide[, N.cols, with=FALSE])
+    N=pwide[, N.cols, with=FALSE],
+    seconds=sec.compare[, N.cols, with=FALSE])
   print(log.dt)
-  N.dir <- file.path(test.path, "N")
+  N.dir <- file.path(test.path, "results")
   dir.create(N.dir, showWarnings = FALSE, recursive = TRUE)
   N.csv <- file.path(N.dir, paste0(log.dt[["commit"]], ".csv"))
   fwrite(log.dt, N.csv)
