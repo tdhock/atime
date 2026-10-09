@@ -1,13 +1,18 @@
-bisect <- function(pkg.path, Test, bad="Slow", good="Fast"){
+bisect <- function(pkg.path, Test, old.name="Fast", new.name="Slow"){
   tinfo <- atime_pkg_test_info(pkg.path)
   tcall <- tinfo$test.call[[Test]]
   atime.path <- dirname(tinfo$tests.R)
-  test.path <- file.path(atime.path, "bisect", test_file_name(Test))
+  test.dir <- paste(c(
+    test_file_name(Test),
+    old.name,
+    new.name),
+    collapse="_")
+  test.path <- file.path(atime.path, "bisect", test.dir)
   unlink(test.path, recursive = TRUE)
   dir.create(test.path, recursive = TRUE)
   file.copy(tinfo$tests.R, test.path)
   Test_commits.csv <- file.path(test.path, "Test_commits.csv")
-  Test_commits <- data.table(Test, bad, good)
+  Test_commits <- data.table(Test, new.name, old.name)
   fwrite(Test_commits, Test_commits.csv)
   commands <- function(...){
     cmd <- paste(c(
@@ -19,10 +24,10 @@ bisect <- function(pkg.path, Test, bad="Slow", good="Fast"){
   }
   status <- commands(
     "git bisect start",
-    sprintf("git bisect bad %s", tcall[[bad]]),
-    sprintf("git bisect good %s", tcall[[good]]),
-    sprintf("git bisect run R -e 'atime::bisect_run(\"%s\")'", test.path))
-  if(status!=0)commands("git bisect reset")
+    sprintf("git bisect old %s", tcall[[old.name]]),
+    sprintf("git bisect new %s", tcall[[new.name]]),
+    sprintf("git bisect run R -e 'atime::bisect_run(\"%s\")'", test.path),
+    "git bisect reset")
 }
 
 bisect_run <- function(test.path){
@@ -41,9 +46,9 @@ bisect_run <- function(test.path){
   }
   Test <- Test_commits[, Test]
   tcall <- tinfo$test.call[[Test]]
-  bad <- Test_commits[, bad]
-  good <- Test_commits[, good]
-  N.cols <- c(good,bad,"HEAD")
+  new.name <- Test_commits[, new.name]
+  old.name <- Test_commits[, old.name]
+  N.cols <- c(old.name,new.name,"HEAD")
   log.row <- gert::git_log("HEAD", 1, repo=tinfo$checkout.path)
   tres.or.status <- tryCatch({
     eval(tcall)
@@ -57,7 +62,7 @@ bisect_run <- function(test.path){
     ## $ git bisect skip                 # Current version cannot be tested
     ## However, if you skip a commit adjacent to the one you are looking for,
     ## Git will be unable to tell exactly which of those commits was the first
-    ## bad one.
+    ## new.name one.
   }, error=function(e)125)
   status <- if(is.numeric(tres.or.status)){
     pwide <- sec.compare <- data.table()[, (N.cols) := NA_real_]
@@ -81,19 +86,19 @@ bisect_run <- function(test.path){
       value.var="N")
     plong <- melt(
       pwide,
-      measure.vars=c(good,bad),
+      measure.vars=c(old.name,new.name),
       variable.name="version"
     )[, diff := abs(HEAD-value)][]
     closer <- plong[which.min(diff), version]
     ## From man git-bisect, section Bisect run
-    ## If you have a script that can tell if the current source code is good
-    ## or bad, you can bisect by issuing the command:
+    ## If you have a script that can tell if the current source code is old.name
+    ## or new.name, you can bisect by issuing the command:
     ## $ git bisect run my_script arguments
     ## Note that the script (my_script in the above example) should exit with
-    ## code 0 if the current source code is good/old, and exit with a code
+    ## code 0 if the current source code is old, and exit with a code
     ## between 1 and 127 (inclusive), except 125, if the current source code
-    ## is bad/new.
-    ifelse(closer==good, 0, 1)
+    ## is new.
+    ifelse(closer==old.name, 0, 1)
   }
   log.dt <- data.table(
     log.row[, c("commit","time")],
