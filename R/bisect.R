@@ -44,6 +44,7 @@ bisect_run <- function(test.path){
   bad <- Test_commits[, bad]
   good <- Test_commits[, good]
   N.cols <- c(good,bad,"HEAD")
+  log.row <- gert::git_log("HEAD", 1, repo=tinfo$checkout.path)
   tres.or.status <- tryCatch({
     eval(tcall)
     ## From man git-bisect
@@ -59,7 +60,7 @@ bisect_run <- function(test.path){
     ## bad one.
   }, error=function(e)125)
   status <- if(is.numeric(tres.or.status)){
-    pwide <- data.table()[, N.cols := NA_real_]
+    pwide <- sec.compare <- data.table()[, (N.cols) := NA_real_]
     tres.or.status
   }else{
     tref <- references_best(tres.or.status)
@@ -68,6 +69,10 @@ bisect_run <- function(test.path){
     , version := ifelse(grepl("HEAD", expr.name), "HEAD", expr.name)
     ][N.cols, on="version"]
     sec.long <- set_version(tres.or.status$meas)[, .(version, N, median)]
+    RData.dir <- file.path(test.path, "RData")
+    dir.create(RData.dir, showWarnings = FALSE, recursive = TRUE)
+    result.RData <- file.path(RData.dir, paste0(log.row[["commit"]], ".RData"))
+    save(tres.or.status, tref, tpred, file=result.RData)
     sec.wide <- dcast(sec.long, N ~ version, value.var="median")
     sec.compare <- sec.wide[!apply(is.na(sec.wide), 1, any)][.N]
     pwide <- dcast(
@@ -90,16 +95,15 @@ bisect_run <- function(test.path){
     ## is bad/new.
     ifelse(closer==good, 0, 1)
   }
-  log.row <- gert::git_log("HEAD", 1, repo=tinfo$checkout.path)
   log.dt <- data.table(
     log.row[, c("commit","time")],
     status,
     N=pwide[, N.cols, with=FALSE],
     seconds=sec.compare[, N.cols, with=FALSE])
   print(log.dt)
-  N.dir <- file.path(test.path, "results")
-  dir.create(N.dir, showWarnings = FALSE, recursive = TRUE)
-  N.csv <- file.path(N.dir, paste0(log.dt[["commit"]], ".csv"))
-  fwrite(log.dt, N.csv)
+  csv.dir <- file.path(test.path, "csv")
+  dir.create(csv.dir, showWarnings = FALSE, recursive = TRUE)
+  result.csv <- file.path(csv.dir, paste0(log.dt[["commit"]], ".csv"))
+  fwrite(log.dt, result.csv)
   q(status=status)
 }
