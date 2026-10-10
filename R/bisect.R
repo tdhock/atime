@@ -27,6 +27,7 @@ bisect <- function(pkg.path, Test, old.name="Fast", new.name="Slow"){
     sprintf("git bisect old %s", tcall[[old.name]]),
     sprintf("git bisect new %s", tcall[[new.name]]),
     sprintf("git bisect run R -e 'atime::bisect_run(\"%s\")'", test.path),
+    sprintf("rm -f %s", tinfo$tests.R),
     "git bisect reset")
 }
 
@@ -81,9 +82,9 @@ bisect_run <- function(test.path){
     sec.wide <- dcast(sec.long, N ~ version, value.var="median")
     sec.compare <- sec.wide[!apply(is.na(sec.wide), 1, any)][.N]
     pwide <- dcast(
-      set_version(tpred$prediction),
+      set_version(tpred$prediction[, log10.N := log10(N)]),
       . ~ version,
-      value.var="N")
+      value.var="log10.N")
     plong <- melt(
       pwide,
       measure.vars=c(old.name,new.name),
@@ -103,8 +104,8 @@ bisect_run <- function(test.path){
   log.dt <- data.table(
     log.row[, c("commit","time")],
     status,
-    N=pwide[, N.cols, with=FALSE],
-    seconds=sec.compare[, N.cols, with=FALSE])
+    log10_N=pwide[, N.cols, with=FALSE],
+    log10_seconds=log10(sec.compare[, N.cols, with=FALSE]))
   print(log.dt)
   csv.dir <- file.path(test.path, "csv")
   dir.create(csv.dir, showWarnings = FALSE, recursive = TRUE)
