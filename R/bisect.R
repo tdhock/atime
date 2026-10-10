@@ -32,6 +32,7 @@ bisect <- function(pkg.path, Test, old.name="Fast", new.name="Slow"){
 }
 
 bisect_run <- function(test.path){
+  start <- Sys.time()
   Test_commits.csv <- file.path(test.path, "Test_commits.csv")
   Test_commits <- fread(Test_commits.csv)
   atime.path <- dirname(dirname(test.path))
@@ -101,15 +102,16 @@ bisect_run <- function(test.path){
     ## is new.
     ifelse(closer==old.name, 0, 1)
   }
+  csv.dir <- file.path(test.path, "csv")
+  dir.create(csv.dir, showWarnings = FALSE, recursive = TRUE)
+  result.csv <- file.path(csv.dir, paste0(log.dt[["commit"]], ".csv"))
   log.dt <- data.table(
+    start, end=Sys.time(),
     log.row[, c("commit","time")],
     status,
     log10_N=pwide[, N.cols, with=FALSE],
     log10_seconds=log10(sec.compare[, N.cols, with=FALSE]))
   print(log.dt)
-  csv.dir <- file.path(test.path, "csv")
-  dir.create(csv.dir, showWarnings = FALSE, recursive = TRUE)
-  result.csv <- file.path(csv.dir, paste0(log.dt[["commit"]], ".csv"))
   fwrite(log.dt, result.csv)
   q(status=status)
 }
