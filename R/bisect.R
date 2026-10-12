@@ -10,11 +10,11 @@ bisect_tcall <- function(tinfo, Test, ...){
   tcall
 }
 
-bisect <- function(pkg.path, Test, old.name="Fast", new.name="Slow", reps=10){
+bisect <- function(pkg.path, Test, old.name="Fast", new.name="Slow", reps=20){
   tinfo <- atime_pkg_test_info(pkg.path)
   tcall <- bisect_tcall(tinfo, Test, old.name, new.name)
   tcall$sha.vec <- NULL
-  rep.dt <- data.table(rep.i=seq_len(10))[, {
+  rep.dt <- data.table(rep.i=seq_len(reps))[, {
     tres <- eval(tcall)
     tref <- atime::references_best(tres)
     tpred <- predict(tref)
@@ -30,15 +30,31 @@ bisect <- function(pkg.path, Test, old.name="Fast", new.name="Slow", reps=10){
   unlink(test.path, recursive = TRUE)
   dir.create(test.path, recursive = TRUE)
   file.copy(tinfo$tests.R, test.path)
+  N.sds <- 2
+  vstats <- dcast(
+    rep.dt[, .(version=expr.name, log10_N = log10(N))],
+      version ~ .,
+    list(mean, sd),
+    value.var="log10_N"
+  )[order(log10_N_mean)]
+  bounds <- c(lo=-1, hi=1)
+  for(bound.name in names(bounds)){
+    set(
+      vstats,
+      j=paste0("log10_N_", bound.name),
+      value=vstats[, log10_N_mean+bounds[[bound.name]]*N.sds*log10_N_sd])
+  }
+  if(vstats[, log10_N_lo[2]<log10_N_hi[1] ]){
+    ## if bounds overlap, set to midpoint between means.
+    mid <- mean(vstats$log10_N_mean)
+    set(vstats, i=2, j="log10_N_lo", value=mid)
+    set(vstats, i=1, j="log10_N_hi", value=mid)
+  }
   csv.dt.list <- list(
     Test_commits=data.table(Test, old.name, new.name),
-    version_stats=dcast(
-      rep.dt[, .(version=expr.name, log10_N = log10(N))],
-      version ~ .,
-      list(mean, sd),
-      value.var="log10_N"))
+    version_stats=vstats)
   if(FALSE){
-    plot(log10(N) ~ rep.i, rep.dt);csv.dt.list$version_stats[, abline(h=log10_N_mean+log10_N_sd*rep(c(-1,0,1),each=2))]
+    plot(log10(N) ~ rep.i, rep.dt);csv.dt.list$version_stats[, abline(h=log10_N_mean+log10_N_sd*rep(N.sds*c(-1,0,1),each=2))]
   }
   for(csv_name in names(csv.dt.list)){
     csv.dt <- csv.dt.list[[csv_name]]
@@ -112,8 +128,8 @@ bisect_run <- function(test.path){
       )[, diff := abs(HEAD-value)][]
       norm.dt <- version_stats[plong, on="version"][
       , normality := fcase(
-        value < log10_N_mean-log10_N_sd, "lo",
-        value > log10_N_mean+log10_N_sd, "hi",
+        value < log10_N_lo, "lo",
+        value > log10_N_hi, "hi",
         default="normal"
       )][]
       print(norm.dt)
