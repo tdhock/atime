@@ -32,6 +32,12 @@ bisect <- function(pkg.path, Test, old.name="Fast", new.name="Slow"){
   if(nrow(max.dt)==2){
     stop(sprintf("both old=%s and new=%s stopped an N=%s, which means there is not a detectable difference in throughput using the current N sequence and time limit; if you believe there is a real difference that should be detected, you can try again with a finer N sequence and/or larger time limit", old.name, new.name, max.dt$N[1]))
   }
+  tref <- references_best(tres)
+  tpred <- predict(tref)
+  if(nrow(tpred[["prediction"]]) != 2){
+    print(tpred)
+    stop("both old and new are required to have predicted values at seconds.limit; fix by decreasing time limit or increasing N\n")
+  }
   atime.path <- dirname(tinfo$tests.R)
   test.path <- file.path(
     atime.path, "bisect", test_file_name(Test),
