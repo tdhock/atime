@@ -43,8 +43,7 @@ bisect <- function(pkg.path, Test, old.name="Fast", new.name="Slow"){
   dir.create(test.path, recursive = TRUE)
   file.copy(tinfo$tests.R, test.path)
   csv.dt.list <- list(
-    Test_commits=data.table(Test, old.name, new.name),
-    version_stats=vstats)
+    Test_commits=data.table(Test, old.name, new.name))
   for(csv_name in names(csv.dt.list)){
     csv.dt <- csv.dt.list[[csv_name]]
     out.csv <- file.path(test.path, paste0(csv_name, ".csv"))
@@ -67,8 +66,6 @@ bisect_run <- function(test.path){
   start <- Sys.time()
   Test_commits.csv <- file.path(test.path, "Test_commits.csv")
   Test_commits <- fread(Test_commits.csv)
-  version_stats.csv <- file.path(test.path, "version_stats.csv")
-  version_stats <- fread(version_stats.csv)
   atime.path <- dirname(dirname(dirname(test.path)))
   pkg.path <- dirname(dirname(atime.path))
   tests.R <- file.path(test.path, "tests.R")
