@@ -10,16 +10,28 @@ bisect_tcall <- function(tinfo, Test, ...){
   tcall
 }
 
-bisect <- function(pkg.path, Test, old.name="Fast", new.name="Slow", reps=20){
+bisect <- function(pkg.path, Test, old.name="Fast", new.name="Slow"){
   tinfo <- atime_pkg_test_info(pkg.path)
   tcall <- bisect_tcall(tinfo, Test, old.name, new.name)
+  for(prefix in c("old","new")){
+    vname <- paste0(prefix,".name")
+    Rname <- get(vname)
+    if(!(is.character(Rname) && length(Rname)==1 && !is.na(Rname))){
+      stop(vname, " should be string: name of historical commit in atime test case")
+    }
+    ref <- tcall[[Rname]]
+    if(!(is.character(ref) && length(ref)==1 && !is.na(ref))){
+      stop(sprintf(
+        "historical commit %s=%s does not exist in atime test case",
+        Rname, ref))
+    }
+  }
   tcall$sha.vec <- NULL
-  rep.dt <- data.table(rep.i=seq_len(reps))[, {
-    tres <- eval(tcall)
-    tref <- atime::references_best(tres)
-    tpred <- predict(tref)
-    tpred[["prediction"]]
-  }, by=rep.i]
+  tres <- eval(tcall)
+  max.dt <- tres$meas[N==max(N)]
+  if(nrow(max.dt)==2){
+    stop(sprintf("both old=%s and new=%s stopped an N=%s, which means there is not a detectable difference in throughput using the current N sequence and time limit; if you believe there is a real difference that should be detected, you can try again with a finer N sequence and/or larger time limit", old.name, new.name, max.dt$N[1]))
+  }
   atime.path <- dirname(tinfo$tests.R)
   test.path <- file.path(
     atime.path, "bisect", test_file_name(Test),
@@ -30,32 +42,9 @@ bisect <- function(pkg.path, Test, old.name="Fast", new.name="Slow", reps=20){
   unlink(test.path, recursive = TRUE)
   dir.create(test.path, recursive = TRUE)
   file.copy(tinfo$tests.R, test.path)
-  N.sds <- 2
-  vstats <- dcast(
-    rep.dt[, .(version=expr.name, log10_N = log10(N))],
-      version ~ .,
-    list(mean, sd),
-    value.var="log10_N"
-  )[order(log10_N_mean)]
-  bounds <- c(lo=-1, hi=1)
-  for(bound.name in names(bounds)){
-    set(
-      vstats,
-      j=paste0("log10_N_", bound.name),
-      value=vstats[, log10_N_mean+bounds[[bound.name]]*N.sds*log10_N_sd])
-  }
-  if(vstats[, log10_N_lo[2]<log10_N_hi[1] ]){
-    ## if bounds overlap, set to midpoint between means.
-    mid <- mean(vstats$log10_N_mean)
-    set(vstats, i=2, j="log10_N_lo", value=mid)
-    set(vstats, i=1, j="log10_N_hi", value=mid)
-  }
   csv.dt.list <- list(
     Test_commits=data.table(Test, old.name, new.name),
     version_stats=vstats)
-  if(FALSE){
-    plot(log10(N) ~ rep.i, rep.dt);csv.dt.list$version_stats[, abline(h=log10_N_mean+log10_N_sd*rep(N.sds*c(-1,0,1),each=2))]
-  }
   for(csv_name in names(csv.dt.list)){
     csv.dt <- csv.dt.list[[csv_name]]
     out.csv <- file.path(test.path, paste0(csv_name, ".csv"))
@@ -126,27 +115,16 @@ bisect_run <- function(test.path){
         measure.vars=c(old.name,new.name),
         variable.name="version"
       )[, diff := abs(HEAD-value)][]
-      norm.dt <- version_stats[plong, on="version"][
-      , normality := fcase(
-        value < log10_N_lo, "lo",
-        value > log10_N_hi, "hi",
-        default="normal"
-      )][]
-      print(norm.dt)
-      if(sum(norm.dt$normality=="normal")<2){
-        NA # run another timing.
-      }else{
-        closer <- plong[which.min(diff), version]
-        ## From man git-bisect, section Bisect run
-        ## If you have a script that can tell if the current source code is old.name
-        ## or new.name, you can bisect by issuing the command:
-        ## $ git bisect run my_script arguments
-        ## Note that the script (my_script in the above example) should exit with
-        ## code 0 if the current source code is old, and exit with a code
-        ## between 1 and 127 (inclusive), except 125, if the current source code
-        ## is new.
-        ifelse(closer==old.name, 0, 1)
-      }
+      closer <- plong[which.min(diff), version]
+      ## From man git-bisect, section Bisect run
+      ## If you have a script that can tell if the current source code is old.name
+      ## or new.name, you can bisect by issuing the command:
+      ## $ git bisect run my_script arguments
+      ## Note that the script (my_script in the above example) should exit with
+      ## code 0 if the current source code is old, and exit with a code
+      ## between 1 and 127 (inclusive), except 125, if the current source code
+      ## is new.
+      ifelse(closer==old.name, 0, 1)
     }
   }
   log.dt <- data.table(
@@ -165,7 +143,9 @@ bisect_run <- function(test.path){
 }
 
 bisect_try <- function(test.path){
-  tcall <- readRDS(file.path(test.path, "tcall.rds"))
+  tcall.rds <- file.path(test.path, "tcall.rds")
+  tcall <- readRDS(tcall.rds)
+  unlink(tcall.rds)
   tres.or.status <- tryCatch({
     eval(tcall)
     ## From man git-bisect
