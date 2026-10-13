@@ -103,6 +103,11 @@ bisect_run <- function(test.path){
       save(tres.or.status, tref, tpred, file=result.RData)
       sec.wide <- dcast(tres.or.status$meas, N ~ expr.name, value.var="median")
       sec.compare <- sec.wide[!apply(is.na(sec.wide), 1, any)][.N]
+      if(nrow(tpred[["prediction"]])!=length(N.cols)){
+        cat("Skipping because there are not enough measurements at time limit; fix by decreasing time limit or increasing N\n")
+        print(tpred)
+        q(status=125)
+      }
       pwide <- dcast(
         tpred$prediction[, log10_N := log10(N)],
         . ~ expr.name,
