@@ -91,9 +91,7 @@ bisect_run <- function(test.path){
   N.cols <- c(old.name,"HEAD",new.name)
   log.row <- gert::git_log("HEAD", 1, repo=tinfo$checkout.path)
   status <- NA
-  timings <- 0
   while(is.na(status)){
-    timings <- timings+1
     cmd <- sprintf("R -e 'atime:::bisect_try(\"%s\")'", test.path)
     system(cmd)
     tres.or.status <- readRDS(file.path(test.path, "tres.or.status.rds"))
@@ -136,7 +134,6 @@ bisect_run <- function(test.path){
     }
   }
   log.dt <- data.table(
-    timings,
     start, end=Sys.time(),
     log.row[, c("commit","time")],
     status,
