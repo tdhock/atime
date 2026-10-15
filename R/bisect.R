@@ -1,5 +1,6 @@
 bisect_tcall <- function(tinfo, Test, ...){
   tcall <- tinfo$test.call[[Test]]
+  if(is.null(tcall))stop("Test case does not exist: ", Test)
   keep.args <- c(
     names(formals(atime::atime_versions)),
     "", ...)
@@ -22,8 +23,8 @@ bisect <- function(pkg.path, Test, old.name="Fast", new.name="Slow"){
     ref <- tcall[[Rname]]
     if(!(is.character(ref) && length(ref)==1 && !is.na(ref))){
       stop(sprintf(
-        "historical commit %s=%s does not exist in atime test case",
-        Rname, ref))
+        "historical commit %s does not exist in atime test case %s",
+        Rname, Test))
     }
   }
   tcall$sha.vec <- NULL
