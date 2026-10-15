@@ -31,7 +31,7 @@ bisect <- function(pkg.path, Test, old.name="Fast", new.name="Slow"){
   tres <- eval(tcall)
   max.dt <- tres$meas[N==max(N)]
   if(nrow(max.dt)==2){
-    stop(sprintf("both old=%s and new=%s stopped at N=%s, which means there is not a detectable difference in throughput using the current N sequence and time limit; if you believe there is a real difference that should be detected, you can try again with a finer N sequence and/or larger time limit", old.name, new.name, max.dt$N[1]))
+    stop(sprintf("both old=%s and new=%s stopped at N=%s, which means there is not a large difference in throughput using the current N sequence and time limit; if you believe there is a real difference that should be detected, you can try again with a finer N sequence and/or larger time limit", old.name, new.name, max.dt$N[1]))
   }
   tref <- references_best(tres)
   tpred <- predict(tref)
@@ -78,11 +78,15 @@ bisect_run <- function(test.path){
   pkg.path <- dirname(dirname(atime.path))
   tests.R <- file.path(test.path, "tests.R")
   dir.create(atime.path, showWarnings = FALSE, recursive = TRUE)
-  file.copy(tests.R, atime.path, overwrite = TRUE)
+  print(file.copy(tests.R, atime.path, overwrite = TRUE))
+  system(paste("head", file.path(atime.path, "tests.R")))
   tinfo <- atime_pkg_test_info(pkg.path)
   if(is.function(tinfo$bisect.restore.fun)){
+    cat("running bisect.restore.fun()\n")
+    print(tinfo$bisect.restore.fun)
     tinfo$bisect.restore.fun(tinfo)
   }else{
+    cat("running git_restore()\n")
     gert::git_restore(".", repo=tinfo$checkout.path)
   }
   Test <- Test_commits[, Test]
