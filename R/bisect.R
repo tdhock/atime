@@ -66,7 +66,8 @@ bisect <- function(pkg.path, Test, old.name="Fast", new.name="Slow"){
     "git bisect reset"
   ), collapse=" && ")
   cat(cmd, "\n")
-  system(cmd)
+  status <- system(cmd)
+  if(status != 0)stop("error in git bisect")
 }
 
 bisect_run <- function(test.path){
