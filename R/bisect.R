@@ -31,7 +31,7 @@ bisect <- function(pkg.path, Test, old.name="Fast", new.name="Slow"){
   tres <- eval(tcall)
   max.dt <- tres$meas[N==max(N)]
   if(nrow(max.dt)==2){
-    stop(sprintf("both old=%s and new=%s stopped an N=%s, which means there is not a detectable difference in throughput using the current N sequence and time limit; if you believe there is a real difference that should be detected, you can try again with a finer N sequence and/or larger time limit", old.name, new.name, max.dt$N[1]))
+    stop(sprintf("both old=%s and new=%s stopped at N=%s, which means there is not a detectable difference in throughput using the current N sequence and time limit; if you believe there is a real difference that should be detected, you can try again with a finer N sequence and/or larger time limit", old.name, new.name, max.dt$N[1]))
   }
   tref <- references_best(tres)
   tpred <- predict(tref)
