@@ -1,10 +1,10 @@
 atime: Asymptotic Timing
 
 - [[https://docs.google.com/presentation/d/1_aWo2HgM600Mk1nZ4UUv3qV-DzdBmvcEInEU96KqIjY/edit?usp=sharing][Asymptotic benchmarking slides]] for a short talk about atime.
-- compare time/memory/other quantities of different R codes that depend on N: [[https://atime-docs.netlify.app/manual#sec:man-atime][atime().]]
+- compare time/memory/other quantities of different R codes that depend on N: [[https://atime-docs.netlify.app/manual#sec:man-atime][atime()]].
 - estimate the asymptotic complexity (big-O notation) of any R code that depends on some data size N: [[https://atime-docs.netlify.app/manual#sec:man-references_best][references_best()]].
-- compare time/memory of different git versions of R package code: [[https://atime-docs.netlify.app/manual#sec:man-atime_versions][atime_versions()]].
-- continuous performance testing of R packages: [[https://atime-docs.netlify.app/manual#sec:man-atime_pkg][atime_pkg()]].
+- compare asymptotic performance of specified git commits of an R package: [[https://atime-docs.netlify.app/manual#sec:man-atime_versions][atime_versions()]].
+- run all asymptotic performance test cases in an R package: [[https://atime-docs.netlify.app/manual#sec:man-atime_pkg][atime_pkg()]].
 
 | [[file:tests/testthat][tests]]    | [[https://github.com/tdhock/atime/actions][https://github.com/tdhock/atime/workflows/R-CMD-check/badge.svg]] |
 | [[https://github.com/jimhester/covr][coverage]] | [[https://app.codecov.io/gh/tdhock/atime?branch=main][https://codecov.io/gh/tdhock/atime/branch/main/graph/badge.svg]]  |
@@ -267,4 +267,5 @@ in the same R session, so we can be confident that any differences
 that we see are real. In the Bencher framework, a similar idea is
 presented in [[https://bencher.dev/docs/how-to/track-benchmarks/#relative-continuous-benchmarking][Relative Continuous Benchmarking]], which shows how to
 compare two branches, =feature-branch= and =main=.
+
 
