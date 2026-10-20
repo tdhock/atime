@@ -268,4 +268,11 @@ that we see are real. In the Bencher framework, a similar idea is
 presented in [[https://bencher.dev/docs/how-to/track-benchmarks/#relative-continuous-benchmarking][Relative Continuous Benchmarking]], which shows how to
 compare two branches, =feature-branch= and =main=.
 
+The paper [[https://dl.acm.org/doi/abs/10.1145/1287624.1287681][Measuring Empirical Computational Complexity]] proposed a different approach for estimating the asymptotic complexity class (big-O notation):
 
+|                          | Previous                | Proposed                                            |
+|--------------------------+-------------------------+-----------------------------------------------------|
+| measure time taken using | iteration counters      | wall time, more generally applicable but more noisy |
+| N values                 | full range              | only under time limit, faster                       |
+| fit model to             | all data                | only largest data, to exclude N in constant regime  |
+| model                    | regression coefficients | best fit reference curve (classification)           |
