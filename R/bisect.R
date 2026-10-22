@@ -12,6 +12,8 @@ bisect_tcall <- function(tinfo, Test, ...){
 }
 
 bisect <- function(pkg.path, Test, old.name="Fast", new.name="Slow"){
+  N <- NULL
+  ## Above to avoid CRAN check NOTEs.
   tinfo <- atime_pkg_test_info(pkg.path)
   tcall <- bisect_tcall(tinfo, Test, old.name, new.name)
   for(prefix in c("old","new")){
@@ -73,6 +75,8 @@ bisect <- function(pkg.path, Test, old.name="Fast", new.name="Slow"){
 }
 
 bisect_run <- function(test.path){
+  log10_N <- N <- HEAD <- value <- NULL
+  ## Above to avoid CRAN check NOTEs.
   start <- Sys.time()
   Test_commits.csv <- file.path(test.path, "Test_commits.csv")
   Test_commits <- fread(Test_commits.csv)
