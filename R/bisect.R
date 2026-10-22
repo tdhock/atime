@@ -75,7 +75,7 @@ bisect <- function(pkg.path, Test, old.name="Fast", new.name="Slow"){
 }
 
 bisect_run <- function(test.path){
-  log10_N <- N <- HEAD <- value <- NULL
+  log10_N <- N <- HEAD <- value <- new.name <- old.name <- Test <- NULL
   ## Above to avoid CRAN check NOTEs.
   start <- Sys.time()
   Test_commits.csv <- file.path(test.path, "Test_commits.csv")
