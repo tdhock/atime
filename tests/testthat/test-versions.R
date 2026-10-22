@@ -205,4 +205,51 @@ if(interactive())test_that("atime_pkg() works for poncatime", {
   expect_identical(tinfo$HEAD.name, "HEAD=master")
   poncatime_info <- atime::atime_pkg(poncatime_dir)
   expect_gt(nrow(poncatime_info$all), 0)#at least one test case run.
+  ## bisect test
+  atime_dir <- file.path(poncatime_dir, ".ci", "atime")
+  gert::git_restore(".ci/atime/tests.R",repo=poncatime_dir)
+  tests.R <- file.path(atime_dir, "tests.R")
+  system(paste("grep by=0.5", tests.R))
+  system(paste("sed -i s/by=0.5/by=0.1/", tests.R))
+  system(paste("grep by=0.5", tests.R))
+  atime::bisect(poncatime_dir, "asoCurvatureEstimation", "v1.0", "v1.4")
+  csv_glob <- file.path(atime_dir,"bisect","asoCurvatureEstimation","v1.0-v1.4","csv","*")
+  (csv.wide <- data.table(
+    csv=Sys.glob(csv_glob)
+  )[
+  , fread(csv), by=csv
+  ][, let(
+    rank = rank(time),
+    Status=factor(status)
+  )][])
+  min.start <- min(as.integer(csv.wide$start))
+  for(cname in c("start", "end")){
+    set(
+      csv.wide,
+      j=paste0(cname,"_minutes"),
+      value=(as.integer(csv.wide[[cname]])-min.start)/60)
+  }
+  if(require(ggplot2)){
+    ggplot()+
+      geom_segment(aes(
+        rank, start_minutes,
+        xend=rank, yend=end_minutes),
+        data=csv.wide)+
+      scale_fill_manual(values=c("0"="black", "1"="white"))+
+      geom_point(aes(
+        rank, start_minutes, fill=Status),
+        shape=21,
+        data=csv.wide)
+  }
+  (csv.long <- melt(csv.wide, measure.vars=measure(variable, version, pattern="([^.]+)[.](.*)")))
+  if(require(ggplot2)){
+    ggplot()+
+      geom_vline(aes(
+        xintercept=rank, linetype=Status),
+        data=csv.wide)+
+      geom_line(aes(
+        rank, value, color=version),
+        data=csv.long)+
+      facet_grid(variable ~ ., scales="free")
+  }
 })
