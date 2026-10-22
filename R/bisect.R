@@ -62,7 +62,9 @@ bisect <- function(pkg.path, Test, old.name="Fast", new.name="Slow"){
     sprintf("git bisect old %s", tcall[[old.name]]),
     sprintf("git bisect new %s", tcall[[new.name]]),
     sprintf("git bisect run R -e 'atime::bisect_run(\"%s\")'", test.path),
-    sprintf("rm -f %s", tinfo$tests.R),
+    sprintf("cd %s", dirname(tinfo$tests.R)),
+    "git restore tests.R",
+    sprintf("cd %s", tinfo$checkout.path),
     "git bisect reset"
   ), collapse=" && ")
   cat(cmd, "\n")
@@ -78,23 +80,16 @@ bisect_run <- function(test.path){
   pkg.path <- dirname(dirname(atime.path))
   tests.R <- file.path(test.path, "tests.R")
   dir.create(atime.path, showWarnings = FALSE, recursive = TRUE)
-  print(file.copy(tests.R, atime.path, overwrite = TRUE))
-  system(paste("head", file.path(atime.path, "tests.R")))
+  file.copy(tests.R, atime.path, overwrite = TRUE)
   tinfo <- atime_pkg_test_info(pkg.path)
   if(is.function(tinfo$bisect.restore.fun)){
-    cat("running bisect.restore.fun()\n")
-    print(tinfo$bisect.restore.fun)
     tinfo$bisect.restore.fun(tinfo)
   }else{
-    cat("running git_restore()\n")
     gert::git_restore(".", repo=tinfo$checkout.path)
   }
-  Test <- Test_commits[, Test]
-  new.name <- Test_commits[, new.name]
-  old.name <- Test_commits[, old.name]
-  tcall <- bisect_tcall(tinfo, Test, old.name, new.name)
+  tcall <- Test_commits[, bisect_tcall(tinfo, Test, old.name, new.name)]
   saveRDS(tcall, file.path(test.path, "tcall.rds"))
-  N.cols <- c(old.name,"HEAD",new.name)
+  N.cols <- Test_commits[, c(old.name,"HEAD",new.name)]
   log.row <- gert::git_log("HEAD", 1, repo=tinfo$checkout.path)
   status <- NA
   while(is.na(status)){
@@ -124,7 +119,7 @@ bisect_run <- function(test.path){
         value.var="log10_N")
       plong <- melt(
         pwide,
-        measure.vars=c(old.name,new.name),
+        measure.vars=Test_commits[, c(old.name,new.name)],
         variable.name="version"
       )[, diff := abs(HEAD-value)][]
       closer <- plong[which.min(diff), version]
@@ -136,7 +131,7 @@ bisect_run <- function(test.path){
       ## code 0 if the current source code is old, and exit with a code
       ## between 1 and 127 (inclusive), except 125, if the current source code
       ## is new.
-      ifelse(closer==old.name, 0, 1)
+      ifelse(closer==Test_commits[, old.name], 0, 1)
     }
   }
   log.dt <- data.table(
