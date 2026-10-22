@@ -209,10 +209,12 @@ if(interactive())test_that("atime_pkg() works for poncatime", {
   atime_dir <- file.path(poncatime_dir, ".ci", "atime")
   gert::git_restore(".ci/atime/tests.R",repo=poncatime_dir)
   tests.R <- file.path(atime_dir, "tests.R")
-  system(paste("grep by=0.5", tests.R))
+  grep_by <- function()system(paste("grep by=0.5", tests.R))
+  grep_by()
   system(paste("sed -i s/by=0.5/by=0.1/", tests.R))
-  system(paste("grep by=0.5", tests.R))
+  grep_by()
   atime::bisect(poncatime_dir, "asoCurvatureEstimation", "v1.0", "v1.4")
+  gert::git_status(repo=poncatime_dir)
   csv_glob <- file.path(atime_dir,"bisect","asoCurvatureEstimation","v1.0-v1.4","csv","*")
   (csv.wide <- data.table(
     csv=Sys.glob(csv_glob)
@@ -252,4 +254,6 @@ if(interactive())test_that("atime_pkg() works for poncatime", {
         data=csv.long)+
       facet_grid(variable ~ ., scales="free")
   }
+  ## can run another bisect after.
+  atime::bisect(poncatime_dir, "asoCurvatureEstimation", "v1.0", "v1.4")
 })
