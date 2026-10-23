@@ -14,6 +14,7 @@
 atime_test_list(
   N, setup, expr, times, seconds.limit,
   verbose, pkg.edit.fun, result, setup.version,
+  bisect.commits, ci.commits,
   tests = NULL, ...)
 }
 \arguments{
@@ -33,13 +34,17 @@ atime_test_list(
   \item{tests}{
     list of tests, with names for tests, values are lists of arguments to pass to
     \code{\link{atime_versions}} (combined with \dots).}
+  \item{bisect.commits}{named character vector of versions to use in git
+    bisect (not CI).}
+  \item{ci.commits}{named character vector of versions to use in CI (and
+    git bisect).}
   \item{\dots}{
     names for tests, values are lists of arguments to pass to
     \code{\link{atime_versions}} (combined with \code{tests}).}
 }
 \value{
-  List representing performance tests,
-  from \dots and \code{tests}; each element is a list of
+  List representing performance tests, from \dots and \code{tests}.
+  each element is a list of
   arguments to pass to \code{\link{atime_versions}}.
 }
 \author{

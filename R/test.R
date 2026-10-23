@@ -426,7 +426,7 @@ atime_test <- function(N, setup, expr, times, seconds.limit, verbose, pkg.edit.f
   targs
 }
 
-atime_test_list <- function(N, setup, expr, times, seconds.limit, verbose, pkg.edit.fun, result, setup.version, bisect.commits, tests=NULL, ...){
+atime_test_list <- function(N, setup, expr, times, seconds.limit, verbose, pkg.edit.fun, result, setup.version, bisect.commits, ci.commits, tests=NULL, ...){
   common.args <- get_test_args()
   L <- c(tests, list(...))
   inherit_args(L, common.args)
