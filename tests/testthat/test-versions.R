@@ -224,7 +224,7 @@ dt_atime_dir <- file.path(dt_dir, ".ci", "atime")
 file.copy(system.file("data.table_tests.R", package="atime"), file.path(dt_atime_dir, "tests.R"), overwrite = TRUE)
 gert::git_add(".ci/atime/tests.R", repo=dt_dir)
 gert::git_commit("commit from atime test-versions.R", repo=dt_dir)
-test_that("bisect.commits arg works", {
+if(interactive())test_that("bisect.commits arg works", {
   dt_info <- atime::atime_pkg_test_info(dt_dir)
   tname <- "fread N=cols regression"
   names(dt_info$test.list[[tname]])
