@@ -93,7 +93,7 @@ atime_versions_install <- function(Package, pkg.path, new.Package.vec, sha.vec, 
             new.Package, first.lib))
         }
       }else if(sha == ""){
-        install.packages(Package)
+        if(interactive())install.packages(Package)
       }else{
         new.repo.path <- file.path(tdir, new.Package)
         unlink(new.repo.path, recursive=TRUE, force=TRUE)
