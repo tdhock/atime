@@ -30,7 +30,10 @@ bisect_try(test.path)
   it is called from \code{git bisect run}); it exits R with a status
   code (0=old, 1=new, 125=skip).
   \code{bisect_try()} is not usually called directly by a user (instead
-  it is called from \code{bisect_run()}); it runs the test in
+  it is called from \code{bisect_run()} but in another R process, in
+  order to isolate environment modifications: data.table test versions
+  may break regular data.table which we use to compute results);
+  it runs the test in
   \code{tryCatch}, saving results or error code 125 to an RDS file.
 }
 \references{
