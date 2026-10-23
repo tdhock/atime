@@ -290,6 +290,7 @@ if(interactive())test_that("atime_pkg() works for poncatime", {
   expect_true(file.exists(tests.R))
   csv_glob <- file.path(atime_dir,"bisect","asoCurvatureEstimation","v1.0-v1.4","csv","*")
   csv.wide <- read_bisect_csv(csv_glob)
+  expect_equal(nrow(csv.wide), 9)
   if(require(ggplot2)){
     ggplot()+
       geom_segment(aes(
