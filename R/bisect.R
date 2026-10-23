@@ -64,7 +64,7 @@ bisect <- function(pkg.path, Test, old.name="Fast", new.name="Slow"){
     "git bisect start",
     sprintf("git bisect old %s", tcall[[old.name]]),
     sprintf("git bisect new %s", tcall[[new.name]]),
-    sprintf("git bisect run R -e 'atime::bisect_run(\"%s\")'", test.path),
+    sprintf("git bisect run %s -e 'atime::bisect_run(\"%s\")'", file.path(R.home(), "bin", "R"), test.path),
     sprintf("cd %s", dirname(tinfo$tests.R)),
     "git restore tests.R",
     sprintf("cd %s", tinfo$checkout.path),
