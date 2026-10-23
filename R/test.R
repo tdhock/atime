@@ -326,7 +326,12 @@ atime_pkg_test_info <- function(pkg.path=".", tests.dir=NULL, verbose=FALSE){
   HEAD.name <- paste0("HEAD=", gert::git_branch(repo=test.env$checkout.path))
   sha.vec[[HEAD.name]] <- HEAD.commit
   installed_version <- tryCatch(paste(packageVersion(Package)), error=function(e)"(not installed)")
-  ap <- utils::available.packages()
+  ap <- tryCatch({
+    utils::available.packages()
+  }, error=function(e){
+    warning("available.packages() errored: ", e)
+    matrix(character())
+  })
   installed_name <- "installed"
   if(Package %in% rownames(ap)){
     CRAN_version <- ap[Package,"Version"]
