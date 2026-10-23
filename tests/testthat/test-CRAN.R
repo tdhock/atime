@@ -582,7 +582,7 @@ if(require(Matrix))test_that("result=fun works, N=commas no decimals", {
 test_that("issue109 speed improvement shows in issues.dt", {
   data(issue109,package="atime")
   tdir <- if(interactive())"~/atest" else tempfile()
-  dir.create(tdir)
+  dir.create(tdir, showWarnings = FALSE)
   pres <- atime:::atime_pkg_plot_files(tdir, issue109$test.info, issue109$pkg.results)
   expected <- pres$all[order(pred.Nx, P.value)][1:nrow(pres$preview)]
   computed <- pres$preview[order(pred.Nx, P.value)]

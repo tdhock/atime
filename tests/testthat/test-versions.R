@@ -277,6 +277,7 @@ poncatime_dir <- tempfile()
 dir.create(poncatime_dir)
 gert::git_clone("https://github.com/poncateam/poncatime", poncatime_dir)
 system(paste("cd", poncatime_dir, "&& git submodule update --init --recursive && cd src/external/ponca && git checkout master"))
+pak::pkg_install(poncatime_dir)
 test_that("atime_pkg() works for poncatime", {
   tinfo <- atime::atime_pkg_test_info(poncatime_dir)
   expect_identical(tinfo$HEAD.name, "HEAD=master")
