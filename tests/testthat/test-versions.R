@@ -224,7 +224,7 @@ dt_atime_dir <- file.path(dt_dir, ".ci", "atime")
 file.copy(system.file("data.table_tests.R", package="atime"), file.path(dt_atime_dir, "tests.R"), overwrite = TRUE)
 gert::git_add(".ci/atime/tests.R", repo=dt_dir)
 gert::git_commit("commit from atime test-versions.R", repo=dt_dir)
-if(interactive())test_that("bisect.commits arg works", {
+test_that("bisect.commits arg works for data.table N=cols regression", {
   dt_info <- atime::atime_pkg_test_info(dt_dir)
   tname <- "fread N=cols regression"
   names(dt_info$test.list[[tname]])
@@ -238,7 +238,7 @@ if(interactive())test_that("bisect.commits arg works", {
   expect_identical(tcall$sha.vec, l.item$sha.vec)
   dt_result <- eval(tcall)
   expect_is(dt_result, "atime")
-  expect_in(c("Fast", "Slow", "HEAD=atime-dt-test-versions", "base=master"), dt_result$measurements$expr.name)
+  expect_in(c("Fast", "Slow", "HEAD=atime-dt-test-versions"), dt_result$measurements$expr.name)#base and others may or may not be present.
   expect_equal(sum(names(l.item$bisect.commits) %in% dt_result$measurements$expr.name), 0)
   atime::bisect(dt_dir, tname, "PR7375", "Slow")
   csv_glob <- file.path(dt_atime_dir, "bisect", "fread_N_cols_regression", "PR7375-Slow", "csv", "*")
@@ -270,29 +270,26 @@ if(interactive())test_that("bisect.commits arg works", {
   }
 })
 
-if(interactive())test_that("atime_pkg() works for poncatime", {
-  poncatime_dir <- tempfile()
-  dir.create(poncatime_dir)
-  gert::git_clone("https://github.com/poncateam/poncatime", poncatime_dir)
-  system(paste("cd", poncatime_dir, "&& git submodule update --init --recursive && cd src/external/ponca && git checkout master"))
+poncatime_dir <- tempfile()
+dir.create(poncatime_dir)
+gert::git_clone("https://github.com/poncateam/poncatime", poncatime_dir)
+system(paste("cd", poncatime_dir, "&& git submodule update --init --recursive && cd src/external/ponca && git checkout master"))
+test_that("atime_pkg() works for poncatime", {
   tinfo <- atime::atime_pkg_test_info(poncatime_dir)
   expect_identical(tinfo$HEAD.name, "HEAD=master")
   poncatime_info <- atime::atime_pkg(poncatime_dir)
   expect_gt(nrow(poncatime_info$all), 0)#at least one test case run.
-  ## bisect test
-  atime_dir <- file.path(poncatime_dir, ".ci", "atime")
-  gert::git_restore(".ci/atime/tests.R",repo=poncatime_dir)
-  tests.R <- file.path(atime_dir, "tests.R")
-  grep_by <- function()system(paste("grep by=0.5", tests.R))
-  grep_by()
-  system(paste("sed -i s/by=0.5/by=0.1/", tests.R))
-  grep_by()
+})
+
+ponca_atime_dir <- file.path(poncatime_dir, ".ci", "atime")
+file.copy(system.file("poncatime_tests.R", package="atime"), file.path(ponca_atime_dir, "tests.R"), overwrite = TRUE)
+test_that("bisect() and atime_test_list(ci.commits=) work for poncatime", {
   atime::bisect(poncatime_dir, "asoCurvatureEstimation", "v1.0", "v1.4")
   gert::git_status(repo=poncatime_dir)
   expect_true(file.exists(tests.R))
-  csv_glob <- file.path(atime_dir,"bisect","asoCurvatureEstimation","v1.0-v1.4","csv","*")
+  csv_glob <- file.path(ponca_atime_dir,"bisect","asoCurvatureEstimation","v1.0-v1.4","csv","*")
   csv.wide <- read_bisect_csv(csv_glob)
-  expect_equal(nrow(csv.wide), 9)
+  expect_equal(nrow(csv.wide), 9) #expected number of commits tested by git bisect.
   if(require(ggplot2)){
     ggplot()+
       geom_segment(aes(

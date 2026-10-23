@@ -2,7 +2,8 @@ bisect_tcall <- function(tinfo, Test, ...){
   tcall <- tinfo$test.call[[Test]]
   l.item <- tinfo$test.list[[Test]]
   if(is.null(tcall))stop("Test case does not exist: ", Test)
-  old.new <- with(l.item, c(ci.commits, bisect.commits))[c(...)]
+  historical.commits <- c(l.item[["ci.commits"]], l.item[["bisect.commits"]])
+  old.new <- historical.commits[c(...)]
   tcall <- get_test_call(l.item, old.new)
   tcall$sha.vec <- c(
     HEAD=tcall$sha.vec[[grep("HEAD", names(tcall$sha.vec))]])
