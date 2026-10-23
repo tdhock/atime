@@ -286,6 +286,7 @@ test_that("atime_pkg() works for poncatime", {
 
 ponca_atime_dir <- file.path(poncatime_dir, ".ci", "atime")
 file.copy(system.file("poncatime_tests.R", package="atime"), file.path(ponca_atime_dir, "tests.R"), overwrite = TRUE)
+## no commit to new branch needed here, because tests.R is in poncatime repo, and git bisect is run in ponca submodule repo.
 test_that("bisect() and atime_test_list(ci.commits=) work for poncatime", {
   atime::bisect(poncatime_dir, "asoCurvatureEstimation", "v1.0", "v1.4")
   gert::git_status(repo=poncatime_dir)
