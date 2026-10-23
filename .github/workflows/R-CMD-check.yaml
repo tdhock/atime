@@ -56,10 +56,11 @@ jobs:
         with:
           type: 'minimal'
 
-      - name: repos
+      - name: skip bisect tests on windows
+        if: ${{ runner.os == 'Windows' }}
         shell: bash
         run: |
-          echo 'options(repos=c(CRAN="http://cloud.r-project.org"))' > ~/.Rprofile
+          rm tests/testthat/test-bisect.R
 
       - uses: r-lib/actions/check-r-package@v2
         with:

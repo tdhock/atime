@@ -40,5 +40,6 @@ Suggests:
     nc,
     RColorBrewer,
     Matrix,
-    litedown
+    litedown,
+    RcppEigen
 VignetteBuilder: litedown
