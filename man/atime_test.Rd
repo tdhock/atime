@@ -9,8 +9,10 @@
 }
 \usage{
 atime_test(
-  N, setup, expr, times, seconds.limit, verbose,
-  pkg.edit.fun, result, setup.version, ...)
+  N, setup, expr, times, seconds.limit,
+  verbose, pkg.edit.fun, result, setup.version,
+  bisect.commits, ci.commits,
+  ...)
 }
 \arguments{
   \item{N}{numeric vector of data sizes to vary.}
@@ -37,10 +39,22 @@ atime_test(
   \item{result}{logical, save results? (default FALSE)}
   \item{setup.version}{expression to evaluate for each version, prior to
   timings.}
-  \item{\dots}{named versions.}
+  \item{bisect.commits}{named character vector of versions to use in git
+    bisect (not CI).}
+  \item{ci.commits}{named character vector of versions to use in CI (and
+    git bisect).}
+  \item{\dots}{named versions to use in CI (and git bisect).}
 }
 \value{
-  List of expressions.
+  List representing a performance test.
+  When the test is run in CI via \code{atime_pkg()},
+  \code{ci.commits} and \dots are combined to create the historical versions passed
+  to \code{atime_versions} via \dots (and \code{sha.vec} comes from
+  commits related to the PR: base, merge-base, HEAD, CRAN).
+  When the test is run in git bisect via \code{bisect()},
+  \code{ci.commits} and \code{bisect.commits} are combined to create the
+  set of versions available to use as old and new (and \code{sha.vec} is
+  the HEAD chosen by git bisect).
 }
 \author{
   Toby Dylan Hocking

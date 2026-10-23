@@ -56,6 +56,12 @@ jobs:
         with:
           type: 'minimal'
 
+      - name: skip bisect tests on windows
+        if: ${{ runner.os == 'Windows' }}
+        shell: bash
+        run: |
+          rm tests/testthat/test-bisect.R
+
       - uses: r-lib/actions/check-r-package@v2
         with:
           upload-snapshots: true

@@ -51,12 +51,11 @@ atime_versions_remove <- function(Package){
   code
 }
 
+R_HOME_R <- function()shQuote(file.path(R.home(), "bin", "R"))
+
 R_CMD_INSTALL <- function(new.pkg.path){
   INSTALL.cmd <- paste(
-    shQuote(file.path(
-      Sys.getenv("R_HOME"),
-      "bin",
-      "R")),
+    R_HOME_R(),
     'CMD INSTALL -l',
     shQuote(.libPaths()[1]),
     shQuote(new.pkg.path))
@@ -94,7 +93,7 @@ atime_versions_install <- function(Package, pkg.path, new.Package.vec, sha.vec, 
             new.Package, first.lib))
         }
       }else if(sha == ""){
-        install.packages(Package)
+        if(interactive())install.packages(Package)
       }else{
         new.repo.path <- file.path(tdir, new.Package)
         unlink(new.repo.path, recursive=TRUE, force=TRUE)
@@ -104,7 +103,10 @@ atime_versions_install <- function(Package, pkg.path, new.Package.vec, sha.vec, 
         new.pkg.path <- paste0(new.repo.path, pkg.suffix.in.repo)
         gert::git_restore(".", repo=new.checkout.path)#to avoid conflicts, because file.copy() above can sometimes cause status=typechange.
         gert::git_branch_create(#and checkout
-          "atime-versions-testing", sha, repo=new.checkout.path)
+          "atime-versions-testing",
+          sha,
+          repo=new.checkout.path,
+          force=TRUE)
         unlink(file.path(new.pkg.path, "src", "*.o"))
         pkg.edit.fun(
           old.Package=Package, 

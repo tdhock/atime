@@ -1,3 +1,11 @@
+Changes in version 2026.10.22
+
+- atime_test() and atime_test_list() gain arguments ci.commits and bisect.commits. Previously there was only one use case for the test data: CI testing using atime_pkg() took historical commits from ..., now they are taken from ... and ci.commits, and used in the ... argument in atime_versions(); sha.vec argument is unchanged (commits relevant to PR: base, merge-base, HEAD, CRAN). Now bisect() is a second use case: old/new commits can come from any of ci.commits, bisect.commits, or ... (sha.vec is HEAD).
+
+Changes in version 2026.10.9
+
+- new functions bisect() and bisect_run() to run git bisect on a performance test.
+
 Changes in version 2026.10.8
 
 - atime_versions_exprs() now works when passed expr from another function.

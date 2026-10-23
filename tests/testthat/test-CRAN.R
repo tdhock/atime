@@ -492,7 +492,11 @@ test_that("atime_test outputs historical versions", {
     expr = data.table:::melt(DT, measure.vars = measure.vars),
     Slow = "fd24a3105953f7785ea7414678ed8e04524e6955", # Parent of the merge commit (https://github.com/Rdatatable/data.table/commit/ed72e398df76a0fcfd134a4ad92356690e4210ea) of the PR (https://github.com/Rdatatable/data.table/pull/5054) that fixes the issue
     Fast = "ed72e398df76a0fcfd134a4ad92356690e4210ea") # Merge commit of the PR (https://github.com/Rdatatable/data.table/pull/5054) that fixes the issue
-  expect_identical(names(atest), c("setup", "expr", "Slow", "Fast"))
+  expect_identical(names(atest), c("setup", "expr", "ci.commits"))
+  expected.commits <- c(
+    Slow = "fd24a3105953f7785ea7414678ed8e04524e6955", 
+    Fast = "ed72e398df76a0fcfd134a4ad92356690e4210ea")
+  expect_identical(atest[["ci.commits"]], expected.commits)
 })
 
 if(require(Matrix))test_that("atime_grid parameters attribute", {
@@ -578,7 +582,7 @@ if(require(Matrix))test_that("result=fun works, N=commas no decimals", {
 test_that("issue109 speed improvement shows in issues.dt", {
   data(issue109,package="atime")
   tdir <- if(interactive())"~/atest" else tempfile()
-  dir.create(tdir)
+  dir.create(tdir, showWarnings = FALSE)
   pres <- atime:::atime_pkg_plot_files(tdir, issue109$test.info, issue109$pkg.results)
   expected <- pres$all[order(pred.Nx, P.value)][1:nrow(pres$preview)]
   computed <- pres$preview[order(pred.Nx, P.value)]

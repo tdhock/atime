@@ -22,6 +22,10 @@ atime_pkg <- function(pkg.path=".", tests.dir=NULL, verbose=FALSE){
   atime_pkg_plot_files(dirname(test.info$tests.R), test.info, pkg.results)
 }
 
+test_file_name <- function(Test){
+  gsub('[^a-zA-Z0-9]', "_", Test)
+}
+
 atime_pkg_plot_files <- function(out.dir, test.info, pkg.results){
   each.sign.rank <- unit <- . <- N <- expr.name <- reference <- fun.name <- 
     empirical <- q25 <- q75 <- p.str <- p.value <- P.value <- fun.latex <- expr.class <- expr.latex <- 
@@ -166,7 +170,7 @@ atime_pkg_plot_files <- function(out.dir, test.info, pkg.results){
       ggplot2::coord_cartesian(xlim=c(NA,xmax))
     out.png <- file.path(
       out.dir,
-      paste0(gsub('[\':\\ /*|<>"?\n\r]', "_", Test), ".png"))
+      paste0(test_file_name(Test), ".png"))
     grDevices::png(out.png, width=test.info$width.in*nrow(max.dt), height=test.info$height.in, units="in", res=100)
     suppressWarnings(print(gg))
     grDevices::dev.off()
@@ -299,7 +303,7 @@ atime_pkg_test_info <- function(pkg.path=".", tests.dir=NULL, verbose=FALSE){
   test.env$tests.R <- find_tests_file(pkg.path, tests.dir)
   tests.parsed <- parse(test.env$tests.R)
   eval(tests.parsed, test.env)
-  checkout.path <- if(is.character(test.env$checkout.path.relative)){
+  test.env$checkout.path <- if(is.character(test.env$checkout.path.relative)){
     file.path(pkg.path, test.env$checkout.path.relative)
   }else pkg.path
   default.list <- list(
@@ -317,12 +321,17 @@ atime_pkg_test_info <- function(pkg.path=".", tests.dir=NULL, verbose=FALSE){
   pkg.DESC <- file.path(pkg.path, "DESCRIPTION")
   DESC.mat <- read.dcf(pkg.DESC)
   Package <- DESC.mat[,"Package"]
-  HEAD.commit <- gert::git_commit_id("HEAD", repo=checkout.path)
-  sha.vec <- c()
-  HEAD.name <- paste0("HEAD=", gert::git_branch(repo=checkout.path))
+  HEAD.commit <- gert::git_commit_id("HEAD", repo=test.env$checkout.path)
+  sha.vec <- character()
+  HEAD.name <- paste0("HEAD=", gert::git_branch(repo=test.env$checkout.path))
   sha.vec[[HEAD.name]] <- HEAD.commit
   installed_version <- tryCatch(paste(packageVersion(Package)), error=function(e)"(not installed)")
-  ap <- utils::available.packages()
+  ap <- tryCatch({
+    utils::available.packages()
+  }, error=function(e){
+    warning("available.packages() errored: ", e)
+    matrix(character())
+  })
   installed_name <- "installed"
   if(Package %in% rownames(ap)){
     CRAN_version <- ap[Package,"Version"]
@@ -338,13 +347,13 @@ atime_pkg_test_info <- function(pkg.path=".", tests.dir=NULL, verbose=FALSE){
     CRAN.name <- NA_character_
   }else{
     CRAN.name <- paste0(installed_name, "=", installed_version)
-    if(identical(pkg.path, checkout.path))sha.vec[[CRAN.name]] <- ""
+    if(identical(pkg.path, test.env$checkout.path))sha.vec[[CRAN.name]] <- ""
   }
   if(is.null(test.env$base.ref)){
     test.env$base.ref <- Sys.getenv("GITHUB_BASE_REF", "master")
   }
   base.commit <- tryCatch({
-    gert::git_commit_info(test.env$base.ref, repo=checkout.path)$id
+    gert::git_commit_info(test.env$base.ref, repo=test.env$checkout.path)$id
   }, error=function(e){
     NULL
   })
@@ -353,7 +362,7 @@ atime_pkg_test_info <- function(pkg.path=".", tests.dir=NULL, verbose=FALSE){
     maybe.new.list <- list()
     maybe.new.list[[base.name]] <- base.commit
     maybe.new.list[["merge-base"]] <- gert::git_merge_find_base(
-      base.commit, "HEAD", repo=checkout.path)
+      base.commit, "HEAD", repo=test.env$checkout.path)
     for(maybe.new.name in names(maybe.new.list)){
       maybe.new.sha <- maybe.new.list[[maybe.new.name]]
       if(!maybe.new.sha %in% sha.vec){
@@ -377,24 +386,34 @@ atime_pkg_test_info <- function(pkg.path=".", tests.dir=NULL, verbose=FALSE){
     pkg.path=pkg.path,
     sha.vec=sha.vec,
     verbose=verbose,
-    checkout.path=checkout.path)
+    checkout.path=test.env$checkout.path)
   test.env$sha.vec <- sha.vec
   test.env$test.list <- inherit_args(test.env$test.list, common.args)
   test.env$test.call <- list()
   for(Test in names(test.env$test.list)){
-    test.env$test.call[[Test]] <- as.call(c(
-      quote(atime::atime_versions),
-      test.env$test.list[[Test]]))
+    l.item <- test.env$test.list[[Test]]
+    tcall <- get_test_call(l.item, l.item[["ci.commits"]])
+    test.env$test.call[[Test]] <- tcall
   }
   test.env
+}
+
+get_test_call <- function(l.item, historical.commits){
+  tcall <- as.call(c(
+    quote(atime::atime_versions),
+    l.item))
+  tcall[names(historical.commits)] <- historical.commits
+  tcall[c("bisect.commits","ci.commits")] <- NULL
+  tcall
 }
 
 get_test_args <- function(){
   s.parent <- sys.parent()
   pfun <- sys.function(s.parent)
-  two.funs <- list(pfun, atime_versions)
-  name.vecs <- lapply(two.funs, function(f)names(formals(f)))
-  could.copy <- Reduce(intersect, name.vecs)
+  could.copy <- c(
+    "N", "setup", "expr", "times", "seconds.limit", "verbose",
+    "pkg.edit.fun", "result", "setup.version", "bisect.commits",
+    "ci.commits")
   mc <- as.list(match.call(pfun, sys.call(s.parent))[-1])
   common.names <- intersect(names(mc), could.copy)
   possible.uneval <- c("setup","expr","setup.version")
@@ -406,11 +425,13 @@ get_test_args <- function(){
   test.args
 }
 
-atime_test <- function(N, setup, expr, times, seconds.limit, verbose, pkg.edit.fun, result, setup.version, ...){
-  c(get_test_args(), ...)
+atime_test <- function(N, setup, expr, times, seconds.limit, verbose, pkg.edit.fun, result, setup.version, bisect.commits, ci.commits, ...){
+  targs <- get_test_args()
+  targs$ci.commits <- c(..., targs$ci.commits)
+  targs
 }
 
-atime_test_list <- function(N, setup, expr, times, seconds.limit, verbose, pkg.edit.fun, result, setup.version, tests=NULL, ...){
+atime_test_list <- function(N, setup, expr, times, seconds.limit, verbose, pkg.edit.fun, result, setup.version, bisect.commits, ci.commits, tests=NULL, ...){
   common.args <- get_test_args()
   L <- c(tests, list(...))
   inherit_args(L, common.args)

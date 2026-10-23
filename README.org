@@ -224,7 +224,17 @@ You can run =atime_versions()= to check R package performance in every Pull Requ
 
 Note that if you copy the yml config from an example above, you need to edit two config files for your package
 - =.github/workflows/performance-tests.yml= add code to install your package from CRAN, if you want to compare with timings from your current CRAN release.
-- =.ci/atime/tests.R= add performance tests relevant for your package. 
+- =.ci/atime/tests.R= add performance tests relevant for your package.
+
+Creating test cases for use in CI and git bisect.
+The test cases are defined in .ci/atime/tests.R:
+
+| atime_test() arg | test list item data | atime_versions() call in CI | atime_versions() call in bisect |
+|------------------+---------------------+-----------------------------+---------------------------------|
+| ci.commits       | ci.commits          | ...                         | ... old/new                     |
+| ...              | ci.commits          | ...                         | ... old/new                     |
+| bisect.commits   | bisect.commits      | unused                      | ... old/new                     |
+| n/a              | sha.vec all         | sha.vec all                 | sha.vec HEAD only               |
 
 ** Related work
 
@@ -241,6 +251,14 @@ sizes (like seconds.limit argument in atime).
 one expression (not several), and there is no special setup argument
 like atime (which means that the timing must include data setup code
 which may be irrelevant).
+
+[[https://github.com/agenis/GuessCompx][GuessCompx]] (2019) did empirical estimation of asymptotic (big-O) time/memory complexity.
+- like atime, it used classification with reference curves (constant, linear, quadratic, cubic, squareroot, log, NlogN).
+- atime only fits to large N, GuessCompx uses all N (unfortunately including N in constant overhead regime).
+- atime fits by distance to second largest data point, GuessCompx fits by leave-one-out CV.
+- atime can fit asymptotic reference curves to arbitrary units, GuessCompx is limited to time and memory.
+- atime runs several expressions, GuessCompx runs one function.
+- atime plots use log-log scales, GuessCompx plot use linear scales (which hide details because N is varied on a log scale).
 
 |                   | Language | Users      | Github workflow result display | Comparative benchmarking | Performance testing |
 |-------------------+----------+------------+--------------------------------+--------------------------+---------------------|
