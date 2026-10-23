@@ -240,8 +240,9 @@ test_that("bisect.commits arg works", {
   expect_is(dt_result, "atime")
   ##atime::bisect(dt_dir, tname, "Fast", "Parent7370")
   atime::bisect(dt_dir, tname, "PR7375", "Slow")
-  csv_glob <- file.path(dt_atime_dir, "bisect", "fread_N_cols_regression", "PR7375-Slow", "csv" "*")
+  csv_glob <- file.path(dt_atime_dir, "bisect", "fread_N_cols_regression", "PR7375-Slow", "csv", "*")
   csv.wide <- read_bisect_csv(csv_glob)
+  expect_equal(nrow(csv.wide), 7)
   if(require(ggplot2)){
     ggplot()+
       geom_segment(aes(
