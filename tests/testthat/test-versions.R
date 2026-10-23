@@ -242,8 +242,6 @@ test_that("bisect.commits arg works for data.table N=cols regression", {
   expect_equal(sum(names(l.item$bisect.commits) %in% dt_result$measurements$expr.name), 0)
 })
 
-# to avoid Error: trying to use CRAN without setting a mirror
-cat('options(repos=c("http://cloud.r-project.org"))', file="~/.Rprofile")
 test_that("bisect() works for data.table N=cols regression", {
   atime::bisect(dt_dir, tname, "PR7375", "Slow")
   csv_glob <- file.path(dt_atime_dir, "bisect", "fread_N_cols_regression", "PR7375-Slow", "csv", "*")

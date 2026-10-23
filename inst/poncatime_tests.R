@@ -66,8 +66,8 @@ ponca.versions <- c(
   "v1.4",
   "v2.0.alpha1")
 test.list <- atime::atime_test_list(
-  seconds.limit=0.1,
-  N=10^seq(2, 6, by=0.1),
+  seconds.limit=0.01,
+  N=unique(as.integer(10^seq(2, 6, by=0.05))),
   pkg.edit.fun=edit_poncatime,
   ci.commits=setNames(ponca.versions, ponca.versions),
   asoCurvatureEstimationK=atime::atime_test(
