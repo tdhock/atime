@@ -51,12 +51,11 @@ atime_versions_remove <- function(Package){
   code
 }
 
+R_HOME_R <- function()shQuote(file.path(R.home(), "bin", "R"))
+
 R_CMD_INSTALL <- function(new.pkg.path){
   INSTALL.cmd <- paste(
-    shQuote(file.path(
-      Sys.getenv("R_HOME"),
-      "bin",
-      "R")),
+    R_HOME_R(),
     'CMD INSTALL -l',
     shQuote(.libPaths()[1]),
     shQuote(new.pkg.path))

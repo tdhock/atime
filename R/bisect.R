@@ -64,7 +64,7 @@ bisect <- function(pkg.path, Test, old.name="Fast", new.name="Slow"){
     "git bisect start",
     sprintf("git bisect old %s", tcall[[old.name]]),
     sprintf("git bisect new %s", tcall[[new.name]]),
-    sprintf("git bisect run %s -e 'atime::bisect_run(\"%s\")'", file.path(R.home(), "bin", "R"), test.path),
+    sprintf("git bisect run %s -e 'atime::bisect_run(\"%s\")'", R_HOME_R(), test.path),
     sprintf("cd %s", dirname(tinfo$tests.R)),
     "git restore tests.R",
     sprintf("cd %s", tinfo$checkout.path),
@@ -98,7 +98,7 @@ bisect_run <- function(test.path){
   log.row <- gert::git_log("HEAD", 1, repo=tinfo$checkout.path)
   status <- NA
   while(is.na(status)){
-    cmd <- sprintf("R -e 'atime:::bisect_try(\"%s\")'", test.path)
+    cmd <- sprintf("%s -e 'atime:::bisect_try(\"%s\")'", R_HOME_R(), test.path)
     system(cmd)
     tres.or.status <- readRDS(file.path(test.path, "tres.or.status.rds"))
     status <- if(is.numeric(tres.or.status)){
