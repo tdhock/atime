@@ -59,7 +59,7 @@ jobs:
       - name: repos
         shell: bash
         run: |
-          echo 'options(repos="http://cloud.r-project.org")' > ~/.Rprofile
+          echo 'options(repos=c(CRAN="http://cloud.r-project.org"))' > ~/.Rprofile
 
       - uses: r-lib/actions/check-r-package@v2
         with:
