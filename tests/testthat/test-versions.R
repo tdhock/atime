@@ -224,9 +224,9 @@ dt_atime_dir <- file.path(dt_dir, ".ci", "atime")
 file.copy(system.file("data.table_tests.R", package="atime"), file.path(dt_atime_dir, "tests.R"), overwrite = TRUE)
 gert::git_add(".ci/atime/tests.R", repo=dt_dir)
 gert::git_commit("commit from atime test-versions.R", repo=dt_dir)
+tname <- "fread N=cols regression"
 test_that("bisect.commits arg works for data.table N=cols regression", {
   dt_info <- atime::atime_pkg_test_info(dt_dir)
-  tname <- "fread N=cols regression"
   names(dt_info$test.list[[tname]])
   l.item <- dt_info$test.list[[tname]]
   expect_equal(length(l.item$bisect.commits), 5)
@@ -240,10 +240,13 @@ test_that("bisect.commits arg works for data.table N=cols regression", {
   expect_is(dt_result, "atime")
   expect_in(c("Fast", "Slow", "HEAD=atime-dt-test-versions"), dt_result$measurements$expr.name)#base and others may or may not be present.
   expect_equal(sum(names(l.item$bisect.commits) %in% dt_result$measurements$expr.name), 0)
+})
+
+test_that("bisect() works for data.table N=cols regression", {
   atime::bisect(dt_dir, tname, "PR7375", "Slow")
   csv_glob <- file.path(dt_atime_dir, "bisect", "fread_N_cols_regression", "PR7375-Slow", "csv", "*")
   csv.wide <- read_bisect_csv(csv_glob)
-  expect_equal(nrow(csv.wide), 7)
+  expect_equal(nrow(csv.wide), 7) #expected number of commits tested by git bisect.
   if(require(ggplot2)){
     ggplot()+
       geom_segment(aes(
