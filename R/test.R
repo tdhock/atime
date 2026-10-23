@@ -322,7 +322,7 @@ atime_pkg_test_info <- function(pkg.path=".", tests.dir=NULL, verbose=FALSE){
   DESC.mat <- read.dcf(pkg.DESC)
   Package <- DESC.mat[,"Package"]
   HEAD.commit <- gert::git_commit_id("HEAD", repo=test.env$checkout.path)
-  sha.vec <- c()
+  sha.vec <- character()
   HEAD.name <- paste0("HEAD=", gert::git_branch(repo=test.env$checkout.path))
   sha.vec[[HEAD.name]] <- HEAD.commit
   installed_version <- tryCatch(paste(packageVersion(Package)), error=function(e)"(not installed)")
@@ -386,19 +386,29 @@ atime_pkg_test_info <- function(pkg.path=".", tests.dir=NULL, verbose=FALSE){
   test.env$test.list <- inherit_args(test.env$test.list, common.args)
   test.env$test.call <- list()
   for(Test in names(test.env$test.list)){
-    test.env$test.call[[Test]] <- as.call(c(
-      quote(atime::atime_versions),
-      test.env$test.list[[Test]]))
+    l.item <- test.env$test.list[[Test]]
+    tcall <- get_test_call(l.item, l.item[["ci.commits"]])
+    test.env$test.call[[Test]] <- tcall
   }
   test.env
+}
+
+get_test_call <- function(l.item, historical.commits){
+  tcall <- as.call(c(
+    quote(atime::atime_versions),
+    l.item))
+  tcall[names(historical.commits)] <- historical.commits
+  tcall[c("bisect.commits","ci.commits")] <- NULL
+  tcall
 }
 
 get_test_args <- function(){
   s.parent <- sys.parent()
   pfun <- sys.function(s.parent)
-  two.funs <- list(pfun, atime_versions)
-  name.vecs <- lapply(two.funs, function(f)names(formals(f)))
-  could.copy <- Reduce(intersect, name.vecs)
+  could.copy <- c(
+    "N", "setup", "expr", "times", "seconds.limit", "verbose",
+    "pkg.edit.fun", "result", "setup.version", "bisect.commits",
+    "ci.commits")
   mc <- as.list(match.call(pfun, sys.call(s.parent))[-1])
   common.names <- intersect(names(mc), could.copy)
   possible.uneval <- c("setup","expr","setup.version")
@@ -410,11 +420,13 @@ get_test_args <- function(){
   test.args
 }
 
-atime_test <- function(N, setup, expr, times, seconds.limit, verbose, pkg.edit.fun, result, setup.version, ...){
-  c(get_test_args(), ...)
+atime_test <- function(N, setup, expr, times, seconds.limit, verbose, pkg.edit.fun, result, setup.version, bisect.commits, ci.commits, ...){
+  targs <- get_test_args()
+  targs$ci.commits <- c(..., targs$ci.commits)
+  targs
 }
 
-atime_test_list <- function(N, setup, expr, times, seconds.limit, verbose, pkg.edit.fun, result, setup.version, tests=NULL, ...){
+atime_test_list <- function(N, setup, expr, times, seconds.limit, verbose, pkg.edit.fun, result, setup.version, bisect.commits, tests=NULL, ...){
   common.args <- get_test_args()
   L <- c(tests, list(...))
   inherit_args(L, common.args)

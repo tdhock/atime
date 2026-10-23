@@ -196,6 +196,24 @@ test_that("atime_versions_exprs works in fun", {
   expect_equal(computed, expected)
 })
 
+file.copy(system.file("data.table_tests.R", package="atime"), file.path(dt_dir, ".ci", "atime", "tests.R"), overwrite = TRUE)
+test_that("bisect.commits arg works", {
+  dt_info <- atime::atime_pkg_test_info(dt_dir)
+  tname <- "fread N=cols regression"
+  names(dt_info$test.list[[tname]])
+  l.item <- dt_info$test.list[[tname]]
+  expect_equal(length(l.item$bisect.commits), 5)
+  expect_equal(length(l.item$ci.commits), 2)
+  expect_is(l.item$sha.vec, "character")
+  tcall <- dt_info$test.call[[tname]]
+  expect_null(tcall$bisect.commits)
+  expect_null(tcall$ci.commits)
+  expect_identical(tcall$sha.vec, l.item$sha.vec)
+  dt_result <- eval(tcall)
+  expect_is(dt_result, "atime")
+  atime::bisect(dt_dir, tname, "Fast", "Parent7370")
+})
+
 if(interactive())test_that("atime_pkg() works for poncatime", {
   poncatime_dir <- tempfile()
   dir.create(poncatime_dir)

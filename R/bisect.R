@@ -1,12 +1,10 @@
 bisect_tcall <- function(tinfo, Test, ...){
   tcall <- tinfo$test.call[[Test]]
+  l.item <- tinfo$test.list[[Test]]
   if(is.null(tcall))stop("Test case does not exist: ", Test)
-  keep.args <- c(
-    names(formals(atime::atime_versions)),
-    "", ...)
-  rm.args <- setdiff(names(tcall), keep.args)
-  tcall[rm.args] <- NULL
-  tcall$sha.vec <- list(
+  old.new <- with(l.item, c(ci.commits, bisect.commits))[c(...)]
+  tcall <- get_test_call(l.item, old.new)
+  tcall$sha.vec <- c(
     HEAD=tcall$sha.vec[[grep("HEAD", names(tcall$sha.vec))]])
   tcall
 }
