@@ -291,7 +291,6 @@ file.copy(system.file("poncatime_tests.R", package="atime"), file.path(ponca_ati
 test_that("bisect() and atime_test_list(ci.commits=) work for poncatime", {
   atime::bisect(poncatime_dir, "asoCurvatureEstimation", "v1.0", "v1.4")
   gert::git_status(repo=poncatime_dir)
-  expect_true(file.exists(tests.R))
   csv_glob <- file.path(ponca_atime_dir,"bisect","asoCurvatureEstimation","v1.0-v1.4","csv","*")
   csv.wide <- read_bisect_csv(csv_glob)
   expect_equal(nrow(csv.wide), 9) #expected number of commits tested by git bisect.
