@@ -196,7 +196,34 @@ test_that("atime_versions_exprs works in fun", {
   expect_equal(computed, expected)
 })
 
-file.copy(system.file("data.table_tests.R", package="atime"), file.path(dt_dir, ".ci", "atime", "tests.R"), overwrite = TRUE)
+read_bisect_csv <- function(glob){
+  (csv.wide <- data.table(
+    csv=Sys.glob(glob)
+  )[
+  , fread(csv), by=csv
+  ][, let(
+    rank = rank(time),
+    Status=factor(status)
+  )][])
+  min.start <- min(as.integer(csv.wide$start))
+  for(cname in c("start", "end")){
+    set(
+      csv.wide,
+      j=paste0(cname,"_minutes"),
+      value=(as.integer(csv.wide[[cname]])-min.start)/60)
+  }
+  csv.wide
+}
+
+gert::git_branch_create(#and checkout
+  "atime-dt-test-versions",
+  "master",
+  repo=dt_dir,
+  force=TRUE)
+dt_atime_dir <- file.path(dt_dir, ".ci", "atime")
+file.copy(system.file("data.table_tests.R", package="atime"), file.path(dt_atime_dir, "tests.R"), overwrite = TRUE)
+gert::git_add(".ci/atime/tests.R", repo=dt_dir)
+gert::git_commit("commit from atime test-versions.R", repo=dt_dir)
 test_that("bisect.commits arg works", {
   dt_info <- atime::atime_pkg_test_info(dt_dir)
   tname <- "fread N=cols regression"
@@ -211,7 +238,33 @@ test_that("bisect.commits arg works", {
   expect_identical(tcall$sha.vec, l.item$sha.vec)
   dt_result <- eval(tcall)
   expect_is(dt_result, "atime")
-  atime::bisect(dt_dir, tname, "Fast", "Parent7370")
+  ##atime::bisect(dt_dir, tname, "Fast", "Parent7370")
+  atime::bisect(dt_dir, tname, "PR7375", "Slow")
+  csv_glob <- file.path(dt_atime_dir, "bisect", "fread_N_cols_regression", "PR7375-Slow", "csv" "*")
+  csv.wide <- read_bisect_csv(csv_glob)
+  if(require(ggplot2)){
+    ggplot()+
+      geom_segment(aes(
+        rank, start_minutes,
+        xend=rank, yend=end_minutes),
+        data=csv.wide)+
+      scale_fill_manual(values=c("0"="black", "1"="white"))+
+      geom_point(aes(
+        rank, start_minutes, fill=Status),
+        shape=21,
+        data=csv.wide)
+  }
+  (csv.long <- melt(csv.wide, measure.vars=measure(variable, version, pattern="([^.]+)[.](.*)")))
+  if(require(ggplot2)){
+    ggplot()+
+      geom_vline(aes(
+        xintercept=rank, linetype=Status),
+        data=csv.wide)+
+      geom_line(aes(
+        rank, value, color=version),
+        data=csv.long)+
+      facet_grid(variable ~ ., scales="free")
+  }
 })
 
 if(interactive())test_that("atime_pkg() works for poncatime", {
@@ -235,21 +288,7 @@ if(interactive())test_that("atime_pkg() works for poncatime", {
   gert::git_status(repo=poncatime_dir)
   expect_true(file.exists(tests.R))
   csv_glob <- file.path(atime_dir,"bisect","asoCurvatureEstimation","v1.0-v1.4","csv","*")
-  (csv.wide <- data.table(
-    csv=Sys.glob(csv_glob)
-  )[
-  , fread(csv), by=csv
-  ][, let(
-    rank = rank(time),
-    Status=factor(status)
-  )][])
-  min.start <- min(as.integer(csv.wide$start))
-  for(cname in c("start", "end")){
-    set(
-      csv.wide,
-      j=paste0(cname,"_minutes"),
-      value=(as.integer(csv.wide[[cname]])-min.start)/60)
-  }
+  csv.wide <- read_bisect_csv(csv_glob)
   if(require(ggplot2)){
     ggplot()+
       geom_segment(aes(
