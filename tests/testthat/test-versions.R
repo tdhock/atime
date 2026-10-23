@@ -238,7 +238,8 @@ test_that("bisect.commits arg works", {
   expect_identical(tcall$sha.vec, l.item$sha.vec)
   dt_result <- eval(tcall)
   expect_is(dt_result, "atime")
-  ##atime::bisect(dt_dir, tname, "Fast", "Parent7370")
+  expect_in(c("Fast", "Slow", "HEAD=atime-dt-test-versions", "base=master"), dt_result$measurements$expr.name)
+  expect_equal(sum(names(l.item$bisect.commits) %in% dt_result$measurements$expr.name), 0)
   atime::bisect(dt_dir, tname, "PR7375", "Slow")
   csv_glob <- file.path(dt_atime_dir, "bisect", "fread_N_cols_regression", "PR7375-Slow", "csv", "*")
   csv.wide <- read_bisect_csv(csv_glob)
@@ -256,6 +257,7 @@ test_that("bisect.commits arg works", {
         data=csv.wide)
   }
   (csv.long <- melt(csv.wide, measure.vars=measure(variable, version, pattern="([^.]+)[.](.*)")))
+  expect_identical(unique(sort(csv.long$version)), c("HEAD","PR7375","Slow"))
   if(require(ggplot2)){
     ggplot()+
       geom_vline(aes(
@@ -304,6 +306,7 @@ if(interactive())test_that("atime_pkg() works for poncatime", {
         data=csv.wide)
   }
   (csv.long <- melt(csv.wide, measure.vars=measure(variable, version, pattern="([^.]+)[.](.*)")))
+  expect_identical(unique(sort(csv.long$version)), c("HEAD","v1.0","v1.4"))
   if(require(ggplot2)){
     ggplot()+
       geom_vline(aes(
