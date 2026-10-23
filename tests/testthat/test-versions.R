@@ -242,6 +242,8 @@ test_that("bisect.commits arg works for data.table N=cols regression", {
   expect_equal(sum(names(l.item$bisect.commits) %in% dt_result$measurements$expr.name), 0)
 })
 
+# to avoid Error: trying to use CRAN without setting a mirror
+cat('options(repos=c("http://cloud.r-project.org"))', file="~/.Rprofile")
 test_that("bisect() works for data.table N=cols regression", {
   atime::bisect(dt_dir, tname, "PR7375", "Slow")
   csv_glob <- file.path(dt_atime_dir, "bisect", "fread_N_cols_regression", "PR7375-Slow", "csv", "*")
@@ -277,7 +279,10 @@ poncatime_dir <- tempfile()
 dir.create(poncatime_dir)
 gert::git_clone("https://github.com/poncateam/poncatime", poncatime_dir)
 system(paste("cd", poncatime_dir, "&& git submodule update --init --recursive && cd src/external/ponca && git checkout master"))
-pak::pkg_install(poncatime_dir) #to avoid ERROR on CI: dependency ‘RcppEigen’ is not available for package ‘Poncatime’
+if(!requireNamespace("RcppEigen")){
+  #to avoid ERROR on CI: dependency ‘RcppEigen’ is not available for package ‘Poncatime’
+  install.packages("RcppEigen")
+}
 test_that("atime_pkg() works for poncatime", {
   tinfo <- atime::atime_pkg_test_info(poncatime_dir)
   expect_identical(tinfo$HEAD.name, "HEAD=master")
