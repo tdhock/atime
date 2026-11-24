@@ -46,7 +46,7 @@ plot(refs_best_string)
 refs_best_string$plot.references <- refs_best_string$ref[c("N","N^2","N^3","2^N"),on="fun.name"]
 plot(refs_best_string)
 ## predict method computes N for given units (default seconds limit).
-(pred_string <- predict(refs_best_string))
+(pred_string <- predict(refs_best_string, seconds=0.0005, kilobytes=100))
 plot(pred_string)
 
 }
